@@ -23,11 +23,8 @@ export default async function ConfigurationPage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-xl font-semibold">Configuration</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Candidats, tables et critères sont entièrement paramétrables. À configurer avant le début
-          de l&apos;événement.
-        </p>
+        <h1 className="text-2xl font-semibold">Configuration</h1>
+        <p className="mt-1 text-sm text-slate-500">À préparer avant l&apos;événement.</p>
       </div>
 
       {/* Candidats */}
@@ -75,9 +72,7 @@ export default async function ConfigurationPage() {
       {/* Tables */}
       <section className="rounded-xl border border-slate-200 bg-white p-5">
         <h2 className="mb-1 font-semibold">Tables ({tables.length})</h2>
-        <p className="mb-4 text-sm text-slate-500">
-          Une table « jury spécial » voit ses votes comptés double dans la moyenne.
-        </p>
+        <p className="mb-4 text-sm text-slate-500">« Jury spécial » = votes comptés double.</p>
 
         <ul className="mb-5 divide-y divide-slate-100">
           {tables.map((table) => (
@@ -130,7 +125,7 @@ export default async function ConfigurationPage() {
       <section className="rounded-xl border border-slate-200 bg-white p-5">
         <h2 className="mb-1 font-semibold">Critères ({criteria.length})</h2>
         <p className="mb-4 text-sm text-slate-500">
-          Chaque critère est noté de 1 à 5, converti en note sur 10. Total actuel d&apos;un vote :{" "}
+          Noté de 1 à 5 (×2 → /10). Total d&apos;un vote :{" "}
           <strong>{maxTotalForCriteria(criteria.length)} points</strong>.
         </p>
 

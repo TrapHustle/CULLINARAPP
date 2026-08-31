@@ -25,11 +25,8 @@ export default async function ResultatsPage() {
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold">Résultats</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Moyenne pondérée par votant, sur 20. Un candidat noté par 18 personnes n&apos;est ni
-            avantagé ni désavantagé face à un candidat noté par 13.
-          </p>
+          <h1 className="text-2xl font-semibold">Résultats</h1>
+          <p className="mt-1 text-sm text-slate-500">Moyenne pondérée par votant, sur 20.</p>
         </div>
 
         <div className="flex gap-2 print:hidden">
@@ -57,9 +54,6 @@ export default async function ResultatsPage() {
         </span>
         <span className="rounded-lg bg-white px-3 py-2 ring-1 ring-slate-200">
           {results.totals.candidates} candidats
-        </span>
-        <span className="rounded-lg bg-white px-3 py-2 ring-1 ring-slate-200">
-          Total d&apos;un vote : {results.maxTotal} points
         </span>
       </div>
 

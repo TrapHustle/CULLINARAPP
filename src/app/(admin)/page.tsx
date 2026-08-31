@@ -36,11 +36,8 @@ export default async function PilotagePage() {
       <AutoRefresh />
 
       <div>
-        <h1 className="text-xl font-semibold">Pilotage des votes</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Ouvrez les votes candidat par candidat. Toutes les tables votent pour le même candidat au
-          même moment.
-        </p>
+        <h1 className="text-2xl font-semibold">Pilotage des votes</h1>
+        <p className="mt-1 text-sm text-slate-500">Ouvrez les votes candidat par candidat.</p>
       </div>
 
       {/* État courant */}
@@ -175,13 +172,9 @@ export default async function PilotagePage() {
 
       {/* Chronomètre */}
       <section className="rounded-xl border border-slate-200 bg-white p-5">
-        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-slate-500">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
           Chronomètre
         </h2>
-        <p className="mb-4 text-sm text-slate-500">
-          À l&apos;expiration, le vote en cours est soumis automatiquement sur la tablette avec les
-          notes déjà sélectionnées.
-        </p>
 
         <form action={updateTimerAction} className="flex flex-wrap items-end gap-4">
           <label className="flex items-center gap-2 text-sm text-slate-700">

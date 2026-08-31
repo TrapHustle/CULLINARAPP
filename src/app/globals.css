@@ -113,8 +113,23 @@
   --color-amber-800: var(--gold-soft);
 }
 
+/*
+ * Taille de base relevée : Tailwind exprime tailles de texte ET espacements en
+ * `rem`, donc augmenter la racine agrandit la police et aère l'interface d'un
+ * seul geste — l'organisateur lit de plus loin, l'écran respire davantage.
+ */
+html {
+  font-size: 17.5px;
+}
+@media print {
+  html {
+    font-size: 16px;
+  }
+}
+
 body {
   min-height: 100vh;
+  line-height: 1.55;
   background:
     radial-gradient(1100px 700px at 100% -10%, var(--glow1), transparent 60%),
     radial-gradient(900px 700px at -10% 110%, var(--glow2), transparent 60%),
