@@ -1,10 +1,14 @@
 "use client";
 
 import { useActionState } from "react";
+import { ArrowRightIcon, ChefHatIcon, LockIcon, UserIcon } from "@/components/icons";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { loginAction, type ActionState } from "@/lib/actions";
 
 const initialState: ActionState = {};
+
+const FIELD_CLASS =
+  "w-full rounded-lg border border-outline-variant/60 bg-[color:var(--field)] py-2.5 pl-10 pr-3 text-body-md text-on-surface transition-colors";
 
 export default function LoginPage() {
   const [state, formAction, pending] = useActionState(loginAction, initialState);
@@ -14,51 +18,72 @@ export default function LoginPage() {
       <div className="absolute right-4 top-4">
         <ThemeToggle />
       </div>
-      <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <div aria-hidden className="mb-3 text-4xl">🍽️</div>
-          <h1 className="font-serif text-3xl font-semibold text-[color:var(--gold)]">Concours culinaire</h1>
-          <p className="mt-1 text-sm text-slate-500">Espace organisateur</p>
-        </div>
 
-        <form action={formAction} className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <label className="block text-sm font-medium text-slate-700" htmlFor="username">
-            Identifiant
-          </label>
-          <input
-            id="username"
-            name="username"
-            autoComplete="username"
-            required
-            className="mt-1 mb-4 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
-          />
+      {/* Carte d'accès : un « carton d'invitation » centré, posé sur le halo doré. */}
+      <div className="relative w-full max-w-sm">
+        <div aria-hidden className="gold-halo pointer-events-none absolute -inset-16" />
 
-          <label className="block text-sm font-medium text-slate-700" htmlFor="password">
-            Mot de passe
-          </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
-          />
-
-          {state.error ? (
-            <p role="alert" className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-              {state.error}
+        <div className="relative rounded-xl bg-surface-container p-8 gold-border shadow-[var(--panel-shadow)]">
+          <div className="mb-8 text-center">
+            <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full border border-primary/40 text-primary">
+              <ChefHatIcon className="h-6 w-6" />
+            </div>
+            <p className="text-label-sm uppercase tracking-[0.2em] text-primary">Concours culinaire</p>
+            <h1 className="mt-2 font-serif text-headline-lg text-on-surface">Espace organisateur</h1>
+            <p className="mt-1 text-label-sm text-on-surface-variant">
+              Configuration, pilotage et résultats
             </p>
-          ) : null}
+          </div>
 
-          <button
-            type="submit"
-            disabled={pending}
-            className="mt-6 w-full rounded-lg bg-amber-600 px-4 py-2.5 font-medium text-white transition hover:bg-amber-700 disabled:opacity-60"
-          >
-            {pending ? "Connexion…" : "Se connecter"}
-          </button>
-        </form>
+          <form action={formAction}>
+            <label className="block text-label-sm text-on-surface-variant" htmlFor="username">
+              Identifiant
+            </label>
+            <div className="relative mt-1.5 mb-5">
+              <UserIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-outline" />
+              <input
+                id="username"
+                name="username"
+                autoComplete="username"
+                required
+                className={FIELD_CLASS}
+              />
+            </div>
+
+            <label className="block text-label-sm text-on-surface-variant" htmlFor="password">
+              Mot de passe
+            </label>
+            <div className="relative mt-1.5">
+              <LockIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-outline" />
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                className={FIELD_CLASS}
+              />
+            </div>
+
+            {state.error ? (
+              <p
+                role="alert"
+                className="mt-5 rounded-lg border border-error/30 bg-error/10 px-3 py-2 text-label-sm text-error"
+              >
+                {state.error}
+              </p>
+            ) : null}
+
+            <button
+              type="submit"
+              disabled={pending}
+              className="gold-gradient mt-7 flex h-touch w-full items-center justify-center gap-2 rounded-lg text-label-lg transition hover:brightness-105 disabled:opacity-60"
+            >
+              {pending ? "Connexion…" : "Se connecter"}
+              {pending ? null : <ArrowRightIcon className="h-4 w-4" />}
+            </button>
+          </form>
+        </div>
       </div>
     </main>
   );

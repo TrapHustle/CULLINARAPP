@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useRef } from "react";
+import { PlusIcon } from "@/components/icons";
 import type { ActionState } from "@/lib/actions";
 
 export type Field =
@@ -39,13 +40,13 @@ export function ActionForm({
   return (
     <form ref={formRef} action={formAction} className="flex flex-wrap items-end gap-3">
       {fields.map((field) => (
-        <label key={field.name} className="text-sm text-slate-700">
+        <label key={field.name} className="text-label-sm text-on-surface-variant">
           <span className="mb-1 block">{field.label}</span>
 
           {field.kind === "select" ? (
             <select
               name={field.name}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-2"
+              className="rounded-lg border border-outline-variant/60 px-3 py-2 text-body-md"
             >
               {field.options.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -62,7 +63,7 @@ export function ActionForm({
               defaultValue={field.kind === "number" ? field.defaultValue : undefined}
               min={field.kind === "number" ? field.min : undefined}
               max={field.kind === "number" ? field.max : undefined}
-              className={`rounded-lg border border-slate-300 px-3 py-2 ${
+              className={`rounded-lg border border-outline-variant/60 px-3 py-2 text-body-md ${
                 field.kind === "number" ? "w-24" : "w-56"
               }`}
             />
@@ -73,18 +74,19 @@ export function ActionForm({
       <button
         type="submit"
         disabled={pending}
-        className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-700 disabled:opacity-60"
+        className="gold-gradient flex h-touch items-center gap-2 rounded-lg px-4 text-label-lg transition hover:brightness-105 disabled:opacity-60"
       >
+        <PlusIcon className="h-4 w-4" />
         {pending ? "…" : submitLabel}
       </button>
 
       {state.error ? (
-        <p role="alert" className="w-full text-sm text-red-700">
+        <p role="alert" className="w-full text-label-sm text-error">
           {state.error}
         </p>
       ) : null}
       {state.success ? (
-        <p role="status" className="w-full text-sm text-green-700">
+        <p role="status" className="w-full text-label-sm text-success">
           {state.success}
         </p>
       ) : null}

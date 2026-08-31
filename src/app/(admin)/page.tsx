@@ -1,8 +1,23 @@
 import { AutoRefresh } from "@/components/auto-refresh";
+import {
+  ArrowRightIcon,
+  CheckCircleIcon,
+  DotIcon,
+  HourglassIcon,
+  StopIcon,
+  TimerIcon,
+  VoteIcon,
+} from "@/components/icons";
 import { closeVotingAction, openVotingAction, updateTimerAction } from "@/lib/actions";
 import { getOrCreateSession, prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
+
+/** Durée du chronomètre en `M:SS`, pour l'afficheur doré central. */
+function formatDuration(seconds: number) {
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes}:${String(seconds % 60).padStart(2, "0")}`;
+}
 
 export default async function PilotagePage() {
   const session = await getOrCreateSession();
@@ -12,9 +27,11 @@ export default async function PilotagePage() {
     prisma.votingTable.findMany({ orderBy: { name: "asc" } }),
   ]);
 
-  const activeCandidate = session.activeCandidateId
-    ? candidates.find((candidate) => candidate.id === session.activeCandidateId)
-    : undefined;
+  const activeIndex = session.activeCandidateId
+    ? candidates.findIndex((candidate) => candidate.id === session.activeCandidateId)
+    : -1;
+  const activeCandidate = activeIndex >= 0 ? candidates[activeIndex] : undefined;
+  const nextCandidate = activeIndex >= 0 ? candidates[activeIndex + 1] : candidates[0];
 
   // Avancement des tables pour le candidat en cours.
   const [validations, voteCounts] = activeCandidate
@@ -31,181 +48,269 @@ export default async function PilotagePage() {
   const validatedTableIds = new Set(validations.map((validation) => validation.tableId));
   const votesByTable = new Map(voteCounts.map((row) => [row.tableId, row._count._all]));
 
+  const validatedCount = tables.filter((table) => validatedTableIds.has(table.id)).length;
+  const progress = tables.length > 0 ? Math.round((validatedCount / tables.length) * 100) : 0;
+
   return (
-    <div className="space-y-8">
+    <div className="grid grid-cols-1 gap-gutter lg:grid-cols-12">
       <AutoRefresh />
 
-      <div>
-        <h1 className="text-2xl font-semibold">Pilotage des votes</h1>
-        <p className="mt-1 text-sm text-slate-500">Ouvrez les votes candidat par candidat.</p>
-      </div>
+      {/* ---- Colonne 1 : les candidats, dans l'ordre de passage ---- */}
+      <section className="flex flex-col overflow-hidden rounded-xl bg-surface-container gold-border lg:col-span-3">
+        <div className="border-b border-outline-variant/30 p-4">
+          <h1 className="font-serif text-headline-md text-primary">Candidats</h1>
+          <p className="mt-0.5 text-label-sm text-on-surface-variant">
+            Ouvrez les votes candidat par candidat.
+          </p>
+        </div>
 
-      {/* État courant */}
-      <section className="rounded-xl border border-slate-200 bg-white p-5">
-        <div className="flex flex-wrap items-center gap-3">
-          <span
-            className={`rounded-full px-3 py-1 text-sm font-medium ${
-              session.votingOpen ? "bg-green-100 text-green-800" : "bg-slate-100 text-slate-600"
-            }`}
-          >
-            {session.votingOpen ? "Votes ouverts" : "Votes fermés"}
-          </span>
+        <div className="custom-scrollbar max-h-[70vh] flex-1 space-y-2 overflow-y-auto p-2">
+          {candidates.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-outline-variant p-6 text-label-sm text-on-surface-variant">
+              Aucun candidat. Ajoutez-en depuis la page Configuration.
+            </p>
+          ) : null}
 
-          <span className="text-sm text-slate-600">
-            {activeCandidate ? (
-              <>
-                Candidat en cours : <strong className="text-slate-900">{activeCandidate.name}</strong>
-              </>
-            ) : (
-              "Aucun candidat sélectionné"
-            )}
-          </span>
+          {candidates.map((candidate) => {
+            const isActive = candidate.id === session.activeCandidateId;
+            return (
+              <div
+                key={candidate.id}
+                className={
+                  isActive
+                    ? "relative overflow-hidden rounded-lg bg-surface-highest p-3 gold-border-active"
+                    : "rounded-lg border border-outline-variant/30 bg-surface p-3 transition-colors hover:border-primary/30"
+                }
+              >
+                {isActive ? (
+                  <span className="absolute right-0 top-0 rounded-bl-lg bg-primary/20 px-2 py-1 text-label-sm text-primary">
+                    Actif
+                  </span>
+                ) : null}
+
+                <div className="mb-3 pr-12">
+                  <p
+                    className={`truncate text-body-lg leading-tight ${
+                      isActive ? "text-on-surface" : "text-on-surface-variant"
+                    }`}
+                  >
+                    {candidate.name}
+                  </p>
+                  <p className="text-label-sm text-outline">
+                    {candidate.openedAt
+                      ? `Ouvert le ${candidate.openedAt.toLocaleString("fr-FR")}`
+                      : "Jamais ouvert"}
+                  </p>
+                </div>
+
+                <form action={openVotingAction}>
+                  <input type="hidden" name="candidateId" value={candidate.id} />
+                  <button
+                    type="submit"
+                    className={
+                      isActive && session.votingOpen
+                        ? "gold-gradient flex h-touch w-full items-center justify-center gap-2 rounded-lg text-label-lg transition hover:brightness-105"
+                        : "flex h-touch w-full items-center justify-center gap-2 rounded-lg border border-primary/40 text-label-lg text-primary transition-colors hover:bg-primary/5"
+                    }
+                  >
+                    <VoteIcon className="h-4 w-4" />
+                    {isActive && session.votingOpen ? "Votes ouverts" : "Ouvrir les votes"}
+                  </button>
+                </form>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ---- Colonne 2 : l'état en direct et le chronomètre ---- */}
+      <section className="flex flex-col gap-gutter lg:col-span-5">
+        <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden rounded-xl bg-surface-container p-6 py-12 gold-border">
+          <div aria-hidden className="gold-halo pointer-events-none absolute inset-0" />
 
           {session.votingOpen ? (
-            <form action={closeVotingAction} className="ml-auto">
+            <span className="mb-6 flex items-center gap-2 rounded-full border border-error/30 bg-error-container/20 px-4 py-1.5 text-label-lg uppercase tracking-wider text-error">
+              <DotIcon className="h-3 w-3 animate-pulse" />
+              Direct — vote en cours
+            </span>
+          ) : (
+            <span className="mb-6 flex items-center gap-2 rounded-full border border-outline-variant px-4 py-1.5 text-label-lg uppercase tracking-wider text-on-surface-variant">
+              <DotIcon className="h-3 w-3" />
+              Votes fermés
+            </span>
+          )}
+
+          <h2 className="text-center font-serif text-headline-lg text-on-surface">
+            {activeCandidate ? activeCandidate.name : "Aucun candidat sélectionné"}
+          </h2>
+          <p className="mt-2 text-body-md text-on-surface-variant">
+            {activeCandidate
+              ? "Candidat en cours d'évaluation"
+              : "Ouvrez les votes d'un candidat pour démarrer"}
+          </p>
+
+          {/* Durée accordée à chaque juré — réglage, non décompte : le
+              chronomètre s'égrène sur les tablettes, pas sur le serveur. */}
+          <p className="relative mt-10 font-serif text-[80px] leading-none text-primary gold-text-glow">
+            {session.timerEnabled ? formatDuration(session.timerSeconds) : "—"}
+          </p>
+          <p className="mt-2 text-label-sm uppercase tracking-wider text-outline">
+            {session.timerEnabled ? "par juré, sur la tablette" : "sans chronomètre"}
+          </p>
+
+          {/* Avancement réel : tables ayant validé pour ce candidat. */}
+          <div className="relative mt-12 w-full max-w-md">
+            <div className="mb-2 flex justify-between text-label-sm text-on-surface-variant">
+              <span>Progression du vote</span>
+              <span>
+                {validatedCount}/{tables.length} tables validées
+              </span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-highest">
+              <div className="gold-gradient h-full rounded-full transition-all" style={{ width: `${progress}%` }} />
+            </div>
+          </div>
+        </div>
+
+        {/* Actions de fin de tour */}
+        <div className="flex flex-wrap gap-3">
+          {session.votingOpen ? (
+            <form action={closeVotingAction} className="flex-1">
               <button
                 type="submit"
-                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
+                className="flex h-touch w-full items-center justify-center gap-2 rounded-lg border border-outline-variant text-label-lg text-on-surface-variant transition-colors hover:border-error/50 hover:text-error"
               >
+                <StopIcon className="h-4 w-4" />
                 Fermer les votes
               </button>
             </form>
           ) : null}
+
+          {nextCandidate ? (
+            <form action={openVotingAction} className="flex-1">
+              <input type="hidden" name="candidateId" value={nextCandidate.id} />
+              <button
+                type="submit"
+                className="gold-gradient flex h-touch w-full items-center justify-center gap-2 rounded-lg text-label-lg transition hover:brightness-105"
+              >
+                {activeCandidate ? "Candidat suivant" : "Ouvrir le premier candidat"}
+                <ArrowRightIcon className="h-4 w-4" />
+              </button>
+            </form>
+          ) : null}
+        </div>
+
+        {/* Réglage du chronomètre */}
+        <div className="rounded-xl bg-surface-container p-5 gold-border">
+          <h2 className="mb-4 flex items-center gap-2 font-serif text-headline-md text-primary">
+            <TimerIcon className="h-5 w-5" />
+            Chronomètre
+          </h2>
+
+          <form action={updateTimerAction} className="flex flex-wrap items-end gap-4">
+            <label className="flex items-center gap-2 text-body-md text-on-surface-variant">
+              <input
+                type="checkbox"
+                name="timerEnabled"
+                defaultChecked={session.timerEnabled}
+                className="h-4 w-4 rounded border-outline-variant accent-[color:var(--gold)]"
+              />
+              Activer le chronomètre
+            </label>
+
+            <label className="text-label-sm text-on-surface-variant">
+              <span className="mb-1 block">Durée (secondes)</span>
+              <input
+                type="number"
+                name="timerSeconds"
+                min={5}
+                max={600}
+                defaultValue={session.timerSeconds}
+                className="w-28 rounded-lg border border-outline-variant/60 px-3 py-2 text-body-md"
+              />
+            </label>
+
+            <button
+              type="submit"
+              className="h-touch rounded-lg border border-primary/40 px-4 text-label-lg text-primary transition-colors hover:bg-primary/5"
+            >
+              Enregistrer
+            </button>
+          </form>
         </div>
       </section>
 
-      {/* Candidats */}
-      <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
-          Candidats
-        </h2>
+      {/* ---- Colonne 3 : l'état des tables ---- */}
+      <section className="flex flex-col overflow-hidden rounded-xl bg-surface-container gold-border lg:col-span-4">
+        <div className="flex items-center justify-between border-b border-outline-variant/30 p-4">
+          <h2 className="font-serif text-headline-md text-primary">Tables</h2>
+          <div className="flex gap-4 text-label-sm text-on-surface-variant">
+            <span className="flex items-center gap-1.5">
+              <CheckCircleIcon className="h-4 w-4 text-success" />
+              Validé
+            </span>
+            <span className="flex items-center gap-1.5">
+              <HourglassIcon className="h-4 w-4 text-outline" />
+              En attente
+            </span>
+          </div>
+        </div>
 
-        {candidates.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-500">
-            Aucun candidat. Ajoutez-en depuis la page Configuration.
-          </p>
-        ) : (
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {candidates.map((candidate) => {
-              const isActive = candidate.id === session.activeCandidateId;
-              return (
-                <li
-                  key={candidate.id}
-                  className={`flex items-center gap-3 rounded-xl border bg-white p-4 ${
-                    isActive ? "border-amber-400 ring-2 ring-amber-100" : "border-slate-200"
-                  }`}
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium text-slate-900">{candidate.name}</p>
-                    <p className="text-xs text-slate-500">
-                      {candidate.openedAt
-                        ? `Ouvert le ${candidate.openedAt.toLocaleString("fr-FR")}`
-                        : "Jamais ouvert"}
-                    </p>
-                  </div>
+        <div className="custom-scrollbar max-h-[70vh] flex-1 overflow-y-auto p-3">
+          {tables.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-outline-variant p-6 text-label-sm text-on-surface-variant">
+              Aucune table. Ajoutez-en depuis la page Configuration.
+            </p>
+          ) : (
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {tables.map((table) => {
+                const received = votesByTable.get(table.id) ?? 0;
+                const validated = validatedTableIds.has(table.id);
+                const special = table.type === "SPECIAL";
+                return (
+                  <li
+                    key={table.id}
+                    className={`relative rounded-lg p-3 ${
+                      special
+                        ? "bg-surface-high gold-border-active"
+                        : "border border-outline-variant/30 bg-surface"
+                    }`}
+                  >
+                    {special ? (
+                      <span className="absolute -top-2 left-3 rounded-full bg-primary px-1.5 text-label-sm text-on-primary">
+                        ×2
+                      </span>
+                    ) : null}
 
-                  <form action={openVotingAction}>
-                    <input type="hidden" name="candidateId" value={candidate.id} />
-                    <button
-                      type="submit"
-                      className="rounded-lg bg-amber-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-amber-700"
-                    >
-                      {isActive && session.votingOpen ? "Rouvrir" : "Ouvrir les votes"}
-                    </button>
-                  </form>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
-
-      {/* Avancement des tables */}
-      {activeCandidate ? (
-        <section>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Avancement pour {activeCandidate.name}
-          </h2>
-
-          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-            <table className="w-full text-sm">
-              <thead className="border-b border-slate-200 text-left text-slate-500">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Table</th>
-                  <th className="px-4 py-3 font-medium">Type</th>
-                  <th className="px-4 py-3 font-medium">Votes reçus</th>
-                  <th className="px-4 py-3 font-medium">État</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {tables.map((table) => {
-                  const received = votesByTable.get(table.id) ?? 0;
-                  const validated = validatedTableIds.has(table.id);
-                  return (
-                    <tr key={table.id}>
-                      <td className="px-4 py-3 font-medium text-slate-900">{table.name}</td>
-                      <td className="px-4 py-3 text-slate-600">
-                        {table.type === "SPECIAL" ? "Jury spécial (×2)" : "Lambda"}
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">
-                        {received} / {table.expectedJurors}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                            validated
-                              ? "bg-green-100 text-green-800"
-                              : "bg-amber-100 text-amber-800"
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p
+                          className={`truncate text-body-md ${
+                            special ? "text-primary" : "text-on-surface"
                           }`}
                         >
-                          {validated ? "Validée" : "En attente"}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      ) : null}
+                          {table.name}
+                        </p>
+                        <p className="text-label-sm text-outline">
+                          {special ? "Jury spécial" : "Table lambda"}
+                        </p>
+                      </div>
+                      {validated ? (
+                        <CheckCircleIcon className="h-5 w-5 shrink-0 text-success" />
+                      ) : (
+                        <HourglassIcon className="h-5 w-5 shrink-0 text-outline" />
+                      )}
+                    </div>
 
-      {/* Chronomètre */}
-      <section className="rounded-xl border border-slate-200 bg-white p-5">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
-          Chronomètre
-        </h2>
-
-        <form action={updateTimerAction} className="flex flex-wrap items-end gap-4">
-          <label className="flex items-center gap-2 text-sm text-slate-700">
-            <input
-              type="checkbox"
-              name="timerEnabled"
-              defaultChecked={session.timerEnabled}
-              className="h-4 w-4 rounded border-slate-300"
-            />
-            Activer le chronomètre
-          </label>
-
-          <label className="text-sm text-slate-700">
-            <span className="mb-1 block">Durée (secondes)</span>
-            <input
-              type="number"
-              name="timerSeconds"
-              min={5}
-              max={600}
-              defaultValue={session.timerSeconds}
-              className="w-28 rounded-lg border border-slate-300 px-3 py-2"
-            />
-          </label>
-
-          <button
-            type="submit"
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-          >
-            Enregistrer
-          </button>
-        </form>
+                    <p className="mt-2 text-label-sm text-on-surface-variant">
+                      {received} / {table.expectedJurors} vote{table.expectedJurors > 1 ? "s" : ""}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
       </section>
     </div>
   );

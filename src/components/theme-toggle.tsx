@@ -39,7 +39,7 @@ export function ThemeToggle() {
       onClick={toggle}
       aria-label={dark ? "Passer en mode clair" : "Passer en mode sombre"}
       title={dark ? "Mode clair" : "Mode sombre"}
-      className="rounded-lg border border-[color:var(--c-line)] px-2.5 py-1.5 text-base leading-none text-[color:var(--gold-soft)] transition hover:text-[color:var(--gold)]"
+      className="rounded-lg border border-outline-variant/50 px-2.5 py-1.5 text-base leading-none text-primary transition-colors hover:border-primary/50"
     >
       {dark ? "☀️" : "🌙"}
     </button>

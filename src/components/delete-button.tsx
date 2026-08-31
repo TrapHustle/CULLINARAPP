@@ -1,6 +1,7 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
+import { TrashIcon } from "@/components/icons";
 
 function SubmitButton({ confirmMessage }: { confirmMessage: string }) {
   const { pending } = useFormStatus();
@@ -14,9 +15,11 @@ function SubmitButton({ confirmMessage }: { confirmMessage: string }) {
       onClick={(event) => {
         if (!window.confirm(confirmMessage)) event.preventDefault();
       }}
-      className="rounded-lg px-2.5 py-1.5 text-sm text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+      aria-label="Supprimer"
+      title="Supprimer"
+      className="rounded-lg border border-transparent p-2 text-outline transition-colors hover:border-error/30 hover:text-error disabled:opacity-50"
     >
-      {pending ? "…" : "Supprimer"}
+      {pending ? <span className="block h-5 w-5 text-center leading-5">…</span> : <TrashIcon />}
     </button>
   );
 }

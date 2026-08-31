@@ -1,15 +1,24 @@
 @import "tailwindcss";
 
 /*
- * Thème « Noir & Or » du dashboard, décliné en SOMBRE (défaut) et CLAIR.
+ * Design system « Gala Gastronomic » (Stitch) porté sur le dashboard.
  *
- * Toutes les couleurs passent par des variables sémantiques (`--c-*`) : le
- * remappage Tailwind ci-dessous ne référence que ces variables, si bien qu'il
- * suffit de les redéfinir sous `:root[data-theme="light"]` pour que tout le
- * dashboard bascule — sans réécrire une seule page.
+ * Deux familles de jetons cohabitent volontairement :
+ *
+ *  1. Les jetons Material du design system (`--surface*`, `--on-surface*`,
+ *     `--primary*`, `--outline*`) : ce sont eux qu'emploient les pages
+ *     redessinées, via les utilitaires Tailwind `bg-surface-container`,
+ *     `text-on-surface-variant`, `border-outline-variant`…
+ *  2. Le remappage historique de la palette `slate-*` / `amber-*` : il habille
+ *     encore la page d'impression et les formulaires génériques sans qu'on ait
+ *     à les réécrire. Ses variables pointent vers les mêmes couleurs.
+ *
+ * Tout se redéfinit sous `:root[data-theme="light"]` : le dashboard bascule en
+ * ivoire & or sans qu'une seule page change.
  *
  * Les polices sont EMBARQUÉES (public/fonts) : aucune requête distante, le
- * serveur se reconstruit et se sert sans internet (§10.3).
+ * serveur se reconstruit et se sert sans internet (§10.3). Cormorant Garamond
+ * tient le rôle qu'EB Garamond joue dans la maquette Stitch.
  */
 @font-face {
   font-family: "Cormorant Garamond";
@@ -24,73 +33,176 @@
   font-display: swap;
 }
 
-/* ---- Thème SOMBRE (défaut) ---- */
+/* ---- Thème SOMBRE (défaut) — « Deep Luxury » ---- */
 :root {
+  /* Or de marque : le dégradé des boutons, l'accent des titres. */
   --gold: #d4af37;
   --gold-soft: #e8cd72;
   --gold-deep: #b8932e;
-  --gold-ink: #17130e; /* texte sur bouton doré */
+  --gold-ink: #241a00; /* texte sur bouton doré (on-primary-fixed) */
 
-  --c-bg: #15151a; /* fond de page */
-  --c-bg2: #1d1d23; /* slate-50 */
-  --c-chip: #26262d; /* slate-100 */
-  --c-panel: #202027; /* ex-« white » : cartes */
-  --c-line: rgba(212, 175, 55, 0.2); /* slate-200 */
-  --c-line2: rgba(212, 175, 55, 0.32); /* slate-300 */
-  --c-faint: #79746a; /* slate-400 */
-  --c-dim: #b9b3a4; /* slate-500/600 */
-  --c-txt2: #cfc9ba; /* slate-700 */
-  --c-txt1: #e8e2d4; /* slate-800 */
-  --c-txt: #f4f1e8; /* slate-900 : texte principal */
+  /* Jetons Material du design system */
+  --primary: #f2ca50;
+  --on-primary: #3c2f00;
+  --primary-container: #d4af37;
+  --on-primary-container: #554300;
+  --secondary: #dfc56b;
+
+  --surface: #131318;
+  --surface-lowest: #0e0e13;
+  --surface-low: #1b1b20;
+  --surface-container: #1f1f24;
+  --surface-high: #2a292f;
+  --surface-highest: #35343a;
+
+  --on-surface: #e4e1e8;
+  --on-surface-variant: #d0c5af;
+  --outline: #99907c;
+  --outline-variant: #4d4635;
+
+  --error: #ffb4ab;
+  --error-container: #93000a;
+  --success: #6fcf97;
+
+  /* Traits dorés : contour standard, contour actif. */
+  --c-line: rgba(212, 175, 55, 0.2);
+  --c-line2: rgba(212, 175, 55, 0.4);
+
+  /* Alias historiques (page d'impression, formulaires génériques) */
+  --c-bg: var(--surface);
+  --c-bg2: var(--surface-low);
+  --c-chip: var(--surface-high);
+  --c-panel: var(--surface-container);
+  --c-faint: var(--outline);
+  --c-dim: #b0a892;
+  --c-txt2: var(--on-surface-variant);
+  --c-txt1: #e4e1e8;
+  --c-txt: var(--on-surface);
 
   --glow1: rgba(212, 175, 55, 0.1);
   --glow2: rgba(212, 175, 55, 0.06);
-  --field: rgba(255, 255, 255, 0.04);
+  --field: rgba(255, 255, 255, 0.05);
   --panel-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
-  --header-bg: rgba(21, 21, 26, 0.82);
-
-  --background: var(--c-bg);
-  --foreground: var(--c-txt);
+  --header-bg: rgba(19, 19, 24, 0.86);
 }
 
 /* ---- Thème CLAIR (ivoire & or) ---- */
 :root[data-theme="light"] {
-  --gold: #b8860b; /* or plus profond pour contraster sur clair */
+  --gold: #b8860b;
   --gold-soft: #a8791a;
   --gold-deep: #8a6a0e;
-  --gold-ink: #ffffff; /* texte clair sur bouton doré */
+  --gold-ink: #ffffff;
 
-  --c-bg: #f7f3e8; /* ivoire chaud */
-  --c-bg2: #efe9da;
-  --c-chip: #efe9db;
-  --c-panel: #ffffff;
+  --primary: #8a6a0e;
+  --on-primary: #ffffff;
+  --primary-container: #d4af37;
+  --on-primary-container: #3d2f00;
+  --secondary: #7a6420;
+
+  --surface: #f7f3e8;
+  --surface-lowest: #ffffff;
+  --surface-low: #fbf8f0;
+  --surface-container: #ffffff;
+  --surface-high: #f1ead9;
+  --surface-highest: #eae1cc;
+
+  --on-surface: #211e15;
+  --on-surface-variant: #5c5544;
+  --outline: #8a8069;
+  --outline-variant: #cfc3a4;
+
+  --error: #a4141b;
+  --error-container: #ffdad6;
+  --success: #2f9e5f;
+
   --c-line: rgba(184, 147, 46, 0.28);
-  --c-line2: rgba(184, 147, 46, 0.42);
-  --c-faint: #9a9078;
+  --c-line2: rgba(184, 147, 46, 0.5);
+
   --c-dim: #6b6450;
-  --c-txt2: #3a3527;
   --c-txt1: #2a2619;
-  --c-txt: #211e15;
 
   --glow1: rgba(212, 175, 55, 0.22);
   --glow2: rgba(212, 175, 55, 0.12);
   --field: rgba(0, 0, 0, 0.03);
   --panel-shadow: 0 16px 40px rgba(120, 100, 40, 0.14);
-  --header-bg: rgba(247, 243, 232, 0.82);
+  --header-bg: rgba(247, 243, 232, 0.86);
 }
 
 /*
- * Remappage de la palette Tailwind vers les variables sémantiques. Les pages
- * existantes emploient `slate-*`, `white` et `amber-*` : en redéfinissant ces
- * jetons, tout le dashboard suit le thème actif.
+ * Exposition des jetons à Tailwind. Le bloc sert deux publics : les classes
+ * Material du design system (`bg-surface-container`, `text-primary`…) et le
+ * remappage `slate-*` qui habille les pages non réécrites.
  */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--surface);
+  --color-foreground: var(--on-surface);
 
   --font-serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-headline: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-body: "Outfit", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
-  --color-white: var(--c-panel);
+  /* Échelle typographique du design system */
+  --text-display-lg: 48px;
+  --text-display-lg--line-height: 56px;
+  --text-display-lg--font-weight: 500;
+  --text-display-lg--letter-spacing: -0.02em;
+
+  --text-headline-lg: 32px;
+  --text-headline-lg--line-height: 40px;
+  --text-headline-lg--font-weight: 500;
+
+  --text-headline-md: 24px;
+  --text-headline-md--line-height: 32px;
+  --text-headline-md--font-weight: 500;
+
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 28px;
+
+  --text-body-md: 16px;
+  --text-body-md--line-height: 24px;
+
+  --text-label-lg: 14px;
+  --text-label-lg--line-height: 20px;
+  --text-label-lg--font-weight: 600;
+  --text-label-lg--letter-spacing: 0.05em;
+
+  --text-label-sm: 12px;
+  --text-label-sm--line-height: 16px;
+  --text-label-sm--font-weight: 500;
+
+  /* Rythme 8px et cible tactile 44px (usage « sous tension ») */
+  --spacing-gutter: 24px;
+  --spacing-touch: 44px;
+  --container-max: 1440px;
+
+  /* Couleurs Material */
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary-container: var(--on-primary-container);
+  --color-secondary: var(--secondary);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-gold-ink: var(--gold-ink);
+
+  --color-surface: var(--surface);
+  --color-surface-lowest: var(--surface-lowest);
+  --color-surface-low: var(--surface-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-high: var(--surface-high);
+  --color-surface-highest: var(--surface-highest);
+
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+
+  --color-error: var(--error);
+  --color-error-container: var(--error-container);
+  --color-success: var(--success);
+
+  /* Remappage historique — pages non réécrites */
+  --color-white: var(--surface-container);
 
   --color-slate-50: var(--c-bg2);
   --color-slate-100: var(--c-chip);
@@ -133,8 +245,8 @@ body {
   background:
     radial-gradient(1100px 700px at 100% -10%, var(--glow1), transparent 60%),
     radial-gradient(900px 700px at -10% 110%, var(--glow2), transparent 60%),
-    var(--c-bg);
-  color: var(--c-txt);
+    var(--surface);
+  color: var(--on-surface);
   font-family: "Outfit", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
@@ -146,7 +258,43 @@ h3 {
   letter-spacing: 0.01em;
 }
 
-/* Boutons d'action principaux : fond doré dégradé, texte encre. */
+/*
+ * Utilitaires du design system.
+ *
+ * `gold-border` / `gold-border-active` : la profondeur passe par un liseré doré
+ * plutôt que par une ombre portée. `gold-halo` pose le « spot » radial derrière
+ * les cartes principales.
+ */
+.gold-gradient {
+  background-image: linear-gradient(135deg, var(--gold) 0%, var(--gold-soft) 100%);
+  color: var(--gold-ink);
+}
+.gold-border {
+  border: 1px solid var(--c-line);
+}
+.gold-border-active {
+  border: 1px solid var(--gold);
+}
+.gold-halo {
+  background: radial-gradient(circle at center, rgba(212, 175, 55, 0.15) 0%, transparent 70%);
+}
+.gold-text-glow {
+  text-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--on-surface) 5%, transparent);
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.3);
+  border-radius: 4px;
+}
+
+/* Boutons d'action principaux des pages non réécrites : même dégradé doré. */
 .bg-slate-900,
 .bg-amber-600 {
   background-image: linear-gradient(135deg, var(--gold-soft), var(--gold) 45%, var(--gold-deep));
@@ -169,16 +317,26 @@ h3 {
   box-shadow: var(--panel-shadow);
 }
 
-/* Champs de saisie lisibles dans les deux thèmes. */
+/*
+ * Champs de saisie : fond légèrement plus clair que la surface, liseré doré
+ * plein et halo de 4px à la prise de focus (le « bloom » du design system).
+ */
 input,
 select,
 textarea {
   background-color: var(--field);
-  color: var(--c-txt);
+  color: var(--on-surface);
 }
 input::placeholder,
 textarea::placeholder {
-  color: var(--c-faint);
+  color: var(--outline);
+}
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--gold) 22%, transparent);
 }
 
 /* Statuts : rouge/vert adoucis, lisibles sur fond sombre comme clair. */
