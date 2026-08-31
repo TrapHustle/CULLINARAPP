@@ -1,0 +1,116 @@
+// Schéma de données — Application de vote pour concours culinaire
+// Voir §3 du cahier des charges.
+//
+// Les champs « énumérés » (VotingTable.type) sont stockés en String et validés
+// par zod côté API, plutôt qu'en enum PostgreSQL : cela évite une migration de
+// schéma le jour où un nouveau type de table apparaît.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// L'URL de la datasource est définie dans `prisma.config.ts` (Prisma 7).
+datasource db {
+  provider = "postgresql"
+}
+
+model Candidate {
+  id       String  @id @default(cuid())
+  name     String
+  photoUrl String?
+  order    Int     @default(0)
+
+  /// Date de la première ouverture des votes pour ce candidat.
+  /// Reste `null` tant que l'organisateur ne l'a jamais ouvert : le serveur
+  /// rejette alors ses votes (§11). Une fois renseignée, elle n'est plus
+  /// modifiée, ce qui permet d'accepter les votes arrivant en retard après
+  /// la fermeture — cas normal d'une tablette qui se resynchronise.
+  openedAt DateTime?
+
+  votes       Vote[]
+  validations TableValidation[]
+
+  @@index([order])
+}
+
+/// type : "LAMBDA" | "SPECIAL". Un vote issu d'une table SPECIAL pèse double (§4.2).
+/// expectedJurors : nombre de jurés attendus à cette table, utilisé pour
+/// l'enchaînement des saisies sur la tablette et le suivi d'avancement.
+model VotingTable {
+  id             String @id @default(cuid())
+  name           String
+  type           String @default("LAMBDA")
+  expectedJurors Int    @default(1)
+
+  votes       Vote[]
+  validations TableValidation[]
+}
+
+model Criterion {
+  id    String @id @default(cuid())
+  name  String
+  order Int    @default(0)
+
+  scores VoteScore[]
+
+  @@index([order])
+}
+
+/// Session unique de l'événement (une seule ligne, id fixe "singleton").
+model Session {
+  id                String  @id @default("singleton")
+  activeCandidateId String?
+  votingOpen        Boolean @default(false)
+  timerEnabled      Boolean @default(true)
+  timerSeconds      Int     @default(30)
+}
+
+/// id : UUID v4 **généré par la tablette**. C'est la clé de l'idempotence de
+/// la synchronisation (§11) — un upsert sur cet id ne crée jamais de doublon.
+///
+/// Le poids du vote n'est PAS stocké ici : il est dérivé du type de la table
+/// au moment du calcul, afin qu'une tablette ne puisse jamais l'influencer (§0.3).
+model Vote {
+  id          String   @id
+  tableId     String
+  candidateId String
+  jurorIndex  Int
+  createdAt   DateTime
+  syncedAt    DateTime @default(now())
+
+  table     VotingTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  candidate Candidate   @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  scores    VoteScore[]
+
+  @@unique([tableId, candidateId, jurorIndex])
+  @@index([candidateId])
+  @@index([tableId])
+}
+
+/// rawValue : note brute de 1 à 5 saisie par le juré (0 si le critère n'a pas
+/// été noté avant l'expiration du chronomètre, cf. §11).
+/// La conversion ×2 vers une note /10 est faite par le moteur de calcul, jamais ici.
+model VoteScore {
+  id          String @id @default(cuid())
+  voteId      String
+  criterionId String
+  rawValue    Int
+
+  vote      Vote      @relation(fields: [voteId], references: [id], onDelete: Cascade)
+  criterion Criterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+
+  @@unique([voteId, criterionId])
+}
+
+/// Verrouillage des votes d'une table pour un candidat donné (§5, étape 5).
+model TableValidation {
+  id          String   @id @default(cuid())
+  tableId     String
+  candidateId String
+  validatedAt DateTime @default(now())
+
+  table     VotingTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  candidate Candidate   @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@unique([tableId, candidateId])
+}
