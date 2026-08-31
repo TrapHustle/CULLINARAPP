@@ -1,9 +1,15 @@
 @import "tailwindcss";
 
 /*
- * Thème « Noir & Or » du dashboard organisateur, accordé à l'application des
- * tablettes. Les polices sont EMBARQUÉES (public/fonts) : aucune requête
- * distante, le serveur se reconstruit et se sert sans internet (§10.3).
+ * Thème « Noir & Or » du dashboard, décliné en SOMBRE (défaut) et CLAIR.
+ *
+ * Toutes les couleurs passent par des variables sémantiques (`--c-*`) : le
+ * remappage Tailwind ci-dessous ne référence que ces variables, si bien qu'il
+ * suffit de les redéfinir sous `:root[data-theme="light"]` pour que tout le
+ * dashboard bascule — sans réécrire une seule page.
+ *
+ * Les polices sont EMBARQUÉES (public/fonts) : aucune requête distante, le
+ * serveur se reconstruit et se sert sans internet (§10.3).
  */
 @font-face {
   font-family: "Cormorant Garamond";
@@ -18,29 +24,65 @@
   font-display: swap;
 }
 
+/* ---- Thème SOMBRE (défaut) ---- */
 :root {
-  --black: #15151a;
-  --black2: #1d1d23;
-  --panel: #202027;
-  --panel2: #2a2a31;
-  --line: rgba(212, 175, 55, 0.2);
-  --line-strong: rgba(212, 175, 55, 0.32);
   --gold: #d4af37;
   --gold-soft: #e8cd72;
   --gold-deep: #b8932e;
-  --gold-ink: #17130e;
-  --txt: #f4f1e8;
-  --txt-dim: #b9b3a4;
-  --txt-faint: #79746a;
+  --gold-ink: #17130e; /* texte sur bouton doré */
 
-  --background: var(--black);
-  --foreground: var(--txt);
+  --c-bg: #15151a; /* fond de page */
+  --c-bg2: #1d1d23; /* slate-50 */
+  --c-chip: #26262d; /* slate-100 */
+  --c-panel: #202027; /* ex-« white » : cartes */
+  --c-line: rgba(212, 175, 55, 0.2); /* slate-200 */
+  --c-line2: rgba(212, 175, 55, 0.32); /* slate-300 */
+  --c-faint: #79746a; /* slate-400 */
+  --c-dim: #b9b3a4; /* slate-500/600 */
+  --c-txt2: #cfc9ba; /* slate-700 */
+  --c-txt1: #e8e2d4; /* slate-800 */
+  --c-txt: #f4f1e8; /* slate-900 : texte principal */
+
+  --glow1: rgba(212, 175, 55, 0.1);
+  --glow2: rgba(212, 175, 55, 0.06);
+  --field: rgba(255, 255, 255, 0.04);
+  --panel-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+  --header-bg: rgba(21, 21, 26, 0.82);
+
+  --background: var(--c-bg);
+  --foreground: var(--c-txt);
+}
+
+/* ---- Thème CLAIR (ivoire & or) ---- */
+:root[data-theme="light"] {
+  --gold: #b8860b; /* or plus profond pour contraster sur clair */
+  --gold-soft: #a8791a;
+  --gold-deep: #8a6a0e;
+  --gold-ink: #ffffff; /* texte clair sur bouton doré */
+
+  --c-bg: #f7f3e8; /* ivoire chaud */
+  --c-bg2: #efe9da;
+  --c-chip: #efe9db;
+  --c-panel: #ffffff;
+  --c-line: rgba(184, 147, 46, 0.28);
+  --c-line2: rgba(184, 147, 46, 0.42);
+  --c-faint: #9a9078;
+  --c-dim: #6b6450;
+  --c-txt2: #3a3527;
+  --c-txt1: #2a2619;
+  --c-txt: #211e15;
+
+  --glow1: rgba(212, 175, 55, 0.22);
+  --glow2: rgba(212, 175, 55, 0.12);
+  --field: rgba(0, 0, 0, 0.03);
+  --panel-shadow: 0 16px 40px rgba(120, 100, 40, 0.14);
+  --header-bg: rgba(247, 243, 232, 0.82);
 }
 
 /*
- * Remappage de la palette Tailwind : les pages existantes emploient des
- * classes `slate-*`, `white` et `amber-*`. En redéfinissant ces jetons, tout
- * le dashboard bascule en noir & or sans réécrire chaque page.
+ * Remappage de la palette Tailwind vers les variables sémantiques. Les pages
+ * existantes emploient `slate-*`, `white` et `amber-*` : en redéfinissant ces
+ * jetons, tout le dashboard suit le thème actif.
  */
 @theme inline {
   --color-background: var(--background);
@@ -48,27 +90,22 @@
 
   --font-serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
 
-  /* Surfaces claires -> panneaux sombres */
-  --color-white: var(--panel);
+  --color-white: var(--c-panel);
 
-  /* Fonds et lignes */
-  --color-slate-50: var(--black2);
-  --color-slate-100: #26262d;
-  --color-slate-200: var(--line);
-  --color-slate-300: var(--line-strong);
-  --color-slate-400: var(--txt-faint);
+  --color-slate-50: var(--c-bg2);
+  --color-slate-100: var(--c-chip);
+  --color-slate-200: var(--c-line);
+  --color-slate-300: var(--c-line2);
+  --color-slate-400: var(--c-faint);
+  --color-slate-500: var(--c-dim);
+  --color-slate-600: var(--c-dim);
+  --color-slate-700: var(--c-txt2);
+  --color-slate-800: var(--c-txt1);
+  --color-slate-900: var(--c-txt);
 
-  /* Textes (du plus discret au plus fort) */
-  --color-slate-500: var(--txt-dim);
-  --color-slate-600: var(--txt-dim);
-  --color-slate-700: #cfc9ba;
-  --color-slate-800: #e8e2d4;
-  --color-slate-900: var(--txt);
-
-  /* Accents ambre -> or */
-  --color-amber-50: rgba(212, 175, 55, 0.1);
-  --color-amber-100: rgba(212, 175, 55, 0.16);
-  --color-amber-200: var(--line-strong);
+  --color-amber-50: color-mix(in srgb, var(--gold) 10%, transparent);
+  --color-amber-100: color-mix(in srgb, var(--gold) 16%, transparent);
+  --color-amber-200: var(--c-line2);
   --color-amber-400: var(--gold-soft);
   --color-amber-500: var(--gold);
   --color-amber-600: var(--gold);
@@ -79,14 +116,14 @@
 body {
   min-height: 100vh;
   background:
-    radial-gradient(1100px 700px at 100% -10%, rgba(212, 175, 55, 0.1), transparent 60%),
-    radial-gradient(900px 700px at -10% 110%, rgba(212, 175, 55, 0.06), transparent 60%),
-    var(--black);
-  color: var(--txt);
+    radial-gradient(1100px 700px at 100% -10%, var(--glow1), transparent 60%),
+    radial-gradient(900px 700px at -10% 110%, var(--glow2), transparent 60%),
+    var(--c-bg);
+  color: var(--c-txt);
   font-family: "Outfit", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
-/* Titres en serif doré, façon carton d'invitation. */
+/* Titres serif, esprit carton d'invitation. */
 h1,
 h2,
 h3 {
@@ -94,16 +131,10 @@ h3 {
   letter-spacing: 0.01em;
 }
 
-/*
- * Ajustements ciblés pour les quelques cas que le remappage ne couvre pas
- * proprement (un même jeton servant à la fois de fond de bouton et de couleur
- * de texte ailleurs).
- */
-
 /* Boutons d'action principaux : fond doré dégradé, texte encre. */
 .bg-slate-900,
 .bg-amber-600 {
-  background-image: linear-gradient(135deg, #f7e7a6, var(--gold) 45%, var(--gold-deep));
+  background-image: linear-gradient(135deg, var(--gold-soft), var(--gold) 45%, var(--gold-deep));
   background-color: var(--gold);
   color: var(--gold-ink) !important;
   border: none;
@@ -117,38 +148,38 @@ h3 {
   color: var(--gold-ink) !important;
 }
 
-/* Panneaux (ex-`bg-white`) : léger contour doré + profondeur. */
+/* Panneaux (ex-`bg-white`) : contour fin + profondeur. */
 .bg-white {
-  border: 1px solid var(--line);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--c-line);
+  box-shadow: var(--panel-shadow);
 }
 
-/* Champs de saisie lisibles sur fond sombre. */
+/* Champs de saisie lisibles dans les deux thèmes. */
 input,
 select,
 textarea {
-  background-color: rgba(255, 255, 255, 0.04);
-  color: var(--txt);
+  background-color: var(--field);
+  color: var(--c-txt);
 }
 input::placeholder,
 textarea::placeholder {
-  color: var(--txt-faint);
+  color: var(--c-faint);
 }
 
-/* Statuts : on garde le rouge/vert, adoucis pour le fond sombre. */
+/* Statuts : rouge/vert adoucis, lisibles sur fond sombre comme clair. */
 .bg-red-50 {
-  background-color: rgba(224, 108, 108, 0.14) !important;
+  background-color: color-mix(in srgb, #e06c6c 16%, transparent) !important;
 }
 .bg-green-100 {
-  background-color: rgba(111, 207, 151, 0.16) !important;
+  background-color: color-mix(in srgb, #6fcf97 18%, transparent) !important;
 }
 .text-red-600,
 .text-red-700 {
-  color: #f0a3a3 !important;
+  color: color-mix(in srgb, #e06c6c 70%, var(--c-txt)) !important;
 }
 .text-green-700,
 .text-green-800 {
-  color: #8fe0b0 !important;
+  color: color-mix(in srgb, #2f9e5f 65%, var(--c-txt)) !important;
 }
 
 /* Le module d'impression reste sur fond blanc, encre noire (feuille A4). */
@@ -162,7 +193,6 @@ textarea::placeholder {
     border: none !important;
     box-shadow: none !important;
   }
-  /* Sur papier, les textes « clairs » du thème redeviennent noirs et gris. */
   .text-slate-900,
   .text-slate-800,
   .text-slate-700 {

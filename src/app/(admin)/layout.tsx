@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { logoutAction } from "@/lib/actions";
 import { isAuthenticated } from "@/lib/session";
 
@@ -18,7 +19,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <>
-      <header className="sticky top-0 z-10 border-b border-[color:var(--line)] bg-[color:rgba(21,21,26,0.82)] backdrop-blur">
+      <header className="sticky top-0 z-10 border-b border-[color:var(--c-line)] bg-[color:var(--header-bg)] backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
           <span className="flex items-center gap-2 font-serif text-lg font-semibold text-[color:var(--gold)]">
             <span aria-hidden className="text-xl">🍽️</span>
@@ -30,21 +31,24 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <Link
                 key={link.href}
                 href={link.href}
-                className="rounded-lg px-3 py-1.5 text-sm text-slate-500 transition hover:bg-[color:var(--line)] hover:text-[color:var(--gold-soft)]"
+                className="rounded-lg px-3 py-1.5 text-sm text-slate-500 transition hover:bg-[color:var(--c-line)] hover:text-[color:var(--gold-soft)]"
               >
                 {link.label}
               </Link>
             ))}
           </nav>
 
-          <form action={logoutAction} className="ml-auto">
-            <button
-              type="submit"
-              className="rounded-lg border border-[color:var(--line)] px-3 py-1.5 text-sm text-slate-500 transition hover:text-[color:var(--gold-soft)]"
-            >
-              Déconnexion
-            </button>
-          </form>
+          <div className="ml-auto flex items-center gap-2">
+            <ThemeToggle />
+            <form action={logoutAction}>
+              <button
+                type="submit"
+                className="rounded-lg border border-[color:var(--c-line)] px-3 py-1.5 text-sm text-slate-500 transition hover:text-[color:var(--gold-soft)]"
+              >
+                Déconnexion
+              </button>
+            </form>
+          </div>
         </div>
       </header>
 

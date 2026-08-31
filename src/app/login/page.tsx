@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { loginAction, type ActionState } from "@/lib/actions";
 
 const initialState: ActionState = {};
@@ -9,7 +10,10 @@ export default function LoginPage() {
   const [state, formAction, pending] = useActionState(loginAction, initialState);
 
   return (
-    <main className="flex-1 grid place-items-center px-4 py-12">
+    <main className="relative flex-1 grid place-items-center px-4 py-12">
+      <div className="absolute right-4 top-4">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <div aria-hidden className="mb-3 text-4xl">🍽️</div>
