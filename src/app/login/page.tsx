@@ -12,7 +12,8 @@ export default function LoginPage() {
     <main className="flex-1 grid place-items-center px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-semibold text-slate-900">Concours culinaire</h1>
+          <div aria-hidden className="mb-3 text-4xl">🍽️</div>
+          <h1 className="font-serif text-3xl font-semibold text-[color:var(--gold)]">Concours culinaire</h1>
           <p className="mt-1 text-sm text-slate-500">Espace organisateur</p>
         </div>
 
