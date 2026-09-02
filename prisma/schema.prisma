@@ -57,12 +57,35 @@ model Criterion {
 }
 
 /// Session unique de l'événement (une seule ligne, id fixe "singleton").
+///
+/// L'événement n'est pas une entité à part : le serveur n'en pilote qu'un à la
+/// fois. Son identité (nom, date, affiche) vit donc ici, et la remise à zéro
+/// consiste à effacer les votes sans toucher à la configuration.
 model Session {
-  id                String  @id @default("singleton")
+  id                String    @id @default("singleton")
   activeCandidateId String?
-  votingOpen        Boolean @default(false)
-  timerEnabled      Boolean @default(true)
-  timerSeconds      Int     @default(30)
+  votingOpen        Boolean   @default(false)
+  timerEnabled      Boolean   @default(true)
+  timerSeconds      Int       @default(30)
+  eventName         String?
+  eventDate         DateTime?
+  /// Chemin servi par ce serveur, de la forme `/api/images/<id>` — jamais une
+  /// URL externe : les tablettes doivent pouvoir l'afficher sans internet.
+  eventPhotoUrl     String?
+}
+
+/// Image téléversée depuis le dashboard (affiche de l'événement, portrait d'un
+/// candidat), stockée en base et servie par `/api/images/<id>`.
+///
+/// Les octets vivent en base plutôt que sur le disque : c'est la seule façon de
+/// servir les mêmes images en mode hébergé (le disque de Vercel est éphémère et
+/// perdrait les fichiers à chaque redéploiement) ET en réseau local sans
+/// internet, sans dépendre d'un service de stockage externe.
+model Image {
+  id        String   @id @default(cuid())
+  mimeType  String
+  data      Bytes
+  createdAt DateTime @default(now())
 }
 
 /// id : UUID v4 **généré par la tablette**. C'est la clé de l'idempotence de

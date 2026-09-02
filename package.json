@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "node scripts/serve-lan.mjs dev",
     "build": "next build",
+    "vercel-build": "prisma migrate deploy && next build",
     "start": "node scripts/serve-lan.mjs start",
     "start:web-only": "next start",
     "beacon": "node scripts/discovery-beacon.mjs",
@@ -15,6 +16,7 @@
     "verify": "tsx scripts/verify-sync.ts",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed-demo": "tsx scripts/seed-demo.mts",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset --force"
   },
