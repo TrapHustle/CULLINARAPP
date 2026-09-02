@@ -320,6 +320,56 @@ export async function openVotingAction(formData: FormData) {
   revalidatePath("/");
 }
 
+/**
+ * Clôt le candidat en cours et ouvre le suivant, en une seule opération.
+ *
+ * Séparer les deux gestes laissait un entre-deux : les votes étaient fermés
+ * mais `activeCandidateId` pointait toujours sur le candidat terminé, si bien
+ * que l'écran projeté continuait de l'afficher jusqu'à ce que quelqu'un pense
+ * à ouvrir le suivant. Un seul bouton supprime cet état bâtard.
+ *
+ * Aucun contrôle bloquant sur les tables n'ayant pas validé : une table peut
+ * être absente ou sa tablette en panne, et l'organisateur doit pouvoir avancer.
+ * Le Pilotage l'avertit en les nommant — c'est à lui de décider.
+ *
+ * S'il n'y a pas de candidat suivant, le bureau retombe au repos : les votes
+ * sont fermés et plus aucun candidat n'est actif, ce qui renvoie l'écran
+ * projeté sur sa page d'attente plutôt que sur le dernier passage.
+ */
+export async function closeAndAdvanceAction() {
+  await requireAuth();
+  const session = await getOrCreateSession();
+
+  const candidates = await prisma.candidate.findMany({ orderBy: { order: "asc" } });
+  const currentIndex = session.activeCandidateId
+    ? candidates.findIndex((candidate) => candidate.id === session.activeCandidateId)
+    : -1;
+  const next = currentIndex >= 0 ? candidates[currentIndex + 1] : candidates[0];
+
+  if (!next) {
+    await prisma.session.update({
+      where: { id: SESSION_ID },
+      data: { activeCandidateId: null, votingOpen: false },
+    });
+  } else {
+    await prisma.$transaction([
+      prisma.candidate.update({
+        where: { id: next.id },
+        // `openedAt` ne bouge plus une fois posée : elle atteste que les votes
+        // ont bien été ouverts, ce dont dépend l'acceptation des votes tardifs.
+        data: { openedAt: next.openedAt ?? new Date() },
+      }),
+      prisma.session.update({
+        where: { id: SESSION_ID },
+        data: { activeCandidateId: next.id, votingOpen: true },
+      }),
+    ]);
+  }
+
+  revalidatePath("/");
+  revalidatePath("/resultats");
+}
+
 export async function closeVotingAction() {
   await requireAuth();
   await getOrCreateSession();

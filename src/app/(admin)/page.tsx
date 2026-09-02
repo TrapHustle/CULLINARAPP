@@ -6,25 +6,19 @@ import {
   DotIcon,
   HourglassIcon,
   StopIcon,
-  TimerIcon,
   UnlockIcon,
   VoteIcon,
+  WarningIcon,
 } from "@/components/icons";
 import {
+  closeAndAdvanceAction,
   closeVotingAction,
   devalidateTableAction,
   openVotingAction,
-  updateTimerAction,
 } from "@/lib/actions";
 import { getOrCreateSession, prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
-
-/** Durée du chronomètre en `M:SS`, pour l'afficheur doré central. */
-function formatDuration(seconds: number) {
-  const minutes = Math.floor(seconds / 60);
-  return `${minutes}:${String(seconds % 60).padStart(2, "0")}`;
-}
 
 export default async function PilotagePage() {
   const session = await getOrCreateSession();
@@ -56,6 +50,11 @@ export default async function PilotagePage() {
   const votesByTable = new Map(voteCounts.map((row) => [row.tableId, row._count._all]));
 
   const validatedCount = tables.filter((table) => validatedTableIds.has(table.id)).length;
+  // Tables restant à valider pour le candidat en cours : c'est ce qu'il faut
+  // savoir avant de clore, et la seule chose qui puisse faire hésiter.
+  const pendingTables = activeCandidate
+    ? tables.filter((table) => !validatedTableIds.has(table.id))
+    : [];
   const progress = tables.length > 0 ? Math.round((validatedCount / tables.length) * 100) : 0;
 
   return (
@@ -130,7 +129,7 @@ export default async function PilotagePage() {
         </div>
       </section>
 
-      {/* ---- Colonne 2 : l'état en direct et le chronomètre ---- */}
+      {/* ---- Colonne 2 : l'état en direct et les actions de tour ---- */}
       <section className="flex flex-col gap-gutter lg:col-span-5">
         <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden rounded-xl bg-surface-container p-6 py-12 gold-border">
           <div aria-hidden className="gold-halo pointer-events-none absolute inset-0" />
@@ -156,14 +155,10 @@ export default async function PilotagePage() {
               : "Ouvrez les votes d'un candidat pour démarrer"}
           </p>
 
-          {/* Durée accordée à chaque juré — réglage, non décompte : le
-              chronomètre s'égrène sur les tablettes, pas sur le serveur. */}
-          <p className="relative mt-10 font-serif text-[80px] leading-none text-primary gold-text-glow">
-            {session.timerEnabled ? formatDuration(session.timerSeconds) : "—"}
-          </p>
-          <p className="mt-2 text-label-sm uppercase tracking-wider text-outline">
-            {session.timerEnabled ? "par juré, sur la tablette" : "sans chronomètre"}
-          </p>
+          {/* Le chronomètre a quitté cet écran : c'est un réglage d'avant
+              l'événement, pas une information à surveiller pendant un vote. Il
+              vit désormais dans Configuration. La place revient à l'avancement,
+              qui est la seule chose qu'on regarde vraiment ici. */}
 
           {/* Avancement réel : tables ayant validé pour ce candidat. */}
           <div className="relative mt-12 w-full max-w-md">
@@ -180,71 +175,62 @@ export default async function PilotagePage() {
         </div>
 
         {/* Actions de fin de tour */}
-        <div className="flex flex-wrap gap-3">
-          {session.votingOpen ? (
-            <form action={closeVotingAction} className="flex-1">
-              <button
-                type="submit"
-                className="flex h-touch w-full items-center justify-center gap-2 rounded-lg border border-outline-variant text-label-lg text-on-surface-variant transition-colors hover:border-error/50 hover:text-error"
-              >
-                <StopIcon className="h-4 w-4" />
-                Fermer les votes
-              </button>
-            </form>
+        <div className="flex flex-col gap-3">
+          {/* Averti sans bloquer : une table peut être absente ou sa tablette en
+              panne, et il faut pouvoir avancer quand même. Les nommer évite
+              d'avoir à comparer soi-même la liste des cartes. */}
+          {activeCandidate && pendingTables.length > 0 ? (
+            <p className="flex items-start gap-2 rounded-lg border border-error/30 bg-error-container/10 px-3 py-2 text-label-sm text-error">
+              <WarningIcon className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>
+                {pendingTables.length === 1
+                  ? `${pendingTables[0].name} n'a pas encore validé.`
+                  : `${pendingTables.length} tables n'ont pas encore validé : ${pendingTables
+                      .map((table) => table.name)
+                      .join(", ")}.`}
+              </span>
+            </p>
           ) : null}
 
-          {nextCandidate ? (
-            <form action={openVotingAction} className="flex-1">
-              <input type="hidden" name="candidateId" value={nextCandidate.id} />
-              <button
-                type="submit"
-                className="gold-gradient flex h-touch w-full items-center justify-center gap-2 rounded-lg text-label-lg transition hover:brightness-105"
-              >
-                {activeCandidate ? "Candidat suivant" : "Ouvrir le premier candidat"}
-                <ArrowRightIcon className="h-4 w-4" />
-              </button>
-            </form>
-          ) : null}
+          <div className="flex flex-wrap gap-3">
+            {activeCandidate ? (
+              <form action={closeAndAdvanceAction} className="flex-1">
+                <button
+                  type="submit"
+                  className="gold-gradient flex h-touch w-full items-center justify-center gap-2 rounded-lg text-label-lg transition hover:brightness-105"
+                >
+                  {nextCandidate ? "Clore et passer au suivant" : "Clore le dernier candidat"}
+                  <ArrowRightIcon className="h-4 w-4" />
+                </button>
+              </form>
+            ) : nextCandidate ? (
+              <form action={openVotingAction} className="flex-1">
+                <input type="hidden" name="candidateId" value={nextCandidate.id} />
+                <button
+                  type="submit"
+                  className="gold-gradient flex h-touch w-full items-center justify-center gap-2 rounded-lg text-label-lg transition hover:brightness-105"
+                >
+                  Ouvrir le premier candidat
+                  <ArrowRightIcon className="h-4 w-4" />
+                </button>
+              </form>
+            ) : null}
+
+            {session.votingOpen ? (
+              <form action={closeVotingAction}>
+                <button
+                  type="submit"
+                  title="Ferme les votes sans changer de candidat"
+                  className="flex h-touch items-center justify-center gap-2 rounded-lg border border-outline-variant px-4 text-label-lg text-on-surface-variant transition-colors hover:border-error/50 hover:text-error"
+                >
+                  <StopIcon className="h-4 w-4" />
+                  Suspendre
+                </button>
+              </form>
+            ) : null}
+          </div>
         </div>
 
-        {/* Réglage du chronomètre */}
-        <div className="rounded-xl bg-surface-container p-5 gold-border">
-          <h2 className="mb-4 flex items-center gap-2 font-serif text-headline-md text-primary">
-            <TimerIcon className="h-5 w-5" />
-            Chronomètre
-          </h2>
-
-          <form action={updateTimerAction} className="flex flex-wrap items-end gap-4">
-            <label className="flex items-center gap-2 text-body-md text-on-surface-variant">
-              <input
-                type="checkbox"
-                name="timerEnabled"
-                defaultChecked={session.timerEnabled}
-                className="h-4 w-4 rounded border-outline-variant accent-[color:var(--gold)]"
-              />
-              Activer le chronomètre
-            </label>
-
-            <label className="text-label-sm text-on-surface-variant">
-              <span className="mb-1 block">Durée (secondes)</span>
-              <input
-                type="number"
-                name="timerSeconds"
-                min={5}
-                max={600}
-                defaultValue={session.timerSeconds}
-                className="w-28 rounded-lg border border-outline-variant/60 px-3 py-2 text-body-md"
-              />
-            </label>
-
-            <button
-              type="submit"
-              className="h-touch rounded-lg border border-primary/40 px-4 text-label-lg text-primary transition-colors hover:bg-primary/5"
-            >
-              Enregistrer
-            </button>
-          </form>
-        </div>
       </section>
 
       {/* ---- Colonne 3 : l'état des tables ---- */}

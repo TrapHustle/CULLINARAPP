@@ -1,6 +1,6 @@
 import { ActionForm } from "@/components/action-form";
 import { DeleteButton } from "@/components/delete-button";
-import { ChefHatIcon, ClocheIcon, SlidersIcon, WarningIcon } from "@/components/icons";
+import { ChefHatIcon, ClocheIcon, SlidersIcon, TimerIcon, WarningIcon } from "@/components/icons";
 import { CandidatePhoto } from "@/components/candidate-photo";
 import { DangerZone } from "@/components/danger-zone";
 import { RowEditor } from "@/components/row-editor";
@@ -17,9 +17,10 @@ import {
   updateCandidateAction,
   updateCriterionAction,
   updateTableAction,
+  updateTimerAction,
   uploadCandidatePhotoAction,
 } from "@/lib/actions";
-import { prisma } from "@/lib/prisma";
+import { getOrCreateSession, prisma } from "@/lib/prisma";
 import { maxTotalForCriteria } from "@/lib/scoring";
 import {
   ACCEPTED_IMAGE_TYPES,
@@ -30,11 +31,12 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function ConfigurationPage() {
-  const [candidates, tables, criteria, voteCount] = await Promise.all([
+  const [candidates, tables, criteria, voteCount, session] = await Promise.all([
     prisma.candidate.findMany({ orderBy: { order: "asc" } }),
     prisma.votingTable.findMany({ orderBy: { name: "asc" } }),
     prisma.criterion.findMany({ orderBy: { order: "asc" } }),
     prisma.vote.count(),
+    getOrCreateSession(),
   ]);
 
   const sections = [
@@ -332,6 +334,51 @@ export default async function ConfigurationPage() {
               </div>
             </section>
           </div>
+
+          {/* Chronomètre — un réglage d'avant l'événement, déplacé ici depuis le
+              Pilotage : pendant un vote on surveille l'avancement des tables,
+              pas une durée qu'on ne touche plus. */}
+          <section className="rounded-xl bg-surface-container p-5 gold-border">
+            <h2 className="mb-1 flex items-center gap-2 font-serif text-headline-md text-primary">
+              <TimerIcon className="h-5 w-5" />
+              Chronomètre
+            </h2>
+            <p className="mb-4 text-label-sm text-on-surface-variant">
+              Durée accordée à chaque juré. Le décompte s&apos;égrène sur la tablette, pas sur le
+              serveur : une coupure réseau ne l&apos;interrompt pas.
+            </p>
+
+            <form action={updateTimerAction} className="flex flex-wrap items-end gap-4">
+              <label className="flex items-center gap-2 text-body-md text-on-surface-variant">
+                <input
+                  type="checkbox"
+                  name="timerEnabled"
+                  defaultChecked={session.timerEnabled}
+                  className="h-4 w-4 rounded border-outline-variant accent-[color:var(--gold)]"
+                />
+                Activer le chronomètre
+              </label>
+
+              <label className="text-label-sm text-on-surface-variant">
+                <span className="mb-1 block">Durée (secondes)</span>
+                <input
+                  type="number"
+                  name="timerSeconds"
+                  min={5}
+                  max={600}
+                  defaultValue={session.timerSeconds}
+                  className="w-28 rounded-lg border border-outline-variant/60 px-3 py-2 text-body-md"
+                />
+              </label>
+
+              <button
+                type="submit"
+                className="h-touch rounded-lg border border-primary/40 px-4 text-label-lg text-primary transition-colors hover:bg-primary/5"
+              >
+                Enregistrer
+              </button>
+            </form>
+          </section>
 
           {/* Zone dangereuse, volontairement en dernier : on ne la croise qu'en
               descendant toute la page, jamais en la survolant. */}
