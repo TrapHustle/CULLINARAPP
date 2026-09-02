@@ -15,6 +15,7 @@ import {
   devalidateSchema,
   loginSchema,
   MAX_IMAGE_BYTES,
+  purgeTabletsSchema,
   releaseTablesSchema,
   resetEventSchema,
   resetVotesSchema,
@@ -476,6 +477,61 @@ export async function devalidateTableAction(formData: FormData) {
  *    répétition qu'une tablette éteinte tenterait d'envoyer après coup (§11) ;
  *  - l'état de la session, ramené à « aucun candidat, votes fermés ».
  */
+/**
+ * Ordonne à toutes les tablettes d'effacer leur base locale.
+ *
+ * N'efface rien ici : change seulement le numéro de génération que les
+ * tablettes comparent au leur à chaque cycle. Celles qui sont en ligne
+ * obéissent en quelques secondes ; celles qui sont hors ligne le feront à leur
+ * retour, **après avoir d'abord envoyé ce qu'elles avaient en attente** — sans
+ * quoi la purge détruirait des votes que le serveur n'a jamais reçus.
+ *
+ * C'est le seul moyen de repartir propre sans manipuler chaque tablette, entre
+ * une répétition et le jour J.
+ */
+export async function purgeTabletsAction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAuth();
+
+  const parsed = purgeTabletsSchema.safeParse({
+    confirmation: formData.get("confirmation") ?? "",
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Confirmation invalide." };
+  }
+
+  await getOrCreateSession();
+
+  const [, released] = await prisma.$transaction([
+    prisma.session.update({
+      where: { id: SESSION_ID },
+      // L'horodatage suffit : seule compte la différence avec ce que la
+      // tablette a retenu, jamais l'ordre ni la valeur.
+      data: { dataGeneration: String(Date.now()) },
+    }),
+    // Les tables se libèrent avec la purge : une tablette qui oublie tout
+    // oublie aussi sa table, et la laisser réservée à un appareil qui ne la
+    // revendique plus bloquerait la salle sans raison.
+    prisma.votingTable.updateMany({
+      where: { assignedDeviceId: { not: null } },
+      data: { assignedDeviceId: null, assignedAt: null },
+    }),
+  ]);
+
+  revalidatePath("/configuration");
+  revalidatePath("/appairage");
+
+  return {
+    success:
+      `Ordre envoyé, ${released.count} table${released.count > 1 ? "s" : ""} libérée` +
+      `${released.count > 1 ? "s" : ""}. Chaque tablette effacera ses données dès ` +
+      "son prochain contact avec le serveur.",
+  };
+}
+
 /**
  * Rend toutes les tables à la salle : chaque tablette devra rechoisir la sienne.
  *

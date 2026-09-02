@@ -1,0 +1,349 @@
+<title>Parcours de la tablette</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Outfit:wght@300;400;500;600&display=swap">
+
+<style>
+:root{
+  --ground:#0d0b08;
+  --panel:#17130e;
+  --panel-2:#1e1811;
+  --gold:#d4af37;
+  --gold-soft:#e8cd72;
+  --gold-deep:#8a6a2e;
+  --ink:#f3ead9;
+  --muted:#a2957c;
+  --muted-2:#6f6553;
+  --line:rgba(212,175,55,.20);
+  --line-2:rgba(212,175,55,.42);
+  --offline:#7fb8a4;
+  --blocked:#d98b7a;
+  --serif:"Cormorant Garamond",Georgia,"Times New Roman",serif;
+  --sans:"Outfit","Segoe UI",system-ui,sans-serif;
+}
+
+body{
+  background:var(--ground);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-weight:300;
+  line-height:1.6;
+}
+
+.page{max-width:1000px;margin:0 auto;padding:56px 24px 96px;}
+
+header.masthead{border-bottom:1px solid var(--line);padding-bottom:28px;margin-bottom:44px;}
+.eyebrow{
+  font-size:12px;letter-spacing:.34em;text-transform:uppercase;
+  color:var(--gold);margin:0 0 12px;
+}
+h1{
+  font-family:var(--serif);font-weight:600;font-size:clamp(38px,6vw,60px);
+  line-height:1.02;margin:0;text-wrap:balance;color:var(--ink);
+}
+.standfirst{
+  margin:16px 0 0;max-width:62ch;font-size:17px;color:var(--muted);
+}
+
+h2{
+  font-family:var(--serif);font-weight:600;font-size:30px;
+  margin:56px 0 6px;color:var(--gold-soft);text-wrap:balance;
+}
+h2:first-of-type{margin-top:0;}
+h3{
+  font-family:var(--sans);font-weight:500;font-size:15px;letter-spacing:.02em;
+  margin:28px 0 4px;color:var(--ink);
+}
+p{margin:10px 0;max-width:68ch;}
+.lede{color:var(--muted);max-width:66ch;margin-bottom:22px;}
+
+figure{margin:26px 0 8px;}
+.diagram{
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:22px 16px;overflow-x:auto;
+}
+.diagram pre.mermaid{margin:0;text-align:center;background:none;}
+figcaption{
+  margin-top:12px;font-size:13.5px;color:var(--muted-2);
+  max-width:70ch;
+}
+
+.rules{display:grid;gap:14px;margin:24px 0 0;}
+@media (min-width:760px){ .rules{grid-template-columns:repeat(3,1fr);} }
+.rule{
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:18px 18px 20px;
+}
+.rule .tag{
+  display:inline-block;font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--gold);border:1px solid var(--line-2);border-radius:99px;
+  padding:3px 10px;margin-bottom:10px;
+}
+.rule .tag.off{color:var(--offline);border-color:rgba(127,184,164,.45);}
+.rule h3{margin:0 0 6px;font-size:16px;}
+.rule p{margin:0;font-size:14px;color:var(--muted);}
+
+table{
+  width:100%;border-collapse:collapse;margin:22px 0 0;font-size:14.5px;
+}
+caption{
+  text-align:left;font-size:13px;color:var(--muted-2);
+  padding-bottom:10px;
+}
+th,td{
+  text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);
+  vertical-align:top;
+}
+th{
+  font-weight:500;font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--gold-deep);
+}
+td strong{font-weight:500;color:var(--ink);}
+.state{white-space:nowrap;font-size:13px;}
+.state.done{color:var(--gold-soft);}
+.state.todo{color:var(--muted-2);}
+.scroller{overflow-x:auto;}
+
+.note{
+  margin-top:44px;border-left:2px solid var(--gold-deep);
+  padding:4px 0 4px 20px;
+}
+.note p{color:var(--muted);font-size:15px;}
+
+footer{
+  margin-top:72px;padding-top:24px;border-top:1px solid var(--line);
+  font-size:13px;color:var(--muted-2);
+}
+</style>
+
+<div class="page">
+
+  <header class="masthead">
+    <p class="eyebrow">Concours culinaire</p>
+    <h1>Parcours de la tablette</h1>
+    <p class="standfirst">
+      Le chemin complet, du lancement de l&rsquo;application à la validation d&rsquo;une table et au
+      passage au candidat suivant &mdash; avec ce qui change quand le réseau tombe.
+    </p>
+  </header>
+
+  <h2>Le parcours nominal</h2>
+  <p class="lede">
+    Une seule étape exige une connexion : la réservation des tables. Tout le reste continue de
+    fonctionner hors ligne, parce qu&rsquo;une salle sans réseau ne doit jamais immobiliser le
+    concours.
+  </p>
+
+  <figure>
+    <div class="diagram">
+<pre class="mermaid">
+%%{init: {"theme":"base","themeVariables":{
+  "background":"#17130e",
+  "primaryColor":"#1e1811",
+  "primaryTextColor":"#f3ead9",
+  "primaryBorderColor":"#8a6a2e",
+  "lineColor":"#b8932e",
+  "secondaryColor":"#241a0e",
+  "tertiaryColor":"#0d0b08",
+  "fontFamily":"Outfit, sans-serif",
+  "fontSize":"14px"
+}}}%%
+flowchart TD
+    A(["Lancement de l'application"]) --> B{"Serveur joignable ?"}
+    B -- non --> B1["Attendre le réseau<br/>la réservation l'exige"]
+    B1 --> B
+    B -- oui --> C["Mes tables<br/>en cocher une ou plusieurs"]
+    C --> D{{"POST /api/tables/id/claim"}}
+    D -- "409 déjà prise" --> D1["Table masquée<br/>à libérer depuis le dashboard"]
+    D1 --> C
+    D -- "200 réservée" --> E["Accueil<br/>candidat en cours + portrait"]
+    E --> F{"Un candidat est-il ouvert ?"}
+    F -- "non, en ligne" --> F1["Écran d'attente"]
+    F1 --> E
+    F -- "non, hors ligne" --> G
+    F -- oui --> G{"La tablette tient-elle<br/>plusieurs tables ?"}
+    G -- oui --> H["Pour quelle table ?"]
+    G -- non --> I
+    H --> I["Juré n : 3 critères<br/>sous chronomètre"]
+    I --> J{"Tous les jurés<br/>ont-ils voté ?"}
+    J -- non --> I
+    J -- oui --> K["Récapitulatif<br/>corrections encore possibles"]
+    K --> L["Valider la table"]
+    L --> M{{"POST /api/tables/id/validate"}}
+    M --> N{"Le serveur a-t-il<br/>changé de candidat ?"}
+    N -- oui --> O["Bascule, mais seulement après<br/>le juré en cours"]
+    O --> E
+    N -- non --> P(["Table validée<br/>en attente du candidat suivant"])
+
+    style A fill:#241a0e,stroke:#d4af37,color:#f3ead9
+    style P fill:#241a0e,stroke:#d4af37,color:#f3ead9
+    style D1 fill:#2a1713,stroke:#d98b7a,color:#f3ead9
+    style B1 fill:#2a1713,stroke:#d98b7a,color:#f3ead9
+    style F1 fill:#14201c,stroke:#7fb8a4,color:#f3ead9
+</pre>
+    </div>
+    <figcaption>
+      Les deux boucles au centre sont l&rsquo;essentiel : on tourne sur les jurés d&rsquo;une même
+      table, puis on remonte à l&rsquo;accueil pour le candidat suivant sans jamais rechoisir sa
+      table.
+    </figcaption>
+  </figure>
+
+  <h2>Les trois moments qui décident</h2>
+
+  <div class="rules">
+    <div class="rule">
+      <span class="tag">Réservation</span>
+      <h3>Le serveur tranche seul</h3>
+      <p>
+        Lui seul voit toutes les tablettes. Une table déjà servie n&rsquo;apparaît pas dans la
+        liste, et si deux tablettes cliquent en même temps, la perdante reçoit un refus explicite.
+      </p>
+    </div>
+    <div class="rule">
+      <span class="tag off">Hors ligne</span>
+      <h3>Tous les candidats s&rsquo;ouvrent</h3>
+      <p>
+        En ligne, seul le candidat ouvert par l&rsquo;organisateur est actif. Hors ligne, le staff
+        peut passer de l&rsquo;un à l&rsquo;autre lui-même : le réseau ne doit jamais arrêter la
+        salle.
+      </p>
+    </div>
+    <div class="rule">
+      <span class="tag">Reprise</span>
+      <h3>Le juré en cours finit d&rsquo;abord</h3>
+      <p>
+        Quand le réseau revient et que le serveur est ailleurs, la tablette se recale &mdash; mais
+        seulement une fois la saisie en cours terminée. Personne ne perd ses notes.
+      </p>
+    </div>
+  </div>
+
+  <h2>Quand le réseau tombe</h2>
+  <p class="lede">
+    La saisie ne s&rsquo;arrête jamais. Les votes s&rsquo;empilent localement et repartent seuls au
+    retour du réseau, y compris pour un candidat que l&rsquo;organisateur n&rsquo;avait pas encore
+    ouvert.
+  </p>
+
+  <figure>
+    <div class="diagram">
+<pre class="mermaid">
+%%{init: {"theme":"base","themeVariables":{
+  "background":"#17130e",
+  "primaryColor":"#1e1811",
+  "primaryTextColor":"#f3ead9",
+  "primaryBorderColor":"#8a6a2e",
+  "lineColor":"#b8932e",
+  "secondaryColor":"#241a0e",
+  "tertiaryColor":"#0d0b08",
+  "fontFamily":"Outfit, sans-serif",
+  "fontSize":"14px"
+}}}%%
+flowchart LR
+    A["Un juré valide<br/>ses notes"] --> B[("File locale<br/>SQLite")]
+    B -- "serveur injoignable" --> B
+    B -- "serveur retrouvé" --> C{{"POST /api/sync/votes"}}
+    C --> D{"Candidat jamais<br/>ouvert ?"}
+    D -- oui --> E["Le serveur accepte<br/>et ouvre le candidat"]
+    D -- non --> F["Vote enregistré"]
+    E --> F
+    F --> G(["Compteur en attente<br/>revenu à zéro"])
+
+    style B fill:#14201c,stroke:#7fb8a4,color:#f3ead9
+    style E fill:#14201c,stroke:#7fb8a4,color:#f3ead9
+    style G fill:#241a0e,stroke:#d4af37,color:#f3ead9
+</pre>
+    </div>
+    <figcaption>
+      Le compteur « en attente » de chaque tablette est le seul contrôle à faire avant la
+      proclamation : à zéro, plus rien ne dort en local.
+    </figcaption>
+  </figure>
+
+  <h2>Où en est la construction</h2>
+
+  <div class="scroller">
+    <table>
+      <caption>État au 2 septembre 2026, après le dernier déploiement.</caption>
+      <thead>
+        <tr><th>Étape du parcours</th><th>Serveur</th><th>Tablette</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Réserver ses tables</strong><br>sélection multiple, exclusivité</td>
+          <td class="state done">fait</td>
+          <td class="state done">fait</td>
+        </tr>
+        <tr>
+          <td><strong>Libérer une table</strong><br>depuis la page Connexion</td>
+          <td class="state done">fait</td>
+          <td class="state done">sans objet</td>
+        </tr>
+        <tr>
+          <td><strong>Voir le candidat</strong><br>accueil, en-tête, saisie</td>
+          <td class="state done">fait</td>
+          <td class="state todo">à faire</td>
+        </tr>
+        <tr>
+          <td><strong>Portraits des candidats</strong><br>avec cache hors ligne</td>
+          <td class="state done">fait</td>
+          <td class="state todo">à faire</td>
+        </tr>
+        <tr>
+          <td><strong>Écran d&rsquo;attente</strong><br>quand aucun candidat n&rsquo;est ouvert</td>
+          <td class="state done">sans objet</td>
+          <td class="state todo">à faire</td>
+        </tr>
+        <tr>
+          <td><strong>Pour quelle table ?</strong><br>si la tablette en tient plusieurs</td>
+          <td class="state done">sans objet</td>
+          <td class="state todo">à faire</td>
+        </tr>
+        <tr>
+          <td><strong>Navigation entre candidats</strong><br>libre hors ligne, cadrée en ligne</td>
+          <td class="state todo">à faire</td>
+          <td class="state todo">à faire</td>
+        </tr>
+        <tr>
+          <td><strong>Historique</strong><br>avancement de tous les candidats</td>
+          <td class="state done">sans objet</td>
+          <td class="state todo">à faire</td>
+        </tr>
+        <tr>
+          <td><strong>Mode clair</strong><br>bascule par le logo</td>
+          <td class="state done">sans objet</td>
+          <td class="state todo">à faire</td>
+        </tr>
+        <tr>
+          <td><strong>Clore et passer au suivant</strong><br>avec alerte sur les tables manquantes</td>
+          <td class="state done">fait</td>
+          <td class="state done">sans objet</td>
+        </tr>
+        <tr>
+          <td><strong>Coefficient du jury</strong><br>paramétrable</td>
+          <td class="state todo">à faire</td>
+          <td class="state done">sans objet</td>
+        </tr>
+        <tr>
+          <td><strong>Formule de calcul</strong><br>affichée dans Résultats</td>
+          <td class="state todo">à faire</td>
+          <td class="state done">sans objet</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    <p>
+      Tout ce qui reste du côté tablette arrivera dans une <strong>seule reconstruction
+      d&rsquo;APK</strong>. Les évolutions du serveur, elles, profitent immédiatement aux tablettes
+      déjà installées : l&rsquo;application vise une adresse, pas une version.
+    </p>
+  </div>
+
+  <footer>
+    Concours culinaire &mdash; document de travail, à relire avant de coder la suite.
+  </footer>
+
+</div>

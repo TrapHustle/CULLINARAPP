@@ -73,6 +73,21 @@ export const devalidateSchema = z.object({
 });
 
 /**
+ * Purge à distance des bases locales des tablettes.
+ *
+ * N'efface rien sur le serveur : change seulement le numéro de génération, que
+ * chaque tablette compare au sien. Le mot diffère des trois autres pour qu'on
+ * ne le saisisse pas par automatisme dans le mauvais champ.
+ */
+export const PURGE_TABLETS_CONFIRMATION = "PURGER";
+
+export const purgeTabletsSchema = z.object({
+  confirmation: z.string().refine((value) => value === PURGE_TABLETS_CONFIRMATION, {
+    message: `Saisissez « ${PURGE_TABLETS_CONFIRMATION} » pour confirmer.`,
+  }),
+});
+
+/**
  * Libération de toutes les tables assignées.
  *
  * Le plus doux des trois effacements : il ne touche à aucune donnée, il rend

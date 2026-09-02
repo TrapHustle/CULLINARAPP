@@ -463,3 +463,60 @@ textarea:focus-visible {
     animation: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Proclamation — la cérémonie de l'écran projeté.
+   Les animations vivent ici plutôt qu'en styles en ligne : elles doivent
+   pouvoir être coupées d'un bloc par `prefers-reduced-motion`.
+--------------------------------------------------------------------------- */
+
+@keyframes proclamation-beat {
+  0%   { opacity: 0; transform: scale(0.55); }
+  22%  { opacity: 1; transform: scale(1); }
+  100% { opacity: 0.15; transform: scale(1.5); }
+}
+
+/* Le chiffre du compte à rebours entre en grossissant et sort en s'effaçant.
+   La clé React change à chaque seconde, ce qui rejoue l'animation. */
+.proclamation-beat {
+  animation: proclamation-beat 1s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+@keyframes proclamation-pop {
+  from { opacity: 0; transform: scale(0.7); }
+  to   { opacity: 1; transform: none; }
+}
+
+.proclamation-pop {
+  animation: proclamation-pop 0.6s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+}
+
+@keyframes proclamation-slide {
+  from { opacity: 0; transform: translateX(-3vw); }
+  to   { opacity: 1; transform: none; }
+}
+
+.proclamation-slide {
+  animation: proclamation-slide 0.6s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+}
+
+/* Pans de velours : la rayure verticale suggère le tissu sans image. */
+.proclamation-panel {
+  background:
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.34) 0 0.7vw, transparent 0.7vw 2.1vw),
+    linear-gradient(180deg, #2a1d10, #120c06);
+  border-bottom: 2px solid var(--gold-deep);
+  transition: transform 1.25s cubic-bezier(0.65, 0.02, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .proclamation-beat,
+  .proclamation-pop,
+  .proclamation-slide {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+  }
+  .proclamation-panel {
+    transition-duration: 0.01ms;
+  }
+}

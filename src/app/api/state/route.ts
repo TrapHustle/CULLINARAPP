@@ -22,6 +22,11 @@ interface StatePayload {
    * une validation prématurée serait définitive.
    */
   validatedTableIds: string[];
+  /**
+   * Génération des données. Une tablette qui la voit changer efface sa base
+   * locale — c'est la purge à distance, décidée depuis le dashboard.
+   */
+  dataGeneration: string;
 }
 
 async function readState(): Promise<StatePayload> {
@@ -43,6 +48,7 @@ async function readState(): Promise<StatePayload> {
     timerEnabled: session.timerEnabled,
     timerSeconds: session.timerSeconds,
     validatedTableIds: validations.map((validation) => validation.tableId),
+    dataGeneration: session.dataGeneration,
   };
 }
 

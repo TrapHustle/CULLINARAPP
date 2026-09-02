@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Proclamation } from "./proclamation";
 
 interface DirectTable {
   id: string;
@@ -108,6 +109,7 @@ export function DirectDisplay({ initial }: { initial: DirectPayload }) {
       {/* Fond en mouvement lent : il occupe le regard quand le compteur, lui,
           n'a rien de neuf à montrer. */}
       <div aria-hidden className="direct-halo pointer-events-none absolute inset-0" />
+      <Proclamation />
 
       <Header
         stale={stale}
@@ -237,6 +239,7 @@ function Standby({ stale }: { stale: boolean }) {
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#0d0b08] px-[6vw] text-center text-white">
       <div aria-hidden className="direct-halo pointer-events-none absolute inset-0" />
+      <Proclamation />
 
       <p className="relative text-[1.8vh] uppercase tracking-[0.5em] text-[#d4af37]">Soirée</p>
       <h1 className="relative mt-[2vh] font-serif text-[10vh] leading-none text-[#d4af37]">

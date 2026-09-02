@@ -85,13 +85,15 @@ function DangerAction({
 }
 
 /**
- * Les trois effacements, du plus doux au plus radical.
+ * Les quatre effacements, du plus doux au plus radical.
  *
  * Ils sont côte à côte parce qu'on les cherche au même endroit, mais leurs mots
- * de confirmation diffèrent tous les trois : recopier machinalement le même
+ * de confirmation diffèrent tous les quatre : recopier machinalement le même
  * dans le mauvais champ détruirait une configuration qu'on voulait garder.
  */
 export function DangerZone({
+  purgeTabletsAction,
+  purgeTabletsWord,
   releaseTablesAction,
   releaseTablesWord,
   assignedCount,
@@ -104,6 +106,8 @@ export function DangerZone({
   tableCount,
   criterionCount,
 }: {
+  purgeTabletsAction: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
+  purgeTabletsWord: string;
   releaseTablesAction: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
   releaseTablesWord: string;
   assignedCount: number;
@@ -118,6 +122,35 @@ export function DangerZone({
 }) {
   return (
     <div className="space-y-gutter">
+      <DangerAction
+        action={purgeTabletsAction}
+        confirmationWord={purgeTabletsWord}
+        title="Purger les tablettes"
+        badge="à distance"
+        description={
+          <>
+            Ordonne à <strong className="text-on-surface">toutes les tablettes</strong> d&apos;effacer
+            leur base locale : votes en attente, validations, portraits et configuration en cache.
+            <strong className="text-on-surface"> Les tables sont libérées</strong> dans le même
+            geste : chaque tablette devra rechoisir la sienne. Aucun vote n&apos;est effacé sur ce
+            serveur.
+          </>
+        }
+        warning={
+          <>
+            <p>
+              Une tablette en ligne obéit en quelques secondes. Une tablette hors ligne le fera à
+              son retour, après avoir d&apos;abord envoyé ce qu&apos;elle avait en attente.
+            </p>
+            <p className="mt-2 text-on-surface-variant">
+              À faire entre la répétition et le jour J, jamais pendant un vote.
+            </p>
+          </>
+        }
+        submitLabel="Purger les tablettes"
+        pendingLabel="Envoi de l&apos;ordre…"
+      />
+
       <DangerAction
         action={releaseTablesAction}
         confirmationWord={releaseTablesWord}

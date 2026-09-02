@@ -85,6 +85,15 @@ model Session {
   /// Chemin servi par ce serveur, de la forme `/api/images/<id>` — jamais une
   /// URL externe : les tablettes doivent pouvoir l'afficher sans internet.
   eventPhotoUrl     String?
+
+  /// Numéro de génération des données, comparé par chaque tablette.
+  ///
+  /// Le changer ordonne aux tablettes d'effacer leur base locale — votes,
+  /// validations, cache et portraits. C'est le seul moyen de repartir propre
+  /// sans manipuler chaque tablette une par une, entre une répétition et le
+  /// jour J. Les tablettes hors ligne obéissent à leur retour, après avoir
+  /// d'abord envoyé ce qu'elles avaient en attente.
+  dataGeneration    String    @default("1")
 }
 
 /// Image téléversée depuis le dashboard (affiche de l'événement, portrait d'un
