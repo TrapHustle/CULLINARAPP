@@ -85,13 +85,16 @@ function DangerAction({
 }
 
 /**
- * Les deux effacements, du plus courant au plus radical.
+ * Les trois effacements, du plus doux au plus radical.
  *
  * Ils sont côte à côte parce qu'on les cherche au même endroit, mais leurs mots
- * de confirmation diffèrent : recopier machinalement le même dans le mauvais
- * champ détruirait une configuration qu'on voulait garder.
+ * de confirmation diffèrent tous les trois : recopier machinalement le même
+ * dans le mauvais champ détruirait une configuration qu'on voulait garder.
  */
 export function DangerZone({
+  releaseTablesAction,
+  releaseTablesWord,
+  assignedCount,
   resetVotesAction,
   resetVotesWord,
   resetEventAction,
@@ -101,6 +104,9 @@ export function DangerZone({
   tableCount,
   criterionCount,
 }: {
+  releaseTablesAction: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
+  releaseTablesWord: string;
+  assignedCount: number;
   resetVotesAction: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
   resetVotesWord: string;
   resetEventAction: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
@@ -112,6 +118,28 @@ export function DangerZone({
 }) {
   return (
     <div className="space-y-gutter">
+      <DangerAction
+        action={releaseTablesAction}
+        confirmationWord={releaseTablesWord}
+        title="Libérer toutes les tables"
+        badge={`${assignedCount} table${assignedCount > 1 ? "s" : ""} assignée${assignedCount > 1 ? "s" : ""}`}
+        description={
+          <>
+            Rend toutes les tables à la salle : chaque tablette devra{" "}
+            <strong className="text-on-surface">rechoisir la sienne</strong>. Aucun vote, aucun
+            candidat, aucune photo n&apos;est touché.
+          </>
+        }
+        warning={
+          <p>
+            Les tablettes en cours de saisie perdent leur table sur-le-champ. À faire entre la
+            répétition et le jour J, pas pendant un vote.
+          </p>
+        }
+        submitLabel="Libérer les tables"
+        pendingLabel="Libération…"
+      />
+
       <DangerAction
         action={resetVotesAction}
         confirmationWord={resetVotesWord}

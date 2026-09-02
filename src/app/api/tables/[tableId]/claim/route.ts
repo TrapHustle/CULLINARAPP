@@ -18,6 +18,10 @@ export const dynamic = "force-dynamic";
  * Une tablette qui redemande **sa propre** table l'obtient : c'est le cas d'un
  * redémarrage en pleine soirée, qui ne doit jamais immobiliser une table.
  *
+ * Une tablette peut en revanche tenir **plusieurs** tables : deux tablettes
+ * suffisent alors à couvrir quatre tables. L'exclusivité porte sur la table,
+ * jamais sur la tablette.
+ *
  * Une table déjà tenue par un autre appareil est refusée (409). Elle se libère
  * depuis le dashboard, page Connexion — une tablette ne peut pas en déloger une
  * autre, sous peine qu'un juré curieux déconnecte une table en plein vote.
@@ -57,19 +61,16 @@ export async function POST(
     );
   }
 
-  // Une tablette ne tient qu'une table à la fois : réclamer la table B libère
-  // la table A. Sans cela, un changement de table en cours de soirée laisserait
-  // l'ancienne bloquée derrière elle.
-  await prisma.$transaction([
-    prisma.votingTable.updateMany({
-      where: { assignedDeviceId: deviceId, id: { not: tableId } },
-      data: { assignedDeviceId: null, assignedAt: null },
-    }),
-    prisma.votingTable.update({
-      where: { id: tableId },
-      data: { assignedDeviceId: deviceId, assignedAt: table.assignedAt ?? new Date() },
-    }),
-  ]);
+  // Une tablette peut tenir plusieurs tables : réclamer la table B ne libère
+  // pas la table A. C'est ce qui permet de couvrir quatre tables avec deux
+  // tablettes, le staff choisissant la table avant chaque série de jurés.
+  //
+  // L'exclusivité reste entière dans l'autre sens : une table n'appartient
+  // qu'à une tablette, ce qui est la garantie recherchée.
+  await prisma.votingTable.update({
+    where: { id: tableId },
+    data: { assignedDeviceId: deviceId, assignedAt: table.assignedAt ?? new Date() },
+  });
 
   return Response.json({
     id: table.id,

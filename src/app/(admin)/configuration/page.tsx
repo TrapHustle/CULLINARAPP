@@ -11,6 +11,7 @@ import {
   deleteCandidateAction,
   deleteCriterionAction,
   deleteTableAction,
+  releaseAllTablesAction,
   removeCandidatePhotoAction,
   resetEventAction,
   resetVotesAction,
@@ -24,6 +25,7 @@ import { getOrCreateSession, prisma } from "@/lib/prisma";
 import { maxTotalForCriteria } from "@/lib/scoring";
 import {
   ACCEPTED_IMAGE_TYPES,
+  RELEASE_TABLES_CONFIRMATION,
   RESET_CONFIRMATION,
   RESET_EVENT_CONFIRMATION,
 } from "@/lib/validation";
@@ -384,6 +386,9 @@ export default async function ConfigurationPage() {
               descendant toute la page, jamais en la survolant. */}
           <section id="remise-a-zero" className="scroll-mt-24">
             <DangerZone
+              releaseTablesAction={releaseAllTablesAction}
+              releaseTablesWord={RELEASE_TABLES_CONFIRMATION}
+              assignedCount={tables.filter((table) => table.assignedDeviceId).length}
               resetVotesAction={resetVotesAction}
               resetVotesWord={RESET_CONFIRMATION}
               resetEventAction={resetEventAction}

@@ -73,6 +73,22 @@ export const devalidateSchema = z.object({
 });
 
 /**
+ * Libération de toutes les tables assignées.
+ *
+ * Le plus doux des trois effacements : il ne touche à aucune donnée, il rend
+ * seulement les tables à la salle pour que chaque tablette rechoisisse la
+ * sienne. Il exige quand même un mot, parce qu'il déconnecte en un clic toutes
+ * les tablettes en cours de saisie.
+ */
+export const RELEASE_TABLES_CONFIRMATION = "LIBERER";
+
+export const releaseTablesSchema = z.object({
+  confirmation: z.string().refine((value) => value === RELEASE_TABLES_CONFIRMATION, {
+    message: `Saisissez « ${RELEASE_TABLES_CONFIRMATION} » pour confirmer.`,
+  }),
+});
+
+/**
  * Remise à zéro des votes. Le mot de confirmation est exigé à la saisie : la
  * page ne peut pas être déclenchée par un clic isolé, ni par un rechargement.
  */

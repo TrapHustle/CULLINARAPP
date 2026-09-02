@@ -15,6 +15,7 @@ import {
   devalidateSchema,
   loginSchema,
   MAX_IMAGE_BYTES,
+  releaseTablesSchema,
   resetEventSchema,
   resetVotesSchema,
   tableSchema,
@@ -475,6 +476,43 @@ export async function devalidateTableAction(formData: FormData) {
  *    répétition qu'une tablette éteinte tenterait d'envoyer après coup (§11) ;
  *  - l'état de la session, ramené à « aucun candidat, votes fermés ».
  */
+/**
+ * Rend toutes les tables à la salle : chaque tablette devra rechoisir la sienne.
+ *
+ * Le plus doux des trois effacements — aucun vote, aucun candidat, aucune photo
+ * n'est touché. C'est celui qu'on veut entre une répétition et le jour J, quand
+ * les tablettes ne sont plus dans les mêmes mains qu'à l'essai.
+ */
+export async function releaseAllTablesAction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAuth();
+
+  const parsed = releaseTablesSchema.safeParse({
+    confirmation: formData.get("confirmation") ?? "",
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Confirmation invalide." };
+  }
+
+  const { count } = await prisma.votingTable.updateMany({
+    where: { assignedDeviceId: { not: null } },
+    data: { assignedDeviceId: null, assignedAt: null },
+  });
+
+  revalidatePath("/appairage");
+  revalidatePath("/configuration");
+
+  return {
+    success:
+      count === 0
+        ? "Aucune table n'était assignée."
+        : `${count} table${count > 1 ? "s" : ""} libérée${count > 1 ? "s" : ""}.`,
+  };
+}
+
 export async function resetVotesAction(
   _prevState: ActionState,
   formData: FormData,
