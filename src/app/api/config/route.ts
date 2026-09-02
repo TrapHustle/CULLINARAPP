@@ -31,6 +31,11 @@ export async function GET() {
       name: table.name,
       type: table.type,
       expectedJurors: table.expectedJurors,
+      // L'identifiant de la tablette qui tient la table, ou `null` si elle est
+      // libre. Il est renvoyé tel quel — et non un simple booléen « prise » —
+      // pour qu'une tablette reconnaisse *sa* table après un redémarrage et la
+      // propose au lieu de la griser.
+      assignedDeviceId: table.assignedDeviceId,
     })),
     criteria: criteria.map((criterion) => ({
       id: criterion.id,

@@ -137,4 +137,15 @@ export const validateTableSchema = z.object({
   candidateId: z.string().min(1),
 });
 
+/**
+ * Réservation d'une table par une tablette.
+ *
+ * `deviceId` est tiré par la tablette à son premier lancement et conservé
+ * localement. Il n'identifie personne : il ne sert qu'à distinguer deux
+ * tablettes entre elles, et à rendre sa table à celle qui redémarre.
+ */
+export const claimTableSchema = z.object({
+  deviceId: z.string().min(8).max(64),
+});
+
 export type IncomingVote = z.infer<typeof incomingVoteSchema>;

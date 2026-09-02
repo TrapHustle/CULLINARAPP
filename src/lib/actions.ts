@@ -321,6 +321,30 @@ export async function openVotingAction(formData: FormData) {
 }
 
 /**
+ * Libère une table de la tablette qui la tient.
+ *
+ * C'est la soupape de l'assignation exclusive : sans elle, une tablette tombée
+ * en panne emporterait sa table jusqu'à la fin du concours, puisqu'aucune autre
+ * ne peut la lui prendre. Le geste appartient à l'organisateur, seul à voir la
+ * salle — une tablette ne peut pas en déloger une autre.
+ *
+ * Les votes déjà enregistrés ne sont pas touchés : on libère la place, on
+ * n'efface rien.
+ */
+export async function releaseTableAction(formData: FormData) {
+  await requireAuth();
+  const tableId = String(formData.get("tableId"));
+  if (!tableId) return;
+
+  await prisma.votingTable.update({
+    where: { id: tableId },
+    data: { assignedDeviceId: null, assignedAt: null },
+  });
+
+  revalidatePath("/appairage");
+}
+
+/**
  * Clôt le candidat en cours et ouvre le suivant, en une seule opération.
  *
  * Séparer les deux gestes laissait un entre-deux : les votes étaient fermés

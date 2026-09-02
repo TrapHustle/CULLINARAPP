@@ -1,4 +1,6 @@
-import { WifiIcon } from "@/components/icons";
+import { ClocheIcon, WifiIcon } from "@/components/icons";
+import { releaseTableAction } from "@/lib/actions";
+import { prisma } from "@/lib/prisma";
 import {
   DISCOVERY_PORT,
   isPubliclyHosted,
@@ -13,6 +15,8 @@ export const dynamic = "force-dynamic";
 export default async function ConnexionPage() {
   const hosted = isPubliclyHosted();
   const addresses = lanAddresses();
+  const tables = await prisma.votingTable.findMany({ orderBy: { name: "asc" } });
+  const assignedCount = tables.filter((table) => table.assignedDeviceId).length;
 
   return (
     <div className="space-y-gutter">
@@ -102,6 +106,63 @@ export default async function ConnexionPage() {
           Ouvrez-la en plein écran (F11) et désactivez la mise en veille de cet écran. La page
           n&apos;a aucun bouton : elle suit ce que vous faites depuis le Pilotage.
         </p>
+      </section>
+
+      {/* Assignation des tables — une tablette par table, décidée par le
+          serveur. Cette page est le seul endroit d'où l'on peut rendre une
+          table à la salle. */}
+      <section className="rounded-xl bg-surface-container p-6 gold-border">
+        <div className="mb-1 flex items-center gap-3 text-primary">
+          <ClocheIcon className="h-5 w-5" />
+          <h2 className="flex-1 font-serif text-headline-md">Tablettes assignées</h2>
+          <span className="text-label-sm text-outline">
+            {assignedCount}/{tables.length}
+          </span>
+        </div>
+        <p className="mb-4 text-label-sm text-on-surface-variant">
+          Une table prise n&apos;apparaît plus sur les autres tablettes. Libérez-la si sa tablette
+          est tombée en panne : les votes déjà enregistrés sont conservés.
+        </p>
+
+        <ul className="divide-y divide-outline-variant/20">
+          {tables.map((table) => (
+            <li key={table.id} className="flex items-center gap-3 py-3">
+              <span className="flex-1 text-body-md text-on-surface">{table.name}</span>
+
+              {table.assignedDeviceId ? (
+                <>
+                  <span className="text-label-sm text-outline">
+                    {table.assignedAt
+                      ? `depuis ${table.assignedAt.toLocaleTimeString("fr-FR", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}`
+                      : null}
+                  </span>
+                  <span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-label-sm text-primary">
+                    tablette connectée
+                  </span>
+                  <form action={releaseTableAction}>
+                    <input type="hidden" name="tableId" value={table.id} />
+                    <button
+                      type="submit"
+                      className="rounded-lg border border-outline-variant px-3 py-1.5 text-label-sm text-on-surface-variant transition-colors hover:border-error/50 hover:text-error"
+                    >
+                      Libérer
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <span className="text-label-sm text-outline">libre</span>
+              )}
+            </li>
+          ))}
+          {tables.length === 0 ? (
+            <li className="py-3 text-label-sm text-on-surface-variant">
+              Aucune table. Créez-en depuis la page Configuration.
+            </li>
+          ) : null}
+        </ul>
       </section>
 
       <section className="rounded-xl bg-surface-container p-6 gold-border">

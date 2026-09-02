@@ -42,6 +42,19 @@ model VotingTable {
   type           String @default("LAMBDA")
   expectedJurors Int    @default(1)
 
+  /// Tablette actuellement en charge de cette table, ou `null` si libre.
+  ///
+  /// L'assignation est exclusive : deux tablettes sur la même table feraient
+  /// voter deux fois les mêmes jurés sans que rien ne le signale. Le serveur
+  /// est seul juge, car lui seul voit toutes les tablettes.
+  ///
+  /// C'est un identifiant tiré par la tablette à son premier lancement et
+  /// conservé localement : il lui permet de retrouver sa table après un
+  /// redémarrage, sans quoi une simple coupure de courant immobiliserait la
+  /// table jusqu'à la fin du concours.
+  assignedDeviceId String?
+  assignedAt       DateTime?
+
   votes       Vote[]
   validations TableValidation[]
 }
