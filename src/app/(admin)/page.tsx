@@ -1,4 +1,5 @@
 import { AutoRefresh } from "@/components/auto-refresh";
+import { ConfirmButton } from "@/components/confirm-button";
 import {
   ArrowRightIcon,
   CheckCircleIcon,
@@ -6,9 +7,15 @@ import {
   HourglassIcon,
   StopIcon,
   TimerIcon,
+  UnlockIcon,
   VoteIcon,
 } from "@/components/icons";
-import { closeVotingAction, openVotingAction, updateTimerAction } from "@/lib/actions";
+import {
+  closeVotingAction,
+  devalidateTableAction,
+  openVotingAction,
+  updateTimerAction,
+} from "@/lib/actions";
 import { getOrCreateSession, prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -303,8 +310,24 @@ export default async function PilotagePage() {
                     </div>
 
                     <p className="mt-2 text-label-sm text-on-surface-variant">
-                      {received} / {table.expectedJurors} vote{table.expectedJurors > 1 ? "s" : ""}
+                      {received} / {table.expectedJurors} vote
+                      {table.expectedJurors > 1 ? "s" : ""} reçu{received > 1 ? "s" : ""}
                     </p>
+
+                    {/* Rattrapage d'une validation prématurée : sans cela, une
+                        table verrouillée par erreur finissait le concours avec
+                        un juré manquant. */}
+                    {validated && activeCandidate ? (
+                      <div className="mt-2">
+                        <ConfirmButton
+                          action={devalidateTableAction}
+                          values={{ tableId: table.id, candidateId: activeCandidate.id }}
+                          label="Dévalider"
+                          icon={<UnlockIcon className="h-3.5 w-3.5" />}
+                          confirmMessage={`Rouvrir les votes de « ${table.name} » pour ${activeCandidate.name} ? Sa tablette pourra de nouveau saisir et corriger ses votes.`}
+                        />
+                      </div>
+                    ) : null}
                   </li>
                 );
               })}

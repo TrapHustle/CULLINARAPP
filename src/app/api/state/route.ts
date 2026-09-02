@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { getOrCreateSession } from "@/lib/prisma";
+import { getOrCreateSession, prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -13,15 +13,36 @@ interface StatePayload {
   votingOpen: boolean;
   timerEnabled: boolean;
   timerSeconds: number;
+  /**
+   * Tables ayant validé leurs votes pour le candidat en cours.
+   *
+   * C'est la source de vérité du verrou : la tablette s'aligne dessus, ce qui
+   * fait qu'une dévalidation décidée au dashboard rouvre réellement la saisie
+   * en salle. Sans cette liste, le verrou vivrait uniquement sur la tablette et
+   * une validation prématurée serait définitive.
+   */
+  validatedTableIds: string[];
 }
 
 async function readState(): Promise<StatePayload> {
   const session = await getOrCreateSession();
+
+  const validations = session.activeCandidateId
+    ? await prisma.tableValidation.findMany({
+        where: { candidateId: session.activeCandidateId },
+        select: { tableId: true },
+        // Ordre stable : la charge utile est comparée telle quelle d'un cycle à
+        // l'autre pour décider s'il faut pousser un événement SSE.
+        orderBy: { tableId: "asc" },
+      })
+    : [];
+
   return {
     activeCandidateId: session.activeCandidateId,
     votingOpen: session.votingOpen,
     timerEnabled: session.timerEnabled,
     timerSeconds: session.timerSeconds,
+    validatedTableIds: validations.map((validation) => validation.tableId),
   };
 }
 

@@ -19,6 +19,17 @@ const nextConfig: NextConfig = {
     "*.local",
   ],
 
+  // Les portraits des candidats transitent par une action serveur, dont le
+  // corps est limité à 1 Mo par défaut — une photo prise au téléphone dépasse
+  // systématiquement cette taille. La limite réelle est appliquée dans
+  // l'action elle-même (MAX_IMAGE_BYTES), avec un message compréhensible ;
+  // celle-ci n'est qu'un plafond de transport, volontairement au-dessus.
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "8mb",
+    },
+  },
+
   // Le client Postgres ouvre des sockets : il doit rester externe au bundle
   // serveur pour ne pas être transformé par le bundler.
   serverExternalPackages: ["pg", "@prisma/adapter-pg"],

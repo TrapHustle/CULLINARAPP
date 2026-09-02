@@ -211,3 +211,52 @@ export function PlusIcon(props: IconProps) {
     </Svg>
   );
 }
+
+/** Crayon — modification d'un élément existant. */
+export function PencilIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3Z" />
+      <path d="M14.5 7.5 16.5 9.5" />
+    </Svg>
+  );
+}
+
+/** Croix — abandon d'une modification en cours. */
+export function CloseIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M6 6l12 12M18 6L6 18" />
+    </Svg>
+  );
+}
+
+/** Cadenas ouvert — dévalidation d'une table. */
+export function UnlockIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <rect x="4" y="11" width="16" height="9" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 7.9-.8" />
+    </Svg>
+  );
+}
+
+/** Triangle d'alerte — les opérations irréversibles. */
+export function WarningIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M12 4 2.5 20h19L12 4Z" />
+      <path d="M12 10v4M12 17.5v.01" />
+    </Svg>
+  );
+}
+
+/** Écran de projection — la page suivie par la salle. */
+export function ScreenIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <rect x="2.5" y="4" width="19" height="13" rx="2" />
+      <path d="M9 21h6M12 17v4" />
+    </Svg>
+  );
+}

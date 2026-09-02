@@ -5,7 +5,21 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getOrCreateSession, prisma, SESSION_ID } from "./prisma";
 import { getSession } from "./session";
-import { candidateSchema, criterionSchema, loginSchema, tableSchema } from "./validation";
+import {
+  ACCEPTED_IMAGE_TYPES,
+  candidatePhotoSchema,
+  candidateSchema,
+  candidateUpdateSchema,
+  criterionSchema,
+  criterionUpdateSchema,
+  devalidateSchema,
+  loginSchema,
+  MAX_IMAGE_BYTES,
+  resetEventSchema,
+  resetVotesSchema,
+  tableSchema,
+  tableUpdateSchema,
+} from "./validation";
 
 export interface ActionState {
   error?: string;
@@ -103,6 +117,39 @@ export async function createCandidateAction(
   return { success: `Candidat « ${parsed.data.name} » ajouté.` };
 }
 
+/**
+ * Renomme ou réordonne un candidat.
+ *
+ * Modifier plutôt que supprimer-recréer est ici une exigence de sécurité : la
+ * suppression est en cascade et emporterait tous les votes déjà reçus. Corriger
+ * une faute de frappe en plein événement ne doit jamais coûter un vote.
+ */
+export async function updateCandidateAction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAuth();
+
+  const parsed = candidateUpdateSchema.safeParse({
+    id: formData.get("id"),
+    name: formData.get("name"),
+    order: formData.get("order") || 0,
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Données invalides." };
+  }
+
+  await prisma.candidate.update({
+    where: { id: parsed.data.id },
+    data: { name: parsed.data.name, order: parsed.data.order },
+  });
+
+  revalidatePath("/configuration");
+  revalidatePath("/");
+  return { success: `Candidat « ${parsed.data.name} » modifié.` };
+}
+
 export async function deleteCandidateAction(formData: FormData) {
   await requireAuth();
   const id = String(formData.get("id"));
@@ -136,6 +183,40 @@ export async function createTableAction(
   return { success: `Table « ${parsed.data.name} » ajoutée.` };
 }
 
+/**
+ * Modifie une table : nom, type (donc le poids de ses votes) et nombre de jurés.
+ *
+ * Le changement de type est rétroactif sur le classement, puisque le poids est
+ * dérivé du type au moment du calcul et jamais figé dans le vote (§0.3). C'est
+ * voulu : une table déclarée « jury spécial » par erreur se corrige sans
+ * refaire voter personne.
+ */
+export async function updateTableAction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAuth();
+
+  const parsed = tableUpdateSchema.safeParse({
+    id: formData.get("id"),
+    name: formData.get("name"),
+    type: formData.get("type") || "LAMBDA",
+    expectedJurors: formData.get("expectedJurors") || 1,
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Données invalides." };
+  }
+
+  const { id, ...data } = parsed.data;
+  await prisma.votingTable.update({ where: { id }, data });
+
+  revalidatePath("/configuration");
+  revalidatePath("/");
+  revalidatePath("/resultats");
+  return { success: `Table « ${data.name} » modifiée.` };
+}
+
 export async function deleteTableAction(formData: FormData) {
   await requireAuth();
   const id = String(formData.get("id"));
@@ -166,6 +247,38 @@ export async function createCriterionAction(
 
   revalidatePath("/configuration");
   return { success: `Critère « ${parsed.data.name} » ajouté.` };
+}
+
+/**
+ * Renomme ou réordonne un critère.
+ *
+ * Seul le libellé bouge : les notes déjà saisies restent rattachées au même
+ * identifiant de critère, donc aucun vote n'est perdu ni faussé.
+ */
+export async function updateCriterionAction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAuth();
+
+  const parsed = criterionUpdateSchema.safeParse({
+    id: formData.get("id"),
+    name: formData.get("name"),
+    order: formData.get("order") || 0,
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Données invalides." };
+  }
+
+  await prisma.criterion.update({
+    where: { id: parsed.data.id },
+    data: { name: parsed.data.name, order: parsed.data.order },
+  });
+
+  revalidatePath("/configuration");
+  revalidatePath("/resultats");
+  return { success: `Critère « ${parsed.data.name} » modifié.` };
 }
 
 export async function deleteCriterionAction(formData: FormData) {
@@ -234,4 +347,243 @@ export async function updateTimerAction(formData: FormData) {
   });
 
   revalidatePath("/");
+}
+
+/* ------------------------------------------------------------------ */
+/* Correction d'une validation de table                                 */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Rouvre les votes d'une table pour un candidat, après une validation faite par
+ * erreur (§5, étape 5).
+ *
+ * La validation est le seul geste irréversible du staff en salle : elle
+ * verrouille la saisie sur la tablette. Sans cette action, une table validée
+ * trop tôt — un juré parti aux toilettes, un appui malheureux — obligeait à
+ * terminer le concours avec un vote manquant.
+ *
+ * Les votes déjà reçus ne sont pas touchés : seul le verrou saute. La tablette
+ * s'en aperçoit au cycle suivant, l'état de session lui annonçant les tables
+ * encore validées pour le candidat en cours.
+ */
+export async function devalidateTableAction(formData: FormData) {
+  await requireAuth();
+
+  const parsed = devalidateSchema.safeParse({
+    tableId: formData.get("tableId"),
+    candidateId: formData.get("candidateId"),
+  });
+  if (!parsed.success) return;
+
+  // `deleteMany` plutôt que `delete` : dévalider une table qui ne l'est plus
+  // (double clic, deux organisateurs sur le dashboard) ne doit pas lever.
+  await prisma.tableValidation.deleteMany({ where: parsed.data });
+
+  revalidatePath("/");
+}
+
+/* ------------------------------------------------------------------ */
+/* Remise à zéro des votes                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Efface tous les votes de l'événement, sans toucher à la configuration.
+ *
+ * C'est l'opération qui sépare la répétition du jour J : on répète avec de
+ * vraies tablettes et de vrais jurés, puis on remet le compteur à zéro en
+ * gardant candidats, tables et critères — que l'on vient justement de valider
+ * sur le terrain.
+ *
+ * Sont remis à zéro, dans une seule transaction :
+ *  - les votes (leurs notes partent en cascade) ;
+ *  - les validations de table, sans quoi les tablettes resteraient verrouillées ;
+ *  - `openedAt` de chaque candidat, ce qui referme la porte aux votes de la
+ *    répétition qu'une tablette éteinte tenterait d'envoyer après coup (§11) ;
+ *  - l'état de la session, ramené à « aucun candidat, votes fermés ».
+ */
+export async function resetVotesAction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAuth();
+
+  const parsed = resetVotesSchema.safeParse({
+    confirmation: formData.get("confirmation") ?? "",
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Confirmation invalide." };
+  }
+
+  // La ligne de session peut ne pas encore exister sur une base neuve.
+  await getOrCreateSession();
+
+  const removed = await prisma.vote.count();
+
+  await prisma.$transaction([
+    prisma.vote.deleteMany({}),
+    prisma.tableValidation.deleteMany({}),
+    prisma.candidate.updateMany({ data: { openedAt: null } }),
+    prisma.session.update({
+      where: { id: SESSION_ID },
+      data: { activeCandidateId: null, votingOpen: false },
+    }),
+  ]);
+
+  revalidatePath("/");
+  revalidatePath("/configuration");
+  revalidatePath("/resultats");
+
+  return {
+    success:
+      removed === 0
+        ? "Aucun vote à effacer — la configuration est intacte."
+        : `${removed} vote${removed > 1 ? "s" : ""} effacé${removed > 1 ? "s" : ""}. La configuration est intacte.`,
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* Photos des candidats                                                 */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Extrait l'identifiant d'image d'un chemin `/api/images/<id>`.
+ *
+ * Retourne `null` pour toute autre forme : une valeur héritée d'une ancienne
+ * version, ou une adresse externe qui aurait été enregistrée avant que le
+ * schéma ne les refuse, ne doit pas provoquer une suppression au hasard.
+ */
+function imageIdFromPath(path: string | null): string | null {
+  if (!path) return null;
+  const match = /^\/api\/images\/([A-Za-z0-9_-]+)$/.exec(path);
+  return match ? match[1] : null;
+}
+
+/**
+ * Remplace le portrait d'un candidat.
+ *
+ * Les octets vont en base, jamais sur le disque : c'est la seule façon de servir
+ * la même image en hébergement (le disque de Vercel est éphémère) et en réseau
+ * local sans internet. L'ancienne image est supprimée dans la foulée, sinon la
+ * base enflerait d'un fichier orphelin à chaque correction de photo.
+ */
+export async function uploadCandidatePhotoAction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAuth();
+
+  const parsed = candidatePhotoSchema.safeParse({ id: formData.get("id") });
+  if (!parsed.success) return { error: "Candidat introuvable." };
+
+  const file = formData.get("photo");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "Choisissez une image." };
+  }
+
+  if (!ACCEPTED_IMAGE_TYPES.includes(file.type as (typeof ACCEPTED_IMAGE_TYPES)[number])) {
+    return { error: "Format accepté : JPEG, PNG ou WebP." };
+  }
+
+  if (file.size > MAX_IMAGE_BYTES) {
+    const limit = Math.round(MAX_IMAGE_BYTES / (1024 * 1024));
+    return { error: `Image trop lourde (maximum ${limit} Mo).` };
+  }
+
+  const candidate = await prisma.candidate.findUnique({ where: { id: parsed.data.id } });
+  if (!candidate) return { error: "Candidat introuvable." };
+
+  const data = Buffer.from(await file.arrayBuffer());
+
+  const image = await prisma.image.create({
+    data: { mimeType: file.type, data },
+  });
+
+  await prisma.candidate.update({
+    where: { id: candidate.id },
+    data: { photoUrl: `/api/images/${image.id}` },
+  });
+
+  // Après coup seulement : si la suppression échoue, le candidat a déjà sa
+  // nouvelle photo, ce qui compte davantage qu'une ligne orpheline.
+  const previousId = imageIdFromPath(candidate.photoUrl);
+  if (previousId) {
+    await prisma.image.deleteMany({ where: { id: previousId } });
+  }
+
+  revalidatePath("/configuration");
+  revalidatePath("/");
+  return { success: `Photo de « ${candidate.name} » mise à jour.` };
+}
+
+export async function removeCandidatePhotoAction(formData: FormData) {
+  await requireAuth();
+
+  const id = String(formData.get("id"));
+  const candidate = await prisma.candidate.findUnique({ where: { id } });
+  if (!candidate) return;
+
+  await prisma.candidate.update({ where: { id }, data: { photoUrl: null } });
+
+  const imageId = imageIdFromPath(candidate.photoUrl);
+  if (imageId) {
+    await prisma.image.deleteMany({ where: { id: imageId } });
+  }
+
+  revalidatePath("/configuration");
+  revalidatePath("/");
+}
+
+/* ------------------------------------------------------------------ */
+/* Réinitialisation complète de l'événement                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Vide entièrement le bureau de vote : votes **et** configuration.
+ *
+ * Le cran au-dessus de la remise à zéro des votes. Celle-ci sert entre la
+ * répétition et le concours ; celle-là sert à repartir d'une page blanche pour
+ * un autre événement, quand candidats, tables et critères n'ont plus rien à
+ * voir avec les précédents.
+ *
+ * Les images partent aussi : conservées, elles resteraient en base sans que
+ * plus aucun candidat ne les référence.
+ */
+export async function resetEventAction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAuth();
+
+  const parsed = resetEventSchema.safeParse({
+    confirmation: formData.get("confirmation") ?? "",
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Confirmation invalide." };
+  }
+
+  await getOrCreateSession();
+
+  await prisma.$transaction([
+    // Les votes et validations partiraient en cascade avec les candidats et les
+    // tables ; on les efface explicitement pour ne pas dépendre de l'ordre de
+    // suppression choisi par la base.
+    prisma.vote.deleteMany({}),
+    prisma.tableValidation.deleteMany({}),
+    prisma.candidate.deleteMany({}),
+    prisma.votingTable.deleteMany({}),
+    prisma.criterion.deleteMany({}),
+    prisma.image.deleteMany({}),
+    prisma.session.update({
+      where: { id: SESSION_ID },
+      data: { activeCandidateId: null, votingOpen: false },
+    }),
+  ]);
+
+  revalidatePath("/");
+  revalidatePath("/configuration");
+  revalidatePath("/resultats");
+
+  return { success: "Bureau de vote réinitialisé. Tout est à reconfigurer." };
 }

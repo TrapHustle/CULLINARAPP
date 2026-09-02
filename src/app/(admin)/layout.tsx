@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { ChefHatIcon } from "@/components/icons";
+import { ChefHatIcon, ScreenIcon } from "@/components/icons";
 import { MainNav } from "@/components/main-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { logoutAction } from "@/lib/actions";
@@ -23,6 +23,20 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <MainNav />
 
           <div className="ml-auto flex items-center gap-3">
+            {/* Ouvre l'écran suivi par la salle dans un onglet séparé : le
+                dashboard reste affiché sur le portable pendant que la
+                projection vit de son côté, sur le second écran. */}
+            <a
+              href="/direct"
+              target="_blank"
+              rel="noopener"
+              title="Ouvrir l'écran public dans un nouvel onglet"
+              className="flex items-center gap-2 rounded-lg border border-primary/40 px-3 py-1.5 text-label-sm text-primary transition-colors hover:border-primary hover:text-gold-soft"
+            >
+              <ScreenIcon className="h-4 w-4" />
+              Écran public
+            </a>
+
             <ThemeToggle />
             <form action={logoutAction}>
               <button

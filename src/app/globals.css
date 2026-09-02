@@ -382,3 +382,84 @@ textarea:focus-visible {
     border-color: #999999 !important;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Animations de l'écran projeté (/direct)                             */
+/*                                                                      */
+/* Elles ne sont pas décoratives. Les tablettes se synchronisent par     */
+/* lots : le compteur peut rester immobile une minute entière, et un     */
+/* écran totalement figé au mur passe pour une panne. Ce mouvement de    */
+/* fond, lent et continu, dit « ça tourne » sans rien raconter du        */
+/* scrutin — et sans jamais concurrencer le grand chiffre.               */
+/*                                                                      */
+/* Tout est en CSS : aucune librairie à charger, la salle n'a pas        */
+/* internet. Les transformations restent sur le compositeur (transform,  */
+/* opacity), pour ne pas faire souffrir un PC de projection modeste.     */
+/* ------------------------------------------------------------------ */
+
+@keyframes direct-drift {
+  0% {
+    transform: translate3d(-3%, -2%, 0) scale(1.04);
+  }
+  50% {
+    transform: translate3d(3%, 2%, 0) scale(1.12);
+  }
+  100% {
+    transform: translate3d(-3%, -2%, 0) scale(1.04);
+  }
+}
+
+/* Halo doré à la dérive, derrière tout le contenu. */
+.direct-halo {
+  background:
+    radial-gradient(45vh 45vh at 20% 25%, rgba(212, 175, 55, 0.17), transparent 70%),
+    radial-gradient(55vh 55vh at 80% 75%, rgba(184, 147, 46, 0.13), transparent 72%);
+  animation: direct-drift 28s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Reflet qui balaie la jauge tant que le vote est ouvert. */
+@keyframes direct-sweep {
+  0% {
+    transform: translateX(-140%);
+  }
+  100% {
+    transform: translateX(420%);
+  }
+}
+
+.direct-sweep {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.55),
+    transparent
+  );
+  animation: direct-sweep 2.8s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Pulsation très douce du grand chiffre, pendant le vote. */
+@keyframes direct-breathe {
+  0%,
+  100% {
+    opacity: 0.92;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.direct-breathe {
+  animation: direct-breathe 3.4s ease-in-out infinite;
+}
+
+/* Un spectateur photosensible, ou un poste configuré pour limiter les
+   animations, doit pouvoir lire l'écran sans rien qui bouge. */
+@media (prefers-reduced-motion: reduce) {
+  .direct-halo,
+  .direct-sweep,
+  .direct-breathe {
+    animation: none;
+  }
+}

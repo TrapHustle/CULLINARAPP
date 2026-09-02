@@ -71,6 +71,40 @@ export default async function ConnexionPage() {
       )}
 
       <section className="rounded-xl bg-surface-container p-6 gold-border">
+        <h2 className="mb-2 font-serif text-headline-md text-primary">Écran public</h2>
+        <p className="mb-4 max-w-2xl text-body-md text-on-surface-variant">
+          À projeter dans la salle : le candidat en cours, son portrait et le nombre de votes
+          reçus, qui monte en direct. Aucune note n&apos;y figure — les jurés qui n&apos;ont pas
+          fini ne doivent pas voir les scores.
+        </p>
+
+        <div className="flex flex-wrap items-center gap-4">
+          <a
+            href="/direct"
+            target="_blank"
+            rel="noreferrer"
+            className="gold-gradient flex h-touch items-center gap-2 rounded-lg px-4 text-label-lg transition hover:brightness-105"
+          >
+            Ouvrir l&apos;écran public
+          </a>
+
+          {addresses.length > 0 ? (
+            <p className="text-label-sm text-on-surface-variant">
+              Depuis une autre machine :{" "}
+              <span className="font-mono text-primary">
+                http://{addresses[0]}:{serverPort()}/direct
+              </span>
+            </p>
+          ) : null}
+        </div>
+
+        <p className="mt-4 text-label-sm text-outline">
+          Ouvrez-la en plein écran (F11) et désactivez la mise en veille de cet écran. La page
+          n&apos;a aucun bouton : elle suit ce que vous faites depuis le Pilotage.
+        </p>
+      </section>
+
+      <section className="rounded-xl bg-surface-container p-6 gold-border">
         <h2 className="mb-3 font-serif text-headline-md text-primary">
           Si une tablette ne trouve pas le serveur
         </h2>

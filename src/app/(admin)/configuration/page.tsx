@@ -1,6 +1,9 @@
 import { ActionForm } from "@/components/action-form";
 import { DeleteButton } from "@/components/delete-button";
-import { ChefHatIcon, ClocheIcon, SlidersIcon } from "@/components/icons";
+import { ChefHatIcon, ClocheIcon, SlidersIcon, WarningIcon } from "@/components/icons";
+import { CandidatePhoto } from "@/components/candidate-photo";
+import { DangerZone } from "@/components/danger-zone";
+import { RowEditor } from "@/components/row-editor";
 import {
   createCandidateAction,
   createCriterionAction,
@@ -8,23 +11,37 @@ import {
   deleteCandidateAction,
   deleteCriterionAction,
   deleteTableAction,
+  removeCandidatePhotoAction,
+  resetEventAction,
+  resetVotesAction,
+  updateCandidateAction,
+  updateCriterionAction,
+  updateTableAction,
+  uploadCandidatePhotoAction,
 } from "@/lib/actions";
 import { prisma } from "@/lib/prisma";
 import { maxTotalForCriteria } from "@/lib/scoring";
+import {
+  ACCEPTED_IMAGE_TYPES,
+  RESET_CONFIRMATION,
+  RESET_EVENT_CONFIRMATION,
+} from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 
 export default async function ConfigurationPage() {
-  const [candidates, tables, criteria] = await Promise.all([
+  const [candidates, tables, criteria, voteCount] = await Promise.all([
     prisma.candidate.findMany({ orderBy: { order: "asc" } }),
     prisma.votingTable.findMany({ orderBy: { name: "asc" } }),
     prisma.criterion.findMany({ orderBy: { order: "asc" } }),
+    prisma.vote.count(),
   ]);
 
   const sections = [
     { href: "#candidats", label: "Candidats", count: candidates.length, Icon: ChefHatIcon },
     { href: "#tables", label: "Tables", count: tables.length, Icon: ClocheIcon },
     { href: "#criteres", label: "Critères", count: criteria.length, Icon: SlidersIcon },
+    { href: "#remise-a-zero", label: "Zone dangereuse", count: voteCount, Icon: WarningIcon },
   ];
 
   return (
@@ -65,16 +82,50 @@ export default async function ConfigurationPage() {
               <span className="text-label-sm text-outline">{candidates.length}</span>
             </div>
 
+            <p className="px-5 pt-4 text-label-sm text-on-surface-variant">
+              Cliquez une vignette pour ajouter ou remplacer un portrait (JPEG, PNG ou WebP).
+            </p>
+
             <ul className="divide-y divide-outline-variant/20 px-5">
               {candidates.map((candidate) => (
                 <li key={candidate.id} className="flex items-center gap-3 py-3">
-                  <span className="w-8 text-label-sm text-outline">#{candidate.order}</span>
-                  <span className="flex-1 text-body-md text-on-surface">{candidate.name}</span>
-                  {candidate.openedAt ? (
-                    <span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-label-sm text-primary">
-                      déjà ouvert
-                    </span>
-                  ) : null}
+                  <CandidatePhoto
+                    candidateId={candidate.id}
+                    name={candidate.name}
+                    photoUrl={candidate.photoUrl}
+                    uploadAction={uploadCandidatePhotoAction}
+                    removeAction={removeCandidatePhotoAction}
+                    accept={ACCEPTED_IMAGE_TYPES.join(",")}
+                  />
+                  <RowEditor
+                    action={updateCandidateAction}
+                    id={candidate.id}
+                    editLabel={`Modifier « ${candidate.name} »`}
+                    fields={[
+                      {
+                        kind: "text",
+                        name: "name",
+                        label: "Nom",
+                        required: true,
+                        defaultValue: candidate.name,
+                      },
+                      {
+                        kind: "number",
+                        name: "order",
+                        label: "Ordre",
+                        defaultValue: candidate.order,
+                        min: 0,
+                      },
+                    ]}
+                  >
+                    <span className="w-8 text-label-sm text-outline">#{candidate.order}</span>
+                    <span className="flex-1 text-body-md text-on-surface">{candidate.name}</span>
+                    {candidate.openedAt ? (
+                      <span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-label-sm text-primary">
+                        déjà ouvert
+                      </span>
+                    ) : null}
+                  </RowEditor>
                   <DeleteButton
                     action={deleteCandidateAction}
                     id={candidate.id}
@@ -123,19 +174,51 @@ export default async function ConfigurationPage() {
               <ul className="divide-y divide-outline-variant/20 px-5">
                 {tables.map((table) => (
                   <li key={table.id} className="flex items-center gap-3 py-3">
-                    <span className="flex-1 text-body-md text-on-surface">{table.name}</span>
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-label-sm ${
-                        table.type === "SPECIAL"
-                          ? "bg-primary/15 text-primary"
-                          : "bg-surface-high text-on-surface-variant"
-                      }`}
+                    <RowEditor
+                      action={updateTableAction}
+                      id={table.id}
+                      editLabel={`Modifier « ${table.name} »`}
+                      fields={[
+                        {
+                          kind: "text",
+                          name: "name",
+                          label: "Nom",
+                          required: true,
+                          defaultValue: table.name,
+                        },
+                        {
+                          kind: "select",
+                          name: "type",
+                          label: "Type",
+                          defaultValue: table.type,
+                          options: [
+                            { value: "LAMBDA", label: "Lambda" },
+                            { value: "SPECIAL", label: "Jury spécial (×2)" },
+                          ],
+                        },
+                        {
+                          kind: "number",
+                          name: "expectedJurors",
+                          label: "Jurés",
+                          defaultValue: table.expectedJurors,
+                          min: 1,
+                        },
+                      ]}
                     >
-                      {table.type === "SPECIAL" ? "Jury spécial ×2" : "Lambda"}
-                    </span>
-                    <span className="text-label-sm text-outline">
-                      {table.expectedJurors} juré{table.expectedJurors > 1 ? "s" : ""}
-                    </span>
+                      <span className="flex-1 text-body-md text-on-surface">{table.name}</span>
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-label-sm ${
+                          table.type === "SPECIAL"
+                            ? "bg-primary/15 text-primary"
+                            : "bg-surface-high text-on-surface-variant"
+                        }`}
+                      >
+                        {table.type === "SPECIAL" ? "Jury spécial ×2" : "Lambda"}
+                      </span>
+                      <span className="text-label-sm text-outline">
+                        {table.expectedJurors} juré{table.expectedJurors > 1 ? "s" : ""}
+                      </span>
+                    </RowEditor>
                     <DeleteButton
                       action={deleteTableAction}
                       id={table.id}
@@ -193,8 +276,30 @@ export default async function ConfigurationPage() {
               <ul className="divide-y divide-outline-variant/20 px-5">
                 {criteria.map((criterion) => (
                   <li key={criterion.id} className="flex items-center gap-3 py-3">
-                    <span className="w-8 text-label-sm text-outline">#{criterion.order}</span>
-                    <span className="flex-1 text-body-md text-on-surface">{criterion.name}</span>
+                    <RowEditor
+                      action={updateCriterionAction}
+                      id={criterion.id}
+                      editLabel={`Modifier « ${criterion.name} »`}
+                      fields={[
+                        {
+                          kind: "text",
+                          name: "name",
+                          label: "Nom",
+                          required: true,
+                          defaultValue: criterion.name,
+                        },
+                        {
+                          kind: "number",
+                          name: "order",
+                          label: "Ordre",
+                          defaultValue: criterion.order,
+                          min: 0,
+                        },
+                      ]}
+                    >
+                      <span className="w-8 text-label-sm text-outline">#{criterion.order}</span>
+                      <span className="flex-1 text-body-md text-on-surface">{criterion.name}</span>
+                    </RowEditor>
                     <DeleteButton
                       action={deleteCriterionAction}
                       id={criterion.id}
@@ -227,6 +332,21 @@ export default async function ConfigurationPage() {
               </div>
             </section>
           </div>
+
+          {/* Zone dangereuse, volontairement en dernier : on ne la croise qu'en
+              descendant toute la page, jamais en la survolant. */}
+          <section id="remise-a-zero" className="scroll-mt-24">
+            <DangerZone
+              resetVotesAction={resetVotesAction}
+              resetVotesWord={RESET_CONFIRMATION}
+              resetEventAction={resetEventAction}
+              resetEventWord={RESET_EVENT_CONFIRMATION}
+              voteCount={voteCount}
+              candidateCount={candidates.length}
+              tableCount={tables.length}
+              criterionCount={criteria.length}
+            />
+          </section>
         </div>
       </div>
     </div>
