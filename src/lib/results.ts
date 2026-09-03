@@ -7,19 +7,20 @@ import {
   round2,
   type ScoredVote,
   type TableType,
+  type WeightsByType,
 } from "./scoring";
 
 export interface CriterionBreakdown {
   criterionId: string;
   name: string;
-  /** Moyenne pondérée du critère, sur 5. `null` si le candidat n'a aucun vote. */
+  /** Moyenne pondérée du critère, sur `scoreMax`. `null` si le candidat n'a aucun vote. */
   averageOutOf5: number | null;
 }
 
 /** Le détail d'un seul juré, pour la popup ouverte depuis une pastille de table. */
 export interface JurorVote {
   jurorIndex: number;
-  /** Note de ce juré pour chaque critère, sur 5. */
+  /** Note de ce juré pour chaque critère, sur `scoreMax`. */
   scores: { criterionId: string; name: string; value: number }[];
   /** Total de ce juré, sur `maxTotal`. */
   total: number;
@@ -56,7 +57,9 @@ export interface CandidateResult {
 
 export interface ResultsPayload {
   criteria: { id: string; name: string }[];
-  /** Total maximal d'un vote — 15 avec 3 critères, à 5 points chacun. */
+  /** Note maximale sélectionnable par un juré sur un critère (5 par défaut). */
+  scoreMax: number;
+  /** Total maximal d'un vote — `criteria.length × scoreMax`. */
   maxTotal: number;
   ranking: CandidateResult[];
   totals: { votes: number; candidates: number; tables: number };
@@ -69,16 +72,25 @@ export interface ResultsPayload {
  * poids est dérivé ici du type de la table, jamais lu depuis le vote (§0.3).
  */
 export async function computeResults(): Promise<ResultsPayload> {
-  const [candidates, criteria, votes, tableCount] = await Promise.all([
+  const [candidates, criteria, votes, tableCount, session] = await Promise.all([
     prisma.candidate.findMany({ orderBy: { order: "asc" } }),
     prisma.criterion.findMany({ orderBy: { order: "asc" } }),
     prisma.vote.findMany({ include: { scores: true, table: true } }),
     prisma.votingTable.count(),
+    prisma.session.findUnique({ where: { id: "singleton" } }),
   ]);
+
+  // Poids et échelle réglés depuis Configuration → Vote — à défaut (avant la
+  // toute première écriture de la session), les valeurs de départ (§4.2, §4.1).
+  const weights: WeightsByType = {
+    LAMBDA: session?.weightPublic ?? 1,
+    SPECIAL: session?.weightSpecial ?? 2,
+  };
+  const scoreMax = session?.scoreMax ?? 5;
 
   const criterionIds = criteria.map((criterion) => criterion.id);
   const criterionNameById = new Map(criteria.map((criterion) => [criterion.id, criterion.name]));
-  const maxTotal = maxTotalForCriteria(criteria.length);
+  const maxTotal = maxTotalForCriteria(criteria.length, scoreMax);
 
   // Regroupement des votes par candidat, en gardant le juré et la table pour
   // le détail affiché dans la popup.
@@ -110,6 +122,7 @@ export async function computeResults(): Promise<ResultsPayload> {
       votes: votesByCandidate.get(candidate.id) ?? [],
     })),
     criterionIds,
+    weights,
   );
 
   const tables = await prisma.votingTable.findMany({ orderBy: { name: "asc" } });
@@ -118,7 +131,7 @@ export async function computeResults(): Promise<ResultsPayload> {
     const candidateVotes = votesByCandidate.get(entry.candidate.id) ?? [];
 
     const byCriterion: CriterionBreakdown[] = criteria.map((criterion) => {
-      const average = computeCriterionAverage(candidateVotes, criterion.id);
+      const average = computeCriterionAverage(candidateVotes, criterion.id, weights);
       return {
         criterionId: criterion.id,
         name: criterion.name,
@@ -128,7 +141,7 @@ export async function computeResults(): Promise<ResultsPayload> {
 
     const byTable: TableBreakdown[] = tables.map((table) => {
       const tableVotes = candidateVotes.filter((vote) => vote.tableId === table.id);
-      const score = computeCandidateScore(tableVotes, criterionIds);
+      const score = computeCandidateScore(tableVotes, criterionIds, weights);
 
       const jurorVotes: JurorVote[] = tableVotes
         .slice()
@@ -156,10 +169,12 @@ export async function computeResults(): Promise<ResultsPayload> {
     const specialScore = computeCandidateScore(
       candidateVotes.filter((vote) => vote.tableType === "SPECIAL"),
       criterionIds,
+      weights,
     );
     const publicScore = computeCandidateScore(
       candidateVotes.filter((vote) => vote.tableType === "LAMBDA"),
       criterionIds,
+      weights,
     );
 
     return {
@@ -179,6 +194,7 @@ export async function computeResults(): Promise<ResultsPayload> {
 
   return {
     criteria: criteria.map((criterion) => ({ id: criterion.id, name: criterion.name })),
+    scoreMax,
     maxTotal,
     ranking,
     totals: { votes: votes.length, candidates: candidates.length, tables: tableCount },

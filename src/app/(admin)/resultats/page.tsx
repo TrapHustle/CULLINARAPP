@@ -73,7 +73,7 @@ export default async function ResultatsPage() {
       {results.criteria.length > 0 && hasVotes ? (
         <section className="overflow-hidden rounded-xl bg-surface-container gold-border">
           <h2 className="border-b border-outline-variant/30 px-6 py-4 font-serif text-headline-md text-primary">
-            Détail par critère (moyennes sur 5)
+            Détail par critère (moyennes sur {results.scoreMax})
           </h2>
 
           <div className="custom-scrollbar overflow-x-auto">

@@ -1,6 +1,13 @@
 import { ActionForm } from "@/components/action-form";
 import { DeleteButton } from "@/components/delete-button";
-import { ChefHatIcon, ClocheIcon, SlidersIcon, TimerIcon, WarningIcon } from "@/components/icons";
+import {
+  ChefHatIcon,
+  ClocheIcon,
+  SlidersIcon,
+  TimerIcon,
+  VoteIcon,
+  WarningIcon,
+} from "@/components/icons";
 import { CandidatePhoto } from "@/components/candidate-photo";
 import { DangerZone } from "@/components/danger-zone";
 import { RowEditor } from "@/components/row-editor";
@@ -20,6 +27,7 @@ import {
   updateCriterionAction,
   updateTableAction,
   updateTimerAction,
+  updateVoteSettingsAction,
   uploadCandidatePhotoAction,
 } from "@/lib/actions";
 import { getOrCreateSession, prisma } from "@/lib/prisma";
@@ -47,6 +55,7 @@ export default async function ConfigurationPage() {
     { href: "#candidats", label: "Candidats", count: candidates.length, Icon: ChefHatIcon },
     { href: "#tables", label: "Tables", count: tables.length, Icon: ClocheIcon },
     { href: "#criteres", label: "Critères", count: criteria.length, Icon: SlidersIcon },
+    { href: "#vote", label: "Vote", count: undefined, Icon: VoteIcon },
     { href: "#remise-a-zero", label: "Zone dangereuse", count: voteCount, Icon: WarningIcon },
   ];
 
@@ -275,8 +284,15 @@ export default async function ConfigurationPage() {
               </div>
 
               <p className="px-5 pt-4 text-label-sm text-on-surface-variant">
-                Noté de 1 à 5 (×2 → /10). Total d&apos;un vote :{" "}
-                <strong className="text-primary">{maxTotalForCriteria(criteria.length)} points</strong>.
+                Noté de {session.scoreMin} à {session.scoreMax}. Total d&apos;un vote :{" "}
+                <strong className="text-primary">
+                  {maxTotalForCriteria(criteria.length, session.scoreMax)} points
+                </strong>
+                . Réglable dans l&apos;onglet{" "}
+                <a href="#vote" className="text-primary underline-offset-2 hover:underline">
+                  Vote
+                </a>
+                .
               </p>
 
               <ul className="divide-y divide-outline-variant/20 px-5">
@@ -382,6 +398,89 @@ export default async function ConfigurationPage() {
                 Enregistrer
               </button>
             </form>
+          </section>
+
+          {/* Vote — le poids d'une table dans le calcul, et l'échelle des
+              notes. S'applique immédiatement à tous les votes déjà reçus : ni
+              l'un ni l'autre n'est stocké sur un vote, seulement dérivé au
+              moment du calcul (§0.3), pour qu'une tablette ne puisse jamais
+              les influencer. */}
+          <section id="vote" className="scroll-mt-24 rounded-xl bg-surface-container p-5 gold-border">
+            <h2 className="mb-1 flex items-center gap-2 font-serif text-headline-md text-primary">
+              <VoteIcon className="h-5 w-5" />
+              Vote
+            </h2>
+            <p className="mb-4 text-label-sm text-on-surface-variant">
+              Poids d&apos;un vote selon la table d&apos;où il vient, et bornes de la note qu&apos;un
+              juré peut saisir sur un critère.
+            </p>
+
+            <form
+              action={updateVoteSettingsAction}
+              className="flex flex-wrap items-end gap-4"
+            >
+              <label className="text-label-sm text-on-surface-variant">
+                <span className="mb-1 block">Poids — Public (tables normales)</span>
+                <input
+                  type="number"
+                  name="weightPublic"
+                  min={0}
+                  max={10}
+                  step={0.5}
+                  defaultValue={session.weightPublic}
+                  className="w-28 rounded-lg border border-outline-variant/60 px-3 py-2 text-body-md"
+                />
+              </label>
+
+              <label className="text-label-sm text-on-surface-variant">
+                <span className="mb-1 block">Poids — Jury spécial</span>
+                <input
+                  type="number"
+                  name="weightSpecial"
+                  min={0}
+                  max={10}
+                  step={0.5}
+                  defaultValue={session.weightSpecial}
+                  className="w-28 rounded-lg border border-outline-variant/60 px-3 py-2 text-body-md"
+                />
+              </label>
+
+              <label className="text-label-sm text-on-surface-variant">
+                <span className="mb-1 block">Note minimale</span>
+                <input
+                  type="number"
+                  name="scoreMin"
+                  min={0}
+                  max={19}
+                  defaultValue={session.scoreMin}
+                  className="w-24 rounded-lg border border-outline-variant/60 px-3 py-2 text-body-md"
+                />
+              </label>
+
+              <label className="text-label-sm text-on-surface-variant">
+                <span className="mb-1 block">Note maximale</span>
+                <input
+                  type="number"
+                  name="scoreMax"
+                  min={1}
+                  max={20}
+                  defaultValue={session.scoreMax}
+                  className="w-24 rounded-lg border border-outline-variant/60 px-3 py-2 text-body-md"
+                />
+              </label>
+
+              <button
+                type="submit"
+                className="h-touch rounded-lg border border-primary/40 px-4 text-label-lg text-primary transition-colors hover:bg-primary/5"
+              >
+                Enregistrer
+              </button>
+            </form>
+
+            <p className="mt-4 text-label-sm text-outline">
+              Un critère hors de 1 à 5 perd ses libellés (« Insuffisant »… « Exceptionnel ») sur la
+              tablette : seul le chiffre reste affiché.
+            </p>
           </section>
 
           {/* Zone dangereuse, volontairement en dernier : on ne la croise qu'en

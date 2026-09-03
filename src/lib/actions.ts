@@ -21,6 +21,7 @@ import {
   resetVotesSchema,
   tableSchema,
   tableUpdateSchema,
+  voteSettingsSchema,
 } from "./validation";
 
 export interface ActionState {
@@ -422,6 +423,43 @@ export async function updateTimerAction(formData: FormData) {
     data: { timerEnabled, timerSeconds },
   });
 
+  revalidatePath("/");
+}
+
+/**
+ * Enregistre les poids du calcul et les bornes de la note (Configuration →
+ * Vote).
+ *
+ * S'applique immédiatement à tous les votes déjà reçus : le poids et
+ * l'échelle ne sont jamais stockés sur un vote, seulement dérivés au moment du
+ * calcul (§0.3) — changer le réglage recalcule tout le palmarès sans rien
+ * réécrire en base.
+ *
+ * Un réglage invalide (ex. note maximale ≤ minimale) est silencieusement
+ * ignoré plutôt que de faire échouer la page : comme pour le chronomètre
+ * voisin, ce formulaire n'affiche pas d'erreur inline, le champ concerné
+ * reprend juste sa dernière valeur enregistrée après rechargement.
+ */
+export async function updateVoteSettingsAction(formData: FormData) {
+  await requireAuth();
+  await getOrCreateSession();
+
+  const parsed = voteSettingsSchema.safeParse({
+    weightPublic: formData.get("weightPublic"),
+    weightSpecial: formData.get("weightSpecial"),
+    scoreMin: formData.get("scoreMin"),
+    scoreMax: formData.get("scoreMax"),
+  });
+
+  if (!parsed.success) return;
+
+  await prisma.session.update({
+    where: { id: SESSION_ID },
+    data: parsed.data,
+  });
+
+  revalidatePath("/configuration");
+  revalidatePath("/resultats");
   revalidatePath("/");
 }
 

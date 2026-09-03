@@ -50,7 +50,7 @@ export async function GET() {
   byCriterion.columns = [
     { header: "Candidat", key: "name", width: 30 },
     ...results.criteria.map((criterion) => ({
-      header: `${criterion.name} /5`,
+      header: `${criterion.name} /${results.scoreMax}`,
       key: criterion.id,
       width: 18,
     })),

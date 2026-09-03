@@ -15,7 +15,15 @@ function formatScore(value: number | null) {
  * gère lui-même le focus et la fermeture au clavier (Échap) — pas de
  * dépendance supplémentaire pour un geste aussi simple.
  */
-export function TableVotesList({ tables, maxTotal }: { tables: TableBreakdown[]; maxTotal: number }) {
+export function TableVotesList({
+  tables,
+  maxTotal,
+  scoreMax,
+}: {
+  tables: TableBreakdown[];
+  maxTotal: number;
+  scoreMax: number;
+}) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [selected, setSelected] = useState<TableBreakdown | null>(null);
 
@@ -103,7 +111,7 @@ export function TableVotesList({ tables, maxTotal }: { tables: TableBreakdown[];
                         <td className="py-2 pr-3 text-on-surface">Juré {vote.jurorIndex}</td>
                         {vote.scores.map((score) => (
                           <td key={score.criterionId} className="py-2 pr-3 text-on-surface-variant">
-                            {score.value}/5
+                            {score.value}/{scoreMax}
                           </td>
                         ))}
                         <td className="py-2 pr-3 text-right font-medium text-on-surface">

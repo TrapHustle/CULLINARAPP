@@ -47,10 +47,11 @@ export async function POST(request: NextRequest) {
   }
 
   // Chargement en une fois des référentiels, pour éviter une requête par vote.
-  const [tables, candidates, criteria] = await Promise.all([
+  const [tables, candidates, criteria, session] = await Promise.all([
     prisma.votingTable.findMany({ select: { id: true } }),
     prisma.candidate.findMany({ select: { id: true, openedAt: true } }),
     prisma.criterion.findMany({ select: { id: true } }),
+    prisma.session.findUnique({ where: { id: "singleton" }, select: { scoreMax: true } }),
   ]);
 
   const tableIds = new Set(tables.map((table) => table.id));
@@ -58,6 +59,9 @@ export async function POST(request: NextRequest) {
   const openedByCandidate = new Map(
     candidates.map((candidate) => [candidate.id, candidate.openedAt !== null]),
   );
+  // Le zod du corps de requête n'accepte qu'un plafond absolu générique : la
+  // vraie borne, réglable depuis Configuration → Vote, ne vit qu'en base.
+  const scoreMax = session?.scoreMax ?? 5;
 
   const accepted: string[] = [];
   const rejected: RejectedVote[] = [];
@@ -67,6 +71,7 @@ export async function POST(request: NextRequest) {
       tableIds,
       criterionIds,
       openedByCandidate,
+      scoreMax,
     });
 
     if (rejection) {
@@ -97,10 +102,24 @@ function validateAgainstReferences(
     tableIds: Set<string>;
     criterionIds: Set<string>;
     openedByCandidate: Map<string, boolean>;
+    scoreMax: number;
   },
 ): RejectedVote | null {
   if (!refs.tableIds.has(vote.tableId)) {
     return { id: vote.id, reason: "Table inconnue", retryable: false };
+  }
+
+  // 0 reste accepté quelle que soit l'échelle : c'est la valeur du critère
+  // laissé vide à l'expiration du chronomètre (§11), pas une note choisie.
+  const outOfRange = vote.scores.find(
+    (score) => score.rawValue !== 0 && score.rawValue > refs.scoreMax,
+  );
+  if (outOfRange) {
+    return {
+      id: vote.id,
+      reason: `Note hors barème (max ${refs.scoreMax}) pour le critère ${outOfRange.criterionId}`,
+      retryable: false,
+    };
   }
 
   const opened = refs.openedByCandidate.get(vote.candidateId);

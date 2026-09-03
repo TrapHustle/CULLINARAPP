@@ -13,10 +13,11 @@ export const dynamic = "force-dynamic";
  * (§7) et le serveur n'est joignable que depuis le réseau local de la salle.
  */
 export async function GET() {
-  const [candidates, tables, criteria] = await Promise.all([
+  const [candidates, tables, criteria, session] = await Promise.all([
     prisma.candidate.findMany({ orderBy: { order: "asc" } }),
     prisma.votingTable.findMany({ orderBy: { name: "asc" } }),
     prisma.criterion.findMany({ orderBy: { order: "asc" } }),
+    prisma.session.findUnique({ where: { id: "singleton" }, select: { scoreMin: true, scoreMax: true } }),
   ]);
 
   return Response.json({
@@ -42,5 +43,10 @@ export async function GET() {
       name: criterion.name,
       order: criterion.order,
     })),
+    // Bornes de la note qu'un juré peut saisir, réglables depuis
+    // Configuration → Vote (1 à 5 par défaut). La tablette en tire le nombre
+    // de cercles à afficher sur l'écran de saisie.
+    scoreMin: session?.scoreMin ?? 1,
+    scoreMax: session?.scoreMax ?? 5,
   });
 }

@@ -6,12 +6,15 @@
  * qui reprend l'exemple chiffré et le contre-exemple du §4.3 du cahier des charges.
  *
  * Règles implémentées ici :
- *  - une note brute va de 1 à 5, et vaut 0 si le critère n'a pas été noté (§11) ;
- *  - les notes ne sont **jamais** remises à l'échelle : un critère reste sur 5,
- *    et la note finale d'un candidat reste sur `criteriaCount × 5` (15 avec les
- *    3 critères de l'édition en cours) — ce que le juré a saisi est ce qui
- *    s'affiche partout, du détail par critère au palmarès ;
- *  - un vote issu de la table spéciale pèse double (§4.2) ;
+ *  - une note brute va de `scoreMin` à `scoreMax` (1 à 5 par défaut), et vaut 0
+ *    si le critère n'a pas été noté (§11) ;
+ *  - les notes ne sont **jamais** remises à l'échelle : un critère reste sur
+ *    `scoreMax`, et la note finale d'un candidat reste sur
+ *    `criteriaCount × scoreMax` — ce que le juré a saisi est ce qui s'affiche
+ *    partout, du détail par critère au palmarès ;
+ *  - un vote issu de la table spéciale pèse plus qu'un vote normal (§4.2) —
+ *    les deux poids sont configurables depuis Configuration → Vote, avec 1 et
+ *    2 comme valeurs de départ ;
  *  - la moyenne d'un candidat est pondérée **par votant**, jamais par somme
  *    brute, afin qu'un candidat noté par 18 personnes ne soit ni avantagé ni
  *    désavantagé face à un candidat noté par 13 personnes (§4.3).
@@ -19,33 +22,39 @@
 
 export type TableType = "LAMBDA" | "SPECIAL";
 
-/** Note brute minimale sélectionnable par un juré. */
+/** Note brute minimale par défaut. Le réglage effectif vit sur `Session.scoreMin`. */
 export const RAW_MIN = 1;
-/** Note brute maximale sélectionnable par un juré. */
+/** Note brute maximale par défaut. Le réglage effectif vit sur `Session.scoreMax`. */
 export const RAW_MAX = 5;
 /** Valeur enregistrée pour un critère laissé vide à l'expiration du chrono (§11). */
 export const RAW_UNSCORED = 0;
 
-const WEIGHT_BY_TABLE_TYPE: Record<TableType, number> = {
+/** Poids d'un vote selon le type de table dont il provient. */
+export type WeightsByType = Record<TableType, number>;
+
+/** Poids de départ, avant tout réglage depuis Configuration → Vote (§4.2). */
+export const DEFAULT_WEIGHTS: WeightsByType = {
   LAMBDA: 1,
   SPECIAL: 2,
 };
 
 /** Poids d'un vote selon le type de table dont il provient (§4.2). */
-export function weightForTableType(type: TableType): number {
-  return WEIGHT_BY_TABLE_TYPE[type] ?? WEIGHT_BY_TABLE_TYPE.LAMBDA;
+export function weightForTableType(type: TableType, weights: WeightsByType = DEFAULT_WEIGHTS): number {
+  return weights[type] ?? weights.LAMBDA;
 }
 
 /**
- * Total maximal atteignable par un vote, en fonction du nombre de critères.
+ * Total maximal atteignable par un vote, en fonction du nombre de critères et
+ * de la note maximale sélectionnable (`scoreMax`, 5 par défaut).
  * Avec les 3 critères de l'édition en cours : 3 × 5 = 15.
  *
- * Cette valeur n'est volontairement pas codée en dur : le nombre de critères
- * est configurable depuis le serveur (§14). C'est aussi l'échelle de la note
- * finale d'un candidat — il n'y a plus de conversion séparée vers un /20.
+ * Le nombre de critères et l'échelle des notes sont volontairement pris en
+ * paramètre plutôt que codés en dur : les deux sont configurables depuis le
+ * serveur (§14). C'est aussi l'échelle de la note finale d'un candidat — il
+ * n'y a plus de conversion séparée vers un /20.
  */
-export function maxTotalForCriteria(criteriaCount: number): number {
-  return criteriaCount * RAW_MAX;
+export function maxTotalForCriteria(criteriaCount: number, scoreMax: number = RAW_MAX): number {
+  return criteriaCount * scoreMax;
 }
 
 /** Un vote tel qu'il est consommé par le moteur de calcul. */
@@ -54,12 +63,12 @@ export interface ScoredVote {
   tableType: TableType;
   /** Identifiant de la table, utilisé pour le détail par table. */
   tableId?: string;
-  /** Notes brutes (1–5) indexées par identifiant de critère. */
+  /** Notes brutes indexées par identifiant de critère. */
   scores: Record<string, number>;
 }
 
 /**
- * Total d'un vote, sur `maxTotalForCriteria(criterionIds.length)`.
+ * Total d'un vote, sur `maxTotalForCriteria(criterionIds.length, scoreMax)`.
  * Un critère absent du vote compte pour 0 (§11).
  */
 export function voteTotal(vote: ScoredVote, criterionIds: string[]): number {
@@ -71,7 +80,7 @@ export function voteTotal(vote: ScoredVote, criterionIds: string[]): number {
 
 /** Résultat du calcul pour un candidat. */
 export interface CandidateScore {
-  /** Moyenne pondérée, sur `maxTotalForCriteria(criterionIds.length)` (15 avec 3 critères). */
+  /** Moyenne pondérée, sur `maxTotalForCriteria(criterionIds.length, scoreMax)`. */
   averageRaw: number;
   /** Nombre de personnes ayant voté (non pondéré) — affiché à titre indicatif. */
   voterCount: number;
@@ -94,6 +103,7 @@ export interface CandidateScore {
 export function computeCandidateScore(
   votes: ScoredVote[],
   criterionIds: string[],
+  weights: WeightsByType = DEFAULT_WEIGHTS,
 ): CandidateScore | null {
   if (votes.length === 0) return null;
 
@@ -101,7 +111,7 @@ export function computeCandidateScore(
   let weightTotal = 0;
 
   for (const vote of votes) {
-    const weight = weightForTableType(vote.tableType);
+    const weight = weightForTableType(vote.tableType, weights);
     weightedSum += voteTotal(vote, criterionIds) * weight;
     weightTotal += weight;
   }
@@ -116,12 +126,13 @@ export function computeCandidateScore(
 }
 
 /**
- * Moyenne pondérée d'un candidat pour un seul critère, sur 5.
+ * Moyenne pondérée d'un candidat pour un seul critère, sur `scoreMax`.
  * Sert au détail par critère du dashboard (§4.4).
  */
 export function computeCriterionAverage(
   votes: ScoredVote[],
   criterionId: string,
+  weights: WeightsByType = DEFAULT_WEIGHTS,
 ): number | null {
   if (votes.length === 0) return null;
 
@@ -129,7 +140,7 @@ export function computeCriterionAverage(
   let weightTotal = 0;
 
   for (const vote of votes) {
-    const weight = weightForTableType(vote.tableType);
+    const weight = weightForTableType(vote.tableType, weights);
     weightedSum += (vote.scores[criterionId] ?? RAW_UNSCORED) * weight;
     weightTotal += weight;
   }
@@ -155,10 +166,11 @@ export interface RankedCandidate<T> {
 export function rankCandidates<T>(
   entries: { candidate: T; votes: ScoredVote[] }[],
   criterionIds: string[],
+  weights: WeightsByType = DEFAULT_WEIGHTS,
 ): RankedCandidate<T>[] {
   const scored = entries.map((entry) => ({
     candidate: entry.candidate,
-    score: computeCandidateScore(entry.votes, criterionIds),
+    score: computeCandidateScore(entry.votes, criterionIds, weights),
   }));
 
   const rated = scored

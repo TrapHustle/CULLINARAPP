@@ -1,5 +1,16 @@
 import { z } from "zod";
-import { RAW_MAX, RAW_UNSCORED } from "./scoring";
+import { RAW_UNSCORED } from "./scoring";
+
+/**
+ * Plafond absolu d'une note brute, toutes échelles confondues.
+ *
+ * `Session.scoreMax` (réglable depuis Configuration → Vote, 5 par défaut) est
+ * la vraie borne — mais elle vit en base, pas dans un schéma zod figé au
+ * démarrage. Celui-ci n'est qu'un garde-fou grossier avant la vérification
+ * dynamique faite dans la route de synchronisation ; un nombre au-delà n'est
+ * jamais une note valide, quel que soit le réglage.
+ */
+const RAW_ABSOLUTE_MAX = 20;
 
 export const tableTypeSchema = z.enum(["LAMBDA", "SPECIAL"]);
 
@@ -138,6 +149,27 @@ export const sessionUpdateSchema = z.object({
 });
 
 /**
+ * Réglages du calcul des votes (Configuration → Vote) : le poids d'un vote
+ * selon la table d'où il vient, et les bornes de la note qu'un juré peut
+ * saisir sur un critère.
+ *
+ * `scoreMax` doit rester strictement supérieur à `scoreMin` — Zod ne peut pas
+ * l'exprimer entre deux champs indépendants, d'où le `.refine` plutôt qu'une
+ * seconde borne sur chaque champ pris isolément.
+ */
+export const voteSettingsSchema = z
+  .object({
+    weightPublic: z.coerce.number().min(0).max(10),
+    weightSpecial: z.coerce.number().min(0).max(10),
+    scoreMin: z.coerce.number().int().min(0).max(RAW_ABSOLUTE_MAX - 1),
+    scoreMax: z.coerce.number().int().min(1).max(RAW_ABSOLUTE_MAX),
+  })
+  .refine((data) => data.scoreMax > data.scoreMin, {
+    message: "La note maximale doit être supérieure à la note minimale.",
+    path: ["scoreMax"],
+  });
+
+/**
  * Un vote tel qu'envoyé par la tablette.
  *
  * La tablette ne transmet que des **notes brutes** : ni total, ni moyenne, ni
@@ -154,7 +186,7 @@ export const incomingVoteSchema = z.object({
     .array(
       z.object({
         criterionId: z.string().min(1),
-        rawValue: z.coerce.number().int().min(RAW_UNSCORED).max(RAW_MAX),
+        rawValue: z.coerce.number().int().min(RAW_UNSCORED).max(RAW_ABSOLUTE_MAX),
       }),
     )
     .min(1, "Un vote doit porter au moins un critère"),

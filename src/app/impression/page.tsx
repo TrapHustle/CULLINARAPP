@@ -65,7 +65,7 @@ export default async function ImpressionPage() {
 
       {results.criteria.length > 0 ? (
         <section className="mb-10 break-inside-avoid">
-          <h2 className="mb-3 text-lg font-semibold">Détail par critère (sur 5)</h2>
+          <h2 className="mb-3 text-lg font-semibold">Détail par critère (sur {results.scoreMax})</h2>
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="border-b-2 border-slate-400 text-left">

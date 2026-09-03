@@ -94,6 +94,20 @@ model Session {
   /// jour J. Les tablettes hors ligne obéissent à leur retour, après avoir
   /// d'abord envoyé ce qu'elles avaient en attente.
   dataGeneration    String    @default("1")
+
+  /// Poids d'un vote selon le type de table dont il provient (§4.2).
+  /// LAMBDA (les tables normales, « le public ») pèse 1 par défaut ; SPECIAL
+  /// (le jury spécial) pèse 2. Modifiable depuis Configuration → Vote plutôt
+  /// que figé dans le code, pour s'adapter d'un concours à l'autre sans
+  /// redéploiement.
+  weightPublic  Float @default(1)
+  weightSpecial Float @default(2)
+
+  /// Bornes de la note brute qu'un juré peut saisir sur un critère.
+  /// 1 à 5 par défaut ; élargir jusqu'à 0–10, par exemple, ne change que ces
+  /// deux valeurs — le reste du calcul (§4.1, §4.3) suit sans modification.
+  scoreMin Int @default(1)
+  scoreMax Int @default(5)
 }
 
 /// Image téléversée depuis le dashboard (affiche de l'événement, portrait d'un

@@ -19,7 +19,11 @@ const GRID = "sm:grid-cols-[4rem_1fr_7rem_7rem_9rem_6rem]";
  * d'affichage) reste celui de la note finale ; les deux autres colonnes n'en
  * sont que la composition.
  */
-export function RankingTable({ results }: { results: { ranking: CandidateResult[]; maxTotal: number } }) {
+export function RankingTable({
+  results,
+}: {
+  results: { ranking: CandidateResult[]; maxTotal: number; scoreMax: number };
+}) {
   return (
     <section className="overflow-hidden rounded-xl bg-surface-container gold-border">
       <div
@@ -135,7 +139,7 @@ export function RankingTable({ results }: { results: { ranking: CandidateResult[
                           </p>
                           <p className="mt-1 font-serif text-headline-md text-on-surface">
                             {formatScore(criterion.averageOutOf5)}
-                            <span className="ml-1 text-label-sm text-outline">/5</span>
+                            <span className="ml-1 text-label-sm text-outline">/{results.scoreMax}</span>
                           </p>
                         </div>
                       ))}
@@ -147,7 +151,11 @@ export function RankingTable({ results }: { results: { ranking: CandidateResult[
                       Par table (sur {results.maxTotal}) — touchez une table pour voir le détail
                       des jurés
                     </p>
-                    <TableVotesList tables={entry.byTable} maxTotal={results.maxTotal} />
+                    <TableVotesList
+                      tables={entry.byTable}
+                      maxTotal={results.maxTotal}
+                      scoreMax={results.scoreMax}
+                    />
                   </div>
                 </div>
               </details>
