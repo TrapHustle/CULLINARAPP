@@ -1,6 +1,3 @@
-"use client";
-
-import { useState } from "react";
 import { TrophyIcon } from "@/components/icons";
 import { TableVotesList } from "@/components/table-votes";
 import type { CandidateResult } from "@/lib/results";
@@ -13,54 +10,26 @@ function formatScore(value: number | null) {
 /** Mention honorifique des trois premières places, comme sur un palmarès imprimé. */
 const MEDALS = ["Médaille d'or", "Médaille d'argent", "Médaille de bronze"];
 
-type Metric = "final" | "special" | "public";
-
-const METRICS: { id: Metric; label: string }[] = [
-  { id: "final", label: "Note finale" },
-  { id: "special", label: "Jury spécial" },
-  { id: "public", label: "Public" },
-];
-
-function scoreFor(entry: CandidateResult, metric: Metric): number | null {
-  if (metric === "special") return entry.specialScore;
-  if (metric === "public") return entry.publicScore;
-  return entry.finalScore;
-}
+const GRID = "sm:grid-cols-[4rem_1fr_7rem_7rem_9rem_6rem]";
 
 /**
- * Palmarès général, avec des onglets pour lire la note finale, celle du seul
- * jury spécial, ou celle du seul public (les tables normales).
- *
- * Le classement (rang, médailles, ordre d'affichage) reste toujours celui de
- * la note finale — ce sont les onglets « Jury spécial » et « Public » qui
- * expliquent sa composition, pas des classements concurrents. Composant
- * client car le choix d'onglet est un état d'écran, sans rapport avec les
- * données.
+ * Palmarès général : trois colonnes de note — Jury spécial, Public, puis Note
+ * finale, chacune sous son propre en-tête — plutôt qu'une seule valeur qui
+ * change de sens selon un onglet. Le classement (rang, médailles, ordre
+ * d'affichage) reste celui de la note finale ; les deux autres colonnes n'en
+ * sont que la composition.
  */
 export function RankingTable({ results }: { results: { ranking: CandidateResult[]; maxTotal: number } }) {
-  const [metric, setMetric] = useState<Metric>("final");
-
   return (
     <section className="overflow-hidden rounded-xl bg-surface-container gold-border">
-      <div className="hidden border-b border-outline-variant/30 px-6 py-3 text-label-sm uppercase tracking-wider text-outline sm:grid sm:grid-cols-[4rem_1fr_10rem_6rem]">
+      <div
+        className={`hidden border-b border-outline-variant/30 px-6 py-3 text-label-sm uppercase tracking-wider text-outline sm:grid ${GRID}`}
+      >
         <span>Rang</span>
         <span>Candidat</span>
-        <span className="flex justify-end gap-3">
-          {METRICS.map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              onClick={() => setMetric(m.id)}
-              className={
-                metric === m.id
-                  ? "text-primary"
-                  : "text-outline transition-colors hover:text-on-surface-variant"
-              }
-            >
-              {m.label}
-            </button>
-          ))}
-        </span>
+        <span className="text-right">Jury spécial</span>
+        <span className="text-right">Public</span>
+        <span className="text-right">Note finale</span>
         <span className="text-right">Détails</span>
       </div>
 
@@ -68,7 +37,6 @@ export function RankingTable({ results }: { results: { ranking: CandidateResult[
         {results.ranking.map((entry) => {
           const podium = entry.rank !== null && entry.rank <= 3;
           const first = entry.rank === 1;
-          const score = scoreFor(entry, metric);
 
           return (
             <li
@@ -76,7 +44,9 @@ export function RankingTable({ results }: { results: { ranking: CandidateResult[
               className={first ? "border-l-2 border-primary bg-primary/5" : undefined}
             >
               <details className="group">
-                <summary className="grid cursor-pointer list-none items-center gap-x-4 gap-y-2 px-6 py-4 transition-colors hover:bg-surface-high/40 sm:grid-cols-[4rem_1fr_10rem_6rem]">
+                <summary
+                  className={`grid cursor-pointer list-none items-center gap-x-4 gap-y-2 px-6 py-4 transition-colors hover:bg-surface-high/40 sm:grid ${GRID}`}
+                >
                   <span
                     className={`grid h-9 w-9 place-items-center rounded-full text-label-lg ${
                       first
@@ -103,19 +73,32 @@ export function RankingTable({ results }: { results: { ranking: CandidateResult[
                     </span>
                   </span>
 
+                  {/* Jury spécial et Public : la composition, chacune sous son
+                      propre en-tête plutôt qu'un onglet qui change de sens. */}
+                  <span className="text-right">
+                    <span className="font-serif text-headline-sm text-on-surface-variant sm:hidden">
+                      Jury spécial{" "}
+                    </span>
+                    <span className="text-on-surface-variant">{formatScore(entry.specialScore)}</span>
+                  </span>
+
+                  <span className="text-right">
+                    <span className="font-serif text-headline-sm text-on-surface-variant sm:hidden">
+                      Public{" "}
+                    </span>
+                    <span className="text-on-surface-variant">{formatScore(entry.publicScore)}</span>
+                  </span>
+
                   <span className="text-right">
                     <span
                       className={`font-serif ${
                         first ? "text-display-lg text-primary" : "text-headline-lg text-on-surface"
                       }`}
                     >
-                      {formatScore(score)}
+                      {formatScore(entry.finalScore)}
                     </span>
                     <span className="ml-1 text-label-sm text-outline">/{results.maxTotal}</span>
-                    {/* La médaille reste celle du classement général : les
-                        onglets Jury spécial / Public n'en ont pas de la leur,
-                        ce ne sont pas des classements séparés. */}
-                    {metric === "final" && podium && entry.finalScore !== null ? (
+                    {podium && entry.finalScore !== null ? (
                       <span className="block text-label-sm text-on-surface-variant">
                         {MEDALS[(entry.rank ?? 1) - 1]}
                       </span>
