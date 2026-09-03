@@ -105,7 +105,7 @@ export function DirectDisplay({ initial }: { initial: DirectPayload }) {
   const complete = data.allValidated || (data.expected > 0 && data.received >= data.expected);
 
   return (
-    <main className="relative flex min-h-screen flex-col overflow-hidden bg-[#0d0b08] text-white">
+    <main className="relative flex min-h-screen flex-col overflow-hidden bg-[#0d0b08] text-[#fff]">
       {/* Fond en mouvement lent : il occupe le regard quand le compteur, lui,
           n'a rien de neuf à montrer. */}
       <div aria-hidden className="direct-halo pointer-events-none absolute inset-0" />
@@ -140,11 +140,11 @@ export function DirectDisplay({ initial }: { initial: DirectPayload }) {
             Candidat {candidate.position} sur {candidate.total}
           </p>
 
-          <h1 className="mt-[1vh] truncate font-serif text-[7vh] leading-none text-white">
+          <h1 className="mt-[1vh] truncate font-serif text-[7vh] leading-none text-[#fff]">
             {candidate.name}
           </h1>
 
-          <p className="mt-[4vh] text-[1.5vh] uppercase tracking-[0.35em] text-white/45">
+          <p className="mt-[4vh] text-[1.5vh] uppercase tracking-[0.35em] text-[#fff]/45">
             {complete ? "Votes complets" : "Votes reçus"}
           </p>
 
@@ -157,12 +157,12 @@ export function DirectDisplay({ initial }: { initial: DirectPayload }) {
             >
               {counted}
             </span>
-            <span className="text-[2.4vh] text-white/50">sur {data.expected} attendus</span>
+            <span className="text-[2.4vh] text-[#fff]/50">sur {data.expected} attendus</span>
           </div>
 
           {/* La jauge : c'est elle qui porte la tension, bien plus qu'un
               compteur de deux chiffres qui ne « défile » jamais vraiment. */}
-          <div className="mt-[3vh] h-[1.4vh] w-full overflow-hidden rounded-full bg-white/10">
+          <div className="mt-[3vh] h-[1.4vh] w-full overflow-hidden rounded-full bg-[#fff]/10">
             <div
               className="relative h-full overflow-hidden rounded-full bg-gradient-to-r from-[#b8932e] via-[#d4af37] to-[#e8cd72] transition-[width] duration-700 ease-out"
               style={{ width: `${Math.min(100, progress)}%` }}
@@ -182,12 +182,12 @@ export function DirectDisplay({ initial }: { initial: DirectPayload }) {
                 className={`flex items-center gap-[0.7vw] rounded-full border px-[1.4vw] py-[1vh] text-[1.9vh] transition-colors duration-500 ${
                   table.validated
                     ? "border-[#d4af37] bg-[#d4af37]/15 text-[#e8cd72]"
-                    : "border-white/15 bg-white/5 text-white/45"
+                    : "border-[#fff]/15 bg-[#fff]/5 text-[#fff]/45"
                 }`}
               >
                 <span
                   className={`inline-block h-[1.1vh] w-[1.1vh] rounded-full ${
-                    table.validated ? "bg-[#d4af37]" : "bg-white/25"
+                    table.validated ? "bg-[#d4af37]" : "bg-[#fff]/25"
                   }`}
                 />
                 {table.name}
@@ -211,7 +211,7 @@ function Header({ state, stale }: { state: "live" | "closed" | "complete"; stale
       ? { label: "Vote en cours", tone: "text-[#ff6b6b] border-[#ff6b6b]/40 bg-[#ff6b6b]/10" }
       : state === "complete"
         ? { label: "Votes complets", tone: "text-[#7ee08a] border-[#7ee08a]/40 bg-[#7ee08a]/10" }
-        : { label: "Votes clos", tone: "text-white/60 border-white/20 bg-white/5" };
+        : { label: "Votes clos", tone: "text-[#fff]/60 border-[#fff]/20 bg-[#fff]/5" };
 
   return (
     <header className="flex items-center justify-between px-[4vw] py-[3vh]">
@@ -219,7 +219,7 @@ function Header({ state, stale }: { state: "live" | "closed" | "complete"; stale
 
       <div className="flex items-center gap-[1.5vw]">
         {stale ? (
-          <span className="text-[1.6vh] text-white/35">reconnexion…</span>
+          <span className="text-[1.6vh] text-[#fff]/35">reconnexion…</span>
         ) : null}
         <span
           className={`flex items-center gap-[0.8vw] rounded-full border px-[1.6vw] py-[1vh] text-[1.7vh] uppercase tracking-[0.25em] ${badge.tone}`}
@@ -237,7 +237,7 @@ function Header({ state, stale }: { state: "live" | "closed" | "complete"; stale
 /** Écran d'attente : aucun candidat n'est ouvert au vote. */
 function Standby({ stale }: { stale: boolean }) {
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#0d0b08] px-[6vw] text-center text-white">
+    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#0d0b08] px-[6vw] text-center text-[#fff]">
       <div aria-hidden className="direct-halo pointer-events-none absolute inset-0" />
       <Proclamation />
 
@@ -245,11 +245,11 @@ function Standby({ stale }: { stale: boolean }) {
       <h1 className="relative mt-[2vh] font-serif text-[10vh] leading-none text-[#d4af37]">
         Concours culinaire
       </h1>
-      <p className="relative mt-[3vh] text-[2.6vh] text-white/50">
+      <p className="relative mt-[3vh] text-[2.6vh] text-[#fff]/50">
         La dégustation va commencer.
       </p>
       {stale ? (
-        <p className="mt-[4vh] text-[1.6vh] text-white/25">reconnexion au serveur…</p>
+        <p className="mt-[4vh] text-[1.6vh] text-[#fff]/25">reconnexion au serveur…</p>
       ) : null}
     </main>
   );

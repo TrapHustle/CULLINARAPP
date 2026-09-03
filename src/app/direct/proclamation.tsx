@@ -234,8 +234,8 @@ export function Proclamation() {
     return (
       <div className="fixed inset-0 z-50 grid place-items-center bg-[#05040288] backdrop-blur-sm">
         <div className="w-[min(90vw,34vh)] rounded-lg border border-[#d4af37]/45 bg-gradient-to-b from-[#241a0e] to-[#17120c] p-[3.4vh] text-center shadow-[0_24px_70px_rgba(0,0,0,.7)]">
-          <h2 className="font-serif text-[3.1vh] text-white">Proclamation</h2>
-          <p className="mt-1 text-[1.3vh] text-white/45">Code de l&apos;organisateur</p>
+          <h2 className="font-serif text-[3.1vh] text-[#fff]">Proclamation</h2>
+          <p className="mt-1 text-[1.3vh] text-[#fff]/45">Code de l&apos;organisateur</p>
 
           <div className="my-[2.6vh] flex justify-center gap-[1.3vh]">
             {[0, 1, 2, 3].map((slot) => (
@@ -259,8 +259,8 @@ export function Proclamation() {
                 onClick={() => (key === "esc" ? quit() : press(key))}
                 className={`rounded border border-[#d4af37]/20 bg-[#d4af37]/5 py-[1.15vh] transition hover:border-[#d4af37] hover:bg-[#d4af37]/15 disabled:opacity-40 ${
                   key === "esc" || key === "del"
-                    ? "text-[1.3vh] tracking-wider text-white/45"
-                    : "text-[2vh] font-light text-white"
+                    ? "text-[1.3vh] tracking-wider text-[#fff]/45"
+                    : "text-[2vh] font-light text-[#fff]"
                 }`}
               >
                 {key === "esc" ? "Annuler" : key === "del" ? "Effacer" : key}
@@ -368,7 +368,7 @@ export function Proclamation() {
           {current?.people.map((person) => (
             <h2
               key={person.name}
-              className={`font-serif font-semibold leading-tight text-white ${
+              className={`font-serif font-semibold leading-tight text-[#fff] ${
                 isWinner ? "text-[9vh]" : "text-[6vh]"
               }`}
             >
@@ -418,12 +418,12 @@ export function Proclamation() {
                 </span>
                 <span
                   className={`flex-1 truncate text-[1.5vh] font-light ${
-                    step.rank === 1 ? "text-[#f2ca50]" : "text-white"
+                    step.rank === 1 ? "text-[#f2ca50]" : "text-[#fff]"
                   }`}
                 >
                   {step.people.map((person) => person.name).join(" · ")}
                 </span>
-                <span className="text-[1.4vh] tabular-nums text-white/40">{step.note}</span>
+                <span className="text-[1.4vh] tabular-nums text-[#fff]/40">{step.note}</span>
               </div>
             );
           })}

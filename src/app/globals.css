@@ -307,9 +307,11 @@ h3 {
   filter: brightness(1.06);
   background-color: var(--gold);
 }
-.text-white {
-  color: var(--gold-ink) !important;
-}
+/* Pas de règle `.text-white` séparée : elle portait le même nom que
+ * l'utilitaire Tailwind, donc s'appliquait à tout le site plutôt qu'aux
+ * seuls boutons ci-dessus — sur l'écran projeté, en noir sur fond noir. Les
+ * boutons `bg-slate-900`/`bg-amber-600` portent déjà `text-white` dans leur
+ * balisage ; la règle au-dessus suffit à recolorer leur texte. */
 
 /* Panneaux (ex-`bg-white`) : contour fin + profondeur. */
 .bg-white {
