@@ -1,5 +1,6 @@
 import { AutoRefresh } from "@/components/auto-refresh";
 import { DownloadIcon, PrintIcon, TrophyIcon } from "@/components/icons";
+import { TableVotesList } from "@/components/table-votes";
 import { computeResults } from "@/lib/results";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +27,8 @@ export default async function ResultatsPage() {
           <p className="text-label-sm uppercase tracking-[0.2em] text-primary">Classement final</p>
           <h1 className="mt-1 font-serif text-display-lg text-on-surface">Palmarès général</h1>
           <p className="mt-2 max-w-xl text-body-md text-on-surface-variant">
-            Moyenne pondérée par votant, ramenée sur 20. Un vote du jury spécial y compte double.
+            Moyenne pondérée par votant, sur {results.maxTotal}. Un vote du jury spécial y compte
+            double.
           </p>
         </div>
 
@@ -118,14 +120,24 @@ export default async function ResultatsPage() {
                           first ? "text-display-lg text-primary" : "text-headline-lg text-on-surface"
                         }`}
                       >
-                        {formatScore(entry.finalOutOf20)}
+                        {formatScore(entry.finalScore)}
                       </span>
-                      <span className="ml-1 text-label-sm text-outline">/20</span>
-                      {podium && entry.finalOutOf20 !== null ? (
+                      <span className="ml-1 text-label-sm text-outline">/{results.maxTotal}</span>
+                      {podium && entry.finalScore !== null ? (
                         <span className="block text-label-sm text-on-surface-variant">
                           {MEDALS[(entry.rank ?? 1) - 1]}
                         </span>
                       ) : null}
+                      {/* Le détail spécial/public à côté de la note finale : la
+                          composition qui l'explique, pas seulement le résultat. */}
+                      <span className="mt-1 flex justify-end gap-3 text-label-sm text-outline">
+                        <span>
+                          Jury spécial <span className="text-on-surface-variant">{formatScore(entry.specialScore)}</span>
+                        </span>
+                        <span>
+                          Public <span className="text-on-surface-variant">{formatScore(entry.publicScore)}</span>
+                        </span>
+                      </span>
                     </span>
 
                     <span className="text-right text-label-sm text-primary">
@@ -156,8 +168,8 @@ export default async function ResultatsPage() {
                               {criterion.name}
                             </p>
                             <p className="mt-1 font-serif text-headline-md text-on-surface">
-                              {formatScore(criterion.averageOutOf10)}
-                              <span className="ml-1 text-label-sm text-outline">/10</span>
+                              {formatScore(criterion.averageOutOf5)}
+                              <span className="ml-1 text-label-sm text-outline">/5</span>
                             </p>
                           </div>
                         ))}
@@ -166,27 +178,10 @@ export default async function ResultatsPage() {
 
                     <div>
                       <p className="mb-2 text-label-sm uppercase tracking-wider text-outline">
-                        Par table (sur {results.maxTotal})
+                        Par table (sur {results.maxTotal}) — touchez une table pour voir le détail
+                        des jurés
                       </p>
-                      <div className="flex flex-wrap gap-2">
-                        {entry.byTable.map((table) => (
-                          <span
-                            key={table.tableId}
-                            className="rounded-full border border-outline-variant/30 bg-surface-container px-3 py-1.5 text-label-sm text-on-surface-variant"
-                          >
-                            {table.tableName}
-                            {table.type === "SPECIAL" ? (
-                              <span className="ml-1 text-primary">×2</span>
-                            ) : null}
-                            <span className="ml-2 text-on-surface">
-                              {formatScore(table.averageRaw)}
-                            </span>
-                            <span className="ml-1 text-outline">
-                              ({table.voterCount} vote{table.voterCount > 1 ? "s" : ""})
-                            </span>
-                          </span>
-                        ))}
-                      </div>
+                      <TableVotesList tables={entry.byTable} maxTotal={results.maxTotal} />
                     </div>
                   </div>
                 </details>
@@ -205,7 +200,7 @@ export default async function ResultatsPage() {
       {results.criteria.length > 0 && hasVotes ? (
         <section className="overflow-hidden rounded-xl bg-surface-container gold-border">
           <h2 className="border-b border-outline-variant/30 px-6 py-4 font-serif text-headline-md text-primary">
-            Détail par critère (moyennes sur 10)
+            Détail par critère (moyennes sur 5)
           </h2>
 
           <div className="custom-scrollbar overflow-x-auto">
@@ -226,7 +221,7 @@ export default async function ResultatsPage() {
                     <td className="px-6 py-3 text-on-surface">{entry.name}</td>
                     {entry.byCriterion.map((criterion) => (
                       <td key={criterion.criterionId} className="px-6 py-3 text-on-surface-variant">
-                        {formatScore(criterion.averageOutOf10)}
+                        {formatScore(criterion.averageOutOf5)}
                       </td>
                     ))}
                   </tr>

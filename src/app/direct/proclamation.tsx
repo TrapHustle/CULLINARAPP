@@ -38,6 +38,9 @@ const STORAGE_KEY = "proclamation-step";
 export function Proclamation() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [steps, setSteps] = useState<RevealStep[]>([]);
+  // 15 par défaut (3 critères × 5) : corrigé dès la réponse du serveur, seul à
+  // connaître le nombre réel de critères configurés.
+  const [maxTotal, setMaxTotal] = useState(15);
   const [index, setIndex] = useState(0);
   const [entry, setEntry] = useState("");
   const [error, setError] = useState("");
@@ -62,9 +65,9 @@ export function Proclamation() {
     }
     if (!saved) return;
 
-    let parsed: { steps: RevealStep[]; index: number };
+    let parsed: { steps: RevealStep[]; index: number; maxTotal?: number };
     try {
-      parsed = JSON.parse(saved) as { steps: RevealStep[]; index: number };
+      parsed = JSON.parse(saved) as { steps: RevealStep[]; index: number; maxTotal?: number };
     } catch {
       return; /* mémoire illisible : on repart de l'écran de vote, sans bruit. */
     }
@@ -74,6 +77,7 @@ export function Proclamation() {
     // diverger le serveur et le navigateur, qui ne voient pas la même mémoire.
     const restore = setTimeout(() => {
       setSteps(parsed.steps);
+      if (parsed.maxTotal) setMaxTotal(parsed.maxTotal);
       setIndex(Math.min(parsed.index, parsed.steps.length - 1));
       setPhase("reveal");
       setCurtainOpen(true);
@@ -82,16 +86,19 @@ export function Proclamation() {
     return () => clearTimeout(restore);
   }, []);
 
-  const remember = useCallback((nextSteps: RevealStep[], nextIndex: number) => {
-    try {
-      window.sessionStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ steps: nextSteps, index: nextIndex }),
-      );
-    } catch {
-      /* Navigation privée ou stockage refusé : la cérémonie marche quand même. */
-    }
-  }, []);
+  const remember = useCallback(
+    (nextSteps: RevealStep[], nextIndex: number, nextMaxTotal: number) => {
+      try {
+        window.sessionStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({ steps: nextSteps, index: nextIndex, maxTotal: nextMaxTotal }),
+        );
+      } catch {
+        /* Navigation privée ou stockage refusé : la cérémonie marche quand même. */
+      }
+    },
+    [],
+  );
 
   /* ---------- Verrouillage après trois essais ---------- */
   useEffect(() => {
@@ -153,7 +160,10 @@ export function Proclamation() {
         return;
       }
 
-      const payload = (await response.json()) as { steps: RevealStep[] };
+      const payload = (await response.json()) as {
+        steps: RevealStep[];
+        maxTotal: number;
+      };
       if (payload.steps.length === 0) {
         setEntry("");
         setError("Aucun candidat noté : il n'y a rien à proclamer.");
@@ -162,8 +172,9 @@ export function Proclamation() {
 
       fails.current = 0;
       setSteps(payload.steps);
+      setMaxTotal(payload.maxTotal);
       setIndex(0);
-      remember(payload.steps, 0);
+      remember(payload.steps, 0, payload.maxTotal);
       setEntry("");
       setTick(COUNTDOWN);
       setPhase("countdown");
@@ -193,7 +204,7 @@ export function Proclamation() {
     if (busy || index >= steps.length - 1) return;
     const nextIndex = index + 1;
     setIndex(nextIndex);
-    remember(steps, nextIndex);
+    remember(steps, nextIndex, maxTotal);
     // Le bouton reste inerte le temps de l'animation : un double-clic brûlerait
     // deux rangs d'un coup, ce qui est irrattrapable en public.
     setBusy(true);
@@ -380,7 +391,7 @@ export function Proclamation() {
             <b className={`font-medium text-[#f2ca50] ${isWinner ? "text-[4.4vh]" : "text-[3.4vh]"}`}>
               {current?.note}
             </b>
-            <span className="text-[2.5vh]"> / 20</span>
+            <span className="text-[2.5vh]"> / {maxTotal}</span>
           </p>
         </div>
       </div>

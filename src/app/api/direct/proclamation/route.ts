@@ -67,8 +67,8 @@ export async function POST(request: NextRequest) {
   // comparables aux autres et sont écartés de la cérémonie plutôt que révélés
   // avec un rang inventé.
   const rated = results.ranking.filter(
-    (entry): entry is typeof entry & { rank: number; finalOutOf20: number } =>
-      entry.rank !== null && entry.finalOutOf20 !== null,
+    (entry): entry is typeof entry & { rank: number; finalScore: number } =>
+      entry.rank !== null && entry.finalScore !== null,
   );
 
   // Les ex æquo partagent un rang : ils sont révélés ensemble, sur un même
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
 
     byRank.set(entry.rank, {
       rank: entry.rank,
-      note: entry.finalOutOf20.toFixed(2).replace(".", ","),
+      note: entry.finalScore.toFixed(2).replace(".", ","),
       people: [person],
     });
   }
@@ -99,5 +99,6 @@ export async function POST(request: NextRequest) {
   return Response.json({
     steps,
     unranked: results.ranking.filter((entry) => entry.rank === null).length,
+    maxTotal: results.maxTotal,
   });
 }

@@ -39,8 +39,9 @@ export default async function ImpressionPage() {
             <tr className="border-b-2 border-slate-400 text-left">
               <th className="py-2 pr-3">Rang</th>
               <th className="py-2 pr-3">Candidat</th>
-              <th className="py-2 pr-3">Note /20</th>
-              <th className="py-2 pr-3">Moyenne /{results.maxTotal}</th>
+              <th className="py-2 pr-3">Note finale /{results.maxTotal}</th>
+              <th className="py-2 pr-3">Jury spécial /{results.maxTotal}</th>
+              <th className="py-2 pr-3">Public /{results.maxTotal}</th>
               <th className="py-2">Votants</th>
             </tr>
           </thead>
@@ -49,8 +50,9 @@ export default async function ImpressionPage() {
               <tr key={entry.candidateId} className="border-b border-slate-200">
                 <td className="py-2 pr-3 font-semibold">{entry.rank ?? "—"}</td>
                 <td className="py-2 pr-3">{entry.name}</td>
-                <td className="py-2 pr-3 font-semibold">{format(entry.finalOutOf20)}</td>
-                <td className="py-2 pr-3">{format(entry.averageRaw)}</td>
+                <td className="py-2 pr-3 font-semibold">{format(entry.finalScore)}</td>
+                <td className="py-2 pr-3">{format(entry.specialScore)}</td>
+                <td className="py-2 pr-3">{format(entry.publicScore)}</td>
                 <td className="py-2">{entry.voterCount}</td>
               </tr>
             ))}
@@ -63,7 +65,7 @@ export default async function ImpressionPage() {
 
       {results.criteria.length > 0 ? (
         <section className="mb-10 break-inside-avoid">
-          <h2 className="mb-3 text-lg font-semibold">Détail par critère (sur 10)</h2>
+          <h2 className="mb-3 text-lg font-semibold">Détail par critère (sur 5)</h2>
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="border-b-2 border-slate-400 text-left">
@@ -81,7 +83,7 @@ export default async function ImpressionPage() {
                   <td className="py-2 pr-3">{entry.name}</td>
                   {entry.byCriterion.map((criterion) => (
                     <td key={criterion.criterionId} className="py-2 pr-3">
-                      {format(criterion.averageOutOf10)}
+                      {format(criterion.averageOutOf5)}
                     </td>
                   ))}
                 </tr>

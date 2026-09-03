@@ -25,8 +25,9 @@ export async function GET() {
   ranking.columns = [
     { header: "Rang", key: "rank", width: 8 },
     { header: "Candidat", key: "name", width: 30 },
-    { header: "Note /20", key: "final", width: 12 },
-    { header: `Moyenne /${results.maxTotal}`, key: "average", width: 16 },
+    { header: `Note finale /${results.maxTotal}`, key: "final", width: 14 },
+    { header: `Jury spécial /${results.maxTotal}`, key: "special", width: 16 },
+    { header: `Public /${results.maxTotal}`, key: "public", width: 14 },
     { header: "Votants", key: "voters", width: 10 },
     { header: "Poids total", key: "weight", width: 12 },
   ];
@@ -36,8 +37,9 @@ export async function GET() {
     ranking.addRow({
       rank: entry.rank ?? "—",
       name: entry.name,
-      final: entry.finalOutOf20 ?? "non noté",
-      average: entry.averageRaw ?? "non noté",
+      final: entry.finalScore ?? "non noté",
+      special: entry.specialScore ?? "non noté",
+      public: entry.publicScore ?? "non noté",
       voters: entry.voterCount,
       weight: entry.weightTotal,
     });
@@ -48,7 +50,7 @@ export async function GET() {
   byCriterion.columns = [
     { header: "Candidat", key: "name", width: 30 },
     ...results.criteria.map((criterion) => ({
-      header: `${criterion.name} /10`,
+      header: `${criterion.name} /5`,
       key: criterion.id,
       width: 18,
     })),
@@ -58,7 +60,7 @@ export async function GET() {
   for (const entry of results.ranking) {
     const row: Record<string, string | number> = { name: entry.name };
     for (const criterion of entry.byCriterion) {
-      row[criterion.criterionId] = criterion.averageOutOf10 ?? "non noté";
+      row[criterion.criterionId] = criterion.averageOutOf5 ?? "non noté";
     }
     byCriterion.addRow(row);
   }
