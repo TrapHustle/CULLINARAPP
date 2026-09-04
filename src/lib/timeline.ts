@@ -14,6 +14,17 @@ export interface TimelineCandidate {
   id: string;
   name: string;
   color: string;
+  /** Portrait servi par ce serveur, ou `null` — la courbe affiche alors l'initiale. */
+  photoUrl: string | null;
+  /**
+   * Nombre de personnes ayant voté pour ce candidat, non pondéré.
+   *
+   * Affiché à titre indicatif à côté de la note : il dit combien de jurés se
+   * sont prononcés, ce que la moyenne seule ne révèle pas. Ce n'est jamais lui
+   * qui classe — deux candidats notés par 5 et par 18 restent comparables,
+   * c'est tout l'objet de la pondération.
+   */
+  votes: number;
 }
 
 /**
@@ -44,19 +55,26 @@ export interface TimelinePayload {
  * Palette de la courbe, fixe et volontairement indépendante du thème du
  * dashboard : l'écran temps réel est le même en salle qu'au bureau, et deux
  * candidats ne doivent jamais échanger leur couleur d'un affichage à l'autre.
- * Les teintes sont assez foncées pour se lire sur le fond clair de la page.
+ *
+ * L'ordre est fixe et jamais recyclé : la couleur suit le candidat, pas son
+ * rang, sinon un dépassement repeindrait toute la courbe.
+ *
+ * Les teintes sont calibrées pour le fond sombre de la page et validées :
+ * bande de luminosité, chroma, contraste, et séparation entre teintes voisines
+ * pour les daltonismes deutan, protan et tritan. Les remplacer sans revalider
+ * peut rendre deux candidats indiscernables.
  */
 const SERIES_COLORS = [
-  "#c2410c",
-  "#1d4ed8",
-  "#15803d",
-  "#a21caf",
+  "#ea580c",
+  "#3b82f6",
+  "#16a34a",
+  "#d946ef",
+  "#d97706",
+  "#0891b2",
+  "#f43f5e",
+  "#8b5cf6",
+  "#0d9488",
   "#b45309",
-  "#0e7490",
-  "#be123c",
-  "#4d7c0f",
-  "#6d28d9",
-  "#0f766e",
 ];
 
 /**
@@ -95,6 +113,8 @@ export async function computeTimeline(): Promise<TimelinePayload> {
     id: candidate.id,
     name: candidate.name,
     color: SERIES_COLORS[i % SERIES_COLORS.length],
+    photoUrl: candidate.photoUrl,
+    votes: 0,
   }));
   const positionById = new Map(series.map((candidate, i) => [candidate.id, i]));
 
@@ -121,6 +141,7 @@ export async function computeTimeline(): Promise<TimelinePayload> {
 
     weightedSum[position] += voteTotal(scoredVote, criterionIds) * weight;
     weightTotal[position] += weight;
+    series[position].votes += 1;
 
     index += 1;
     const current = series.map((_, i) =>

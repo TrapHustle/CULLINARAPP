@@ -103,11 +103,11 @@ export function LiveRanking() {
   /* ---------- La courbe, une fois le code accepté ---------- */
   if (data && pin) {
     return (
-      <div className="fixed inset-0 z-50 overflow-auto bg-slate-50 p-[2vw]">
+      <div className="fixed inset-0 z-50 overflow-auto bg-[#0d0b08] p-[2vw]">
         <button
           type="button"
           onClick={close}
-          className="absolute right-[2vw] top-[2vh] z-10 rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-slate-600 transition hover:border-slate-500 hover:text-slate-900"
+          className="absolute right-[2vw] top-[2vh] z-10 rounded-full border border-white/20 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-white/60 transition hover:border-[#d4af37] hover:text-[#f2ca50]"
         >
           Fermer
         </button>
