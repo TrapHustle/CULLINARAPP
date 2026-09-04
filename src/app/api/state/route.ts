@@ -27,6 +27,17 @@ interface StatePayload {
    * locale — c'est la purge à distance, décidée depuis le dashboard.
    */
   dataGeneration: string;
+  /** Déroulé du vote : "BY_CANDIDATE" (un candidat à la fois) ou "BY_JUROR". */
+  voteMode: string;
+  /**
+   * Candidats que la tablette peut faire noter, décidé ici plutôt qu'en salle.
+   *
+   * En « candidat après candidat », la liste ne contient que celui que
+   * l'organisateur a ouvert. En « juré après juré », elle contient tous ceux
+   * dont les votes ont été ouverts. La tablette n'a plus qu'à s'y conformer,
+   * sans rejouer la règle de son côté — c'est le serveur qui mène le concours.
+   */
+  openCandidateIds: string[];
 }
 
 async function readState(): Promise<StatePayload> {
@@ -42,6 +53,23 @@ async function readState(): Promise<StatePayload> {
       })
     : [];
 
+  // Votes clos : plus rien n'est notable, quel que soit le déroulé.
+  let openCandidateIds: string[] = [];
+  if (session.votingOpen) {
+    if (session.voteMode === "BY_JUROR") {
+      const opened = await prisma.candidate.findMany({
+        where: { openedAt: { not: null } },
+        select: { id: true },
+        // Ordre stable : la charge utile est comparée telle quelle d'un cycle à
+        // l'autre pour décider s'il faut pousser un événement SSE.
+        orderBy: { order: "asc" },
+      });
+      openCandidateIds = opened.map((candidate) => candidate.id);
+    } else if (session.activeCandidateId) {
+      openCandidateIds = [session.activeCandidateId];
+    }
+  }
+
   return {
     activeCandidateId: session.activeCandidateId,
     votingOpen: session.votingOpen,
@@ -49,6 +77,8 @@ async function readState(): Promise<StatePayload> {
     timerSeconds: session.timerSeconds,
     validatedTableIds: validations.map((validation) => validation.tableId),
     dataGeneration: session.dataGeneration,
+    voteMode: session.voteMode,
+    openCandidateIds,
   };
 }
 

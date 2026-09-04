@@ -411,14 +411,26 @@ export default async function ConfigurationPage() {
               Vote
             </h2>
             <p className="mb-4 text-label-sm text-on-surface-variant">
-              Poids d&apos;un vote selon la table d&apos;où il vient, et bornes de la note qu&apos;un
-              juré peut saisir sur un critère.
+              Déroulé du vote, poids d&apos;un vote selon la table d&apos;où il vient, et bornes de
+              la note qu&apos;un juré peut saisir sur un critère.
             </p>
 
             <form
               action={updateVoteSettingsAction}
               className="flex flex-wrap items-end gap-4"
             >
+              <label className="text-label-sm text-on-surface-variant">
+                <span className="mb-1 block">Déroulé</span>
+                <select
+                  name="voteMode"
+                  defaultValue={session.voteMode}
+                  className="rounded-lg border border-outline-variant/60 px-3 py-2 text-body-md"
+                >
+                  <option value="BY_CANDIDATE">Candidat après candidat</option>
+                  <option value="BY_JUROR">Juré après juré</option>
+                </select>
+              </label>
+
               <label className="text-label-sm text-on-surface-variant">
                 <span className="mb-1 block">Poids — Public (tables normales)</span>
                 <input
@@ -478,6 +490,13 @@ export default async function ConfigurationPage() {
             </form>
 
             <p className="mt-4 text-label-sm text-outline">
+              <strong className="text-on-surface-variant">Candidat après candidat</strong> :
+              l&apos;organisateur ouvre un candidat, toute la salle le note, puis on passe au
+              suivant. <strong className="text-on-surface-variant">Juré après juré</strong> : chaque
+              juré parcourt tous les candidats avant de passer la tablette — utilisez alors{" "}
+              <em>Ouvrir tous les votes</em> depuis le Pilotage.
+            </p>
+            <p className="mt-2 text-label-sm text-outline">
               Un critère hors de 1 à 5 perd ses libellés (« Insuffisant »… « Exceptionnel ») sur la
               tablette : seul le chiffre reste affiché.
             </p>

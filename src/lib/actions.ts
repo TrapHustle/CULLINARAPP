@@ -324,6 +324,37 @@ export async function openVotingAction(formData: FormData) {
 }
 
 /**
+ * Ouvre les votes pour **tous** les candidats à la fois.
+ *
+ * C'est ce que suppose le déroulé « juré après juré » : chaque juré prend la
+ * tablette et parcourt l'ensemble des candidats avant de la passer au suivant.
+ * Aucun candidat n'est « en cours » dans ce cas — `activeCandidateId` repasse à
+ * `null`, et c'est la liste des candidats ouverts qui fait foi côté tablette.
+ *
+ * `openedAt` n'est posée que sur les candidats qui ne l'avaient pas : elle
+ * atteste de la première ouverture et autorise l'acceptation des votes en
+ * retard (§11) — la réécrire ferait mentir cette date.
+ */
+export async function openAllVotingAction() {
+  await requireAuth();
+  await getOrCreateSession();
+
+  await prisma.$transaction([
+    prisma.candidate.updateMany({
+      where: { openedAt: null },
+      data: { openedAt: new Date() },
+    }),
+    prisma.session.update({
+      where: { id: SESSION_ID },
+      data: { activeCandidateId: null, votingOpen: true },
+    }),
+  ]);
+
+  revalidatePath("/");
+  revalidatePath("/resultats");
+}
+
+/**
  * Libère une table de la tablette qui la tient.
  *
  * C'est la soupape de l'assignation exclusive : sans elle, une tablette tombée
@@ -449,6 +480,7 @@ export async function updateVoteSettingsAction(formData: FormData) {
     weightSpecial: formData.get("weightSpecial"),
     scoreMin: formData.get("scoreMin"),
     scoreMax: formData.get("scoreMax"),
+    voteMode: formData.get("voteMode"),
   });
 
   if (!parsed.success) return;

@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Session"
+  ADD COLUMN "voteMode" TEXT NOT NULL DEFAULT 'BY_CANDIDATE';

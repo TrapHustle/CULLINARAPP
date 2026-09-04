@@ -166,12 +166,15 @@ export const sessionUpdateSchema = z.object({
  * l'exprimer entre deux champs indépendants, d'où le `.refine` plutôt qu'une
  * seconde borne sur chaque champ pris isolément.
  */
+export const voteModeSchema = z.enum(["BY_CANDIDATE", "BY_JUROR"]);
+
 export const voteSettingsSchema = z
   .object({
     weightPublic: z.coerce.number().min(0).max(10),
     weightSpecial: z.coerce.number().min(0).max(10),
     scoreMin: z.coerce.number().int().min(0).max(RAW_ABSOLUTE_MAX - 1),
     scoreMax: z.coerce.number().int().min(1).max(RAW_ABSOLUTE_MAX),
+    voteMode: voteModeSchema,
   })
   .refine((data) => data.scoreMax > data.scoreMin, {
     message: "La note maximale doit être supérieure à la note minimale.",

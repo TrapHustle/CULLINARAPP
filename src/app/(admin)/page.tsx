@@ -14,6 +14,7 @@ import {
   closeAndAdvanceAction,
   closeVotingAction,
   devalidateTableAction,
+  openAllVotingAction,
   openVotingAction,
 } from "@/lib/actions";
 import { getOrCreateSession, prisma } from "@/lib/prisma";
@@ -27,6 +28,9 @@ export default async function PilotagePage() {
     prisma.candidate.findMany({ orderBy: { order: "asc" } }),
     prisma.votingTable.findMany({ orderBy: { name: "asc" } }),
   ]);
+
+  /** Déroulé « juré après juré » : tous les candidats ouverts en même temps. */
+  const byJuror = session.voteMode === "BY_JUROR";
 
   const activeIndex = session.activeCandidateId
     ? candidates.findIndex((candidate) => candidate.id === session.activeCandidateId)
@@ -66,8 +70,35 @@ export default async function PilotagePage() {
         <div className="border-b border-outline-variant/30 p-4">
           <h1 className="font-serif text-headline-md text-primary">Candidats</h1>
           <p className="mt-0.5 text-label-sm text-on-surface-variant">
-            Ouvrez les votes candidat par candidat.
+            {byJuror
+              ? "Déroulé « juré après juré » : ouvrez tous les votes en une fois."
+              : "Ouvrez les votes candidat par candidat."}
           </p>
+
+          {/* Ouvrir tout d'un coup : ce que suppose le déroulé « juré après
+              juré », où chaque juré parcourt l'ensemble des candidats. Reste
+              accessible dans l'autre déroulé — l'organisateur peut avoir ses
+              raisons — mais n'y est pas mis en avant. */}
+          {candidates.length > 0 ? (
+            <div className="mt-3">
+              <ConfirmButton
+                action={openAllVotingAction}
+                values={{}}
+                label="Ouvrir tous les votes"
+                confirmMessage={
+                  `Ouvrir les votes pour les ${candidates.length} candidats en même temps ?\n\n` +
+                  "Aucun candidat ne sera plus « en cours » : les tablettes laisseront " +
+                  "chaque juré les parcourir tous."
+                }
+                icon={<VoteIcon className="h-4 w-4" />}
+                className={
+                  byJuror
+                    ? "gold-gradient flex h-touch w-full items-center justify-center gap-2 rounded-lg text-label-lg transition hover:brightness-105"
+                    : "flex h-touch w-full items-center justify-center gap-2 rounded-lg border border-primary/40 text-label-lg text-primary transition-colors hover:bg-primary/5"
+                }
+              />
+            </div>
+          ) : null}
         </div>
 
         <div className="custom-scrollbar max-h-[70vh] flex-1 space-y-2 overflow-y-auto p-2">
@@ -146,13 +177,22 @@ export default async function PilotagePage() {
             </span>
           )}
 
+          {/* En « juré après juré », aucun candidat n'est « en cours » : tous
+              le sont. Afficher « aucun candidat sélectionné » se lirait comme
+              une panne alors que la salle vote. */}
           <h2 className="text-center font-serif text-headline-lg text-on-surface">
-            {activeCandidate ? activeCandidate.name : "Aucun candidat sélectionné"}
+            {activeCandidate
+              ? activeCandidate.name
+              : session.votingOpen
+                ? `Tous les candidats (${candidates.length})`
+                : "Aucun candidat sélectionné"}
           </h2>
           <p className="mt-2 text-body-md text-on-surface-variant">
             {activeCandidate
               ? "Candidat en cours d'évaluation"
-              : "Ouvrez les votes d'un candidat pour démarrer"}
+              : session.votingOpen
+                ? "Chaque juré les parcourt tous, à son rythme"
+                : "Ouvrez les votes d'un candidat pour démarrer"}
           </p>
 
           {/* Le chronomètre a quitté cet écran : c'est un réglage d'avant
