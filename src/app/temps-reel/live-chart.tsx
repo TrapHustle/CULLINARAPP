@@ -35,7 +35,7 @@ export type Placement = "bas" | "cote" | "non";
  * Fixe et soustraite de la hauteur disponible : sans elle, la barre du meneur
  * pousserait son propre portrait hors du cadre dès qu'il approche du maximum.
  */
-const HEADROOM = 200;
+const HEADROOM = 236;
 
 /** Cadence de rafraîchissement : assez court pour voir monter, assez long pour ne pas marteler. */
 const REFRESH_MS = 4000;
@@ -118,8 +118,6 @@ export function LiveChart({
   );
 
   const best = rated.length > 0 ? Math.max(...rated.map((row) => row.score)) : 0;
-  const mean =
-    rated.length > 0 ? rated.reduce((sum, row) => sum + row.score, 0) / rated.length : 0;
 
   // Du meilleur au moins bon, les non notés en fin de liste : ils existent, ils
   // n'ont simplement pas encore de note.
@@ -221,20 +219,6 @@ export function LiveChart({
                 ))}
               </div>
 
-              {/* Moyenne générale : la ligne de partage qui a du sens ici, là où
-                  un scrutin afficherait un seuil de majorité. */}
-              <div
-                className="pointer-events-none absolute left-[46px] right-0 border-t border-dashed border-[#d4af37]/50"
-                style={{
-                  bottom: `calc(${HEADROOM}px + (100% - ${HEADROOM}px) * ${mean / maxTotal})`,
-                  transition: `bottom ${RISE}`,
-                }}
-              >
-                <b className="absolute -top-[11px] right-0 whitespace-nowrap rounded-full border border-[#d4af37]/45 bg-[#d4af37]/15 px-2.5 py-0.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#e8cd72]">
-                  Moyenne générale · {fmt(mean)}
-                </b>
-              </div>
-
               <div className="relative flex h-[440px] items-end gap-[18px]">
                 {rows.map((row) => {
                   const { candidate, score, rank } = row;
@@ -258,9 +242,9 @@ export function LiveChart({
                       </span>
 
                       <span
-                        className="relative mx-auto grid h-[74px] w-[74px] place-items-center rounded-full bg-[#332c22]"
+                        className="relative mx-auto grid h-[108px] w-[108px] place-items-center rounded-full bg-[#332c22]"
                         style={{
-                          boxShadow: `inset 0 0 0 2px ${candidate.color}, 0 0 26px ${candidate.color}55`,
+                          boxShadow: `inset 0 0 0 3px ${candidate.color}, 0 0 34px ${candidate.color}55`,
                         }}
                       >
                         {candidate.photoUrl ? (
@@ -272,7 +256,7 @@ export function LiveChart({
                           />
                         ) : (
                           <span
-                            className="font-serif text-[29px] font-bold"
+                            className="font-serif text-[42px] font-bold"
                             style={{ color: candidate.color }}
                           >
                             {candidate.name.trim().charAt(0).toUpperCase()}
@@ -281,7 +265,7 @@ export function LiveChart({
 
                         {rank !== null ? (
                           <span
-                            className="absolute -bottom-1 right-0.5 grid h-6 w-6 place-items-center rounded-full border-2 border-[#241f18] text-[12px] font-bold text-white"
+                            className="absolute -bottom-1 right-1 grid h-7 w-7 place-items-center rounded-full border-2 border-[#241f18] text-[13px] font-bold text-white"
                             style={{ background: candidate.color }}
                           >
                             {rank}
@@ -399,7 +383,7 @@ export function LiveChart({
                 </span>
 
                 <span
-                  className="grid h-[42px] w-[42px] flex-none place-items-center overflow-hidden rounded-xl bg-white/5"
+                  className="grid h-[54px] w-[54px] flex-none place-items-center overflow-hidden rounded-xl bg-white/5"
                   style={{ boxShadow: `inset 0 0 0 2px ${row.candidate.color}` }}
                 >
                   {row.candidate.photoUrl ? (
