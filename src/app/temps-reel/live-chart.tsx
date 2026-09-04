@@ -15,7 +15,7 @@ interface TimelinePoint {
   ranks: (number | null)[];
 }
 
-interface TimelinePayload {
+export interface TimelinePayload {
   candidates: TimelineCandidate[];
   maxTotal: number;
   points: TimelinePoint[];
@@ -33,7 +33,20 @@ const PAD = { top: 28, right: 168, bottom: 44, left: 56 };
  */
 const REFRESH_MS = 4000;
 
-export function LiveChart({ initial }: { initial: TimelinePayload }) {
+export function LiveChart({
+  initial,
+  pin,
+}: {
+  initial: TimelinePayload;
+  /**
+   * Code de proclamation, quand le graphique est affiché sur l'écran projeté.
+   *
+   * Cette machine n'a pas de session : elle passe par la route gardée par le
+   * code plutôt que par celle réservée au dashboard. Absent, on interroge la
+   * route authentifiée comme depuis la page Résultats.
+   */
+  pin?: string;
+}) {
   const [data, setData] = useState(initial);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [live, setLive] = useState(true);
@@ -43,7 +56,14 @@ export function LiveChart({ initial }: { initial: TimelinePayload }) {
   useEffect(() => {
     const timer = setInterval(async () => {
       try {
-        const response = await fetch("/api/results/timeline", { cache: "no-store" });
+        const response = pin
+          ? await fetch("/api/direct/timeline", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ pin }),
+              cache: "no-store",
+            })
+          : await fetch("/api/results/timeline", { cache: "no-store" });
         if (!response.ok) {
           setLive(false);
           return;
@@ -63,7 +83,7 @@ export function LiveChart({ initial }: { initial: TimelinePayload }) {
       }
     }, REFRESH_MS);
     return () => clearInterval(timer);
-  }, []);
+  }, [pin]);
 
   const { candidates, maxTotal, points } = data;
 

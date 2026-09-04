@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { LiveRanking } from "./live-ranking";
 import { Proclamation } from "./proclamation";
 
 interface DirectTable {
@@ -110,6 +111,7 @@ export function DirectDisplay({ initial }: { initial: DirectPayload }) {
           n'a rien de neuf à montrer. */}
       <div aria-hidden className="direct-halo pointer-events-none absolute inset-0" />
       <Proclamation />
+      <LiveRanking />
 
       <Header
         stale={stale}
@@ -240,6 +242,7 @@ function Standby({ stale }: { stale: boolean }) {
     <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#0d0b08] px-[6vw] text-center text-[#fff]">
       <div aria-hidden className="direct-halo pointer-events-none absolute inset-0" />
       <Proclamation />
+      <LiveRanking />
 
       <p className="relative text-[1.8vh] uppercase tracking-[0.5em] text-[#d4af37]">Soirée</p>
       <h1 className="relative mt-[2vh] font-serif text-[10vh] leading-none text-[#d4af37]">
