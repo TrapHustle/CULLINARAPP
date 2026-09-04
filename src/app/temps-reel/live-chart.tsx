@@ -137,7 +137,7 @@ export function LiveChart({
         placement === "cote" ? "lg:grid-cols-[minmax(0,1fr)_300px]" : "grid-cols-1"
       }`}
     >
-      <section className="rounded-2xl border border-white/10 bg-[#12100b] px-6 pb-7 pt-5">
+      <section className="rounded-2xl border border-white/15 bg-[#241f18] px-6 pb-7 pt-5">
         {/* ---- En-tête ---- */}
         <div className="flex items-start gap-3.5">
           <span
@@ -157,14 +157,14 @@ export function LiveChart({
 
           <div className="min-w-0">
             <h2 className="text-lg font-semibold text-white">Notes en direct</h2>
-            <p className="mt-0.5 text-[13px] text-white/45">
+            <p className="mt-0.5 text-[13px] text-white/60">
               Moyenne pondérée sur {maxTotal} — un vote du jury spécial pèse davantage.
             </p>
           </div>
 
           <span
             className={`ml-auto flex flex-none items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] ${
-              live ? "border-emerald-400/40 text-emerald-300" : "border-white/15 text-white/40"
+              live ? "border-emerald-400/40 text-emerald-300" : "border-white/15 text-white/55"
             }`}
           >
             <span
@@ -181,7 +181,7 @@ export function LiveChart({
           {candidates.map((candidate) => (
             <span
               key={candidate.id}
-              className="flex items-center gap-2 text-[12.5px] text-white/45"
+              className="flex items-center gap-2 text-[12.5px] text-white/60"
             >
               <i
                 aria-hidden
@@ -195,7 +195,7 @@ export function LiveChart({
 
         {/* ---- Le graphique ---- */}
         {rated.length === 0 ? (
-          <p className="py-24 text-center text-white/40">Aucun vote reçu pour l&apos;instant.</p>
+          <p className="py-24 text-center text-white/55">Aucun vote reçu pour l&apos;instant.</p>
         ) : (
           <>
             <div className="relative pl-[46px]">
@@ -204,7 +204,7 @@ export function LiveChart({
                 {ticks.map((tick) => (
                   <span
                     key={tick}
-                    className="absolute right-2.5 translate-y-1/2 text-[11.5px] tabular-nums text-white/30"
+                    className="absolute right-2.5 translate-y-1/2 text-[11.5px] tabular-nums text-white/65"
                     style={{ bottom: `${tick * 100}%` }}
                   >
                     {Math.round(tick * maxTotal)}
@@ -215,7 +215,7 @@ export function LiveChart({
                 {ticks.map((tick) => (
                   <div
                     key={tick}
-                    className="absolute inset-x-0 border-t border-white/[0.06]"
+                    className="absolute inset-x-0 border-t border-white/[0.10]"
                     style={{ bottom: `${tick * 100}%` }}
                   />
                 ))}
@@ -258,7 +258,7 @@ export function LiveChart({
                       </span>
 
                       <span
-                        className="relative mx-auto grid h-[74px] w-[74px] place-items-center rounded-full bg-[#1b1710]"
+                        className="relative mx-auto grid h-[74px] w-[74px] place-items-center rounded-full bg-[#332c22]"
                         style={{
                           boxShadow: `inset 0 0 0 2px ${candidate.color}, 0 0 26px ${candidate.color}55`,
                         }}
@@ -281,7 +281,7 @@ export function LiveChart({
 
                         {rank !== null ? (
                           <span
-                            className="absolute -bottom-1 right-0.5 grid h-6 w-6 place-items-center rounded-full border-2 border-[#12100b] text-[12px] font-bold text-white"
+                            className="absolute -bottom-1 right-0.5 grid h-6 w-6 place-items-center rounded-full border-2 border-[#241f18] text-[12px] font-bold text-white"
                             style={{ background: candidate.color }}
                           >
                             {rank}
@@ -292,7 +292,7 @@ export function LiveChart({
                       <p className="mx-auto mb-0.5 mt-3 text-center text-[30px] font-semibold tabular-nums text-white">
                         {unrated ? "—" : fmt(score)}
                       </p>
-                      <p className="mb-2.5 text-center text-[11.5px] tabular-nums text-white/30">
+                      <p className="mb-2.5 text-center text-[11.5px] tabular-nums text-white/65">
                         {unrated
                           ? "aucun vote"
                           : `${candidate.votes} vote${candidate.votes > 1 ? "s" : ""}`}
@@ -310,7 +310,7 @@ export function LiveChart({
                           transition: `height ${RISE}`,
                         }}
                       >
-                        <span className="absolute inset-x-0 bottom-0 truncate bg-black/40 px-1.5 py-1.5 text-center text-[11.5px] font-semibold uppercase tracking-[0.08em] text-white/90">
+                        <span className="absolute inset-x-0 bottom-0 truncate bg-black/45 px-1.5 py-1.5 text-center text-[11.5px] font-semibold uppercase tracking-[0.08em] text-white/90">
                           {candidate.name}
                         </span>
                       </div>
@@ -319,7 +319,7 @@ export function LiveChart({
                 })}
               </div>
             </div>
-            <div className="ml-[46px] border-t border-white/20" />
+            <div className="ml-[46px] border-t border-white/25" />
           </>
         )}
 
@@ -329,21 +329,21 @@ export function LiveChart({
             {ranked.map((row) => (
               <div
                 key={row.candidate.id}
-                className={`rounded-2xl border bg-[#181410] px-3 py-3.5 text-center ${
-                  row.rank === 1 ? "border-[#d4af37]/45" : "border-white/10"
+                className={`rounded-2xl border bg-[#2c261d] px-3 py-3.5 text-center ${
+                  row.rank === 1 ? "border-[#d4af37]/45" : "border-white/15"
                 }`}
               >
                 <b className="block font-serif text-lg font-bold text-white">
                   {row.candidate.name}
                 </b>
-                <span className="mt-1 block text-xs text-white/45">
+                <span className="mt-1 block text-xs text-white/60">
                   {row.score === null
                     ? "—"
                     : `Rang n° ${row.rank} · ${row.candidate.votes} vote${
                         row.candidate.votes > 1 ? "s" : ""
                       }`}
                 </span>
-                <span className="mt-1.5 block text-[11.5px] tabular-nums text-white/30">
+                <span className="mt-1.5 block text-[11.5px] tabular-nums text-white/65">
                   {row.score === null
                     ? "Non noté"
                     : row.rank === 1
@@ -356,7 +356,7 @@ export function LiveChart({
         ) : null}
 
         {/* ---- Où loger le classement ---- */}
-        <div className="mt-5 flex flex-wrap items-center gap-2 text-[12px] text-white/35">
+        <div className="mt-5 flex flex-wrap items-center gap-2 text-[12px] text-white/65">
           <span className="mr-1 uppercase tracking-[0.14em]">Classement</span>
           {(
             [
@@ -383,18 +383,18 @@ export function LiveChart({
 
       {/* ---- Classement sur le côté ---- */}
       {placement === "cote" ? (
-        <aside className="rounded-2xl border border-white/10 bg-[#12100b] p-4">
+        <aside className="rounded-2xl border border-white/15 bg-[#241f18] p-4">
           <h2 className="mb-3 font-serif text-lg font-bold text-white">Classement</h2>
 
           <ol className="flex flex-col gap-2.5">
             {ranked.map((row) => (
               <li
                 key={row.candidate.id}
-                className={`flex items-center gap-3 rounded-xl border bg-white/[0.03] p-2.5 ${
-                  row.rank === 1 ? "border-[#d4af37]/45" : "border-white/[0.07]"
+                className={`flex items-center gap-3 rounded-xl border bg-white/[0.06] p-2.5 ${
+                  row.rank === 1 ? "border-[#d4af37]/45" : "border-white/[0.12]"
                 }`}
               >
-                <span className="w-[18px] text-center font-serif text-[17px] font-bold tabular-nums text-white/50">
+                <span className="w-[18px] text-center font-serif text-[17px] font-bold tabular-nums text-white/65">
                   {row.rank ?? "—"}
                 </span>
 
@@ -423,7 +423,7 @@ export function LiveChart({
                   <b className="block truncate text-[13.5px] font-semibold text-white">
                     {row.candidate.name}
                   </b>
-                  <span className="mt-0.5 block text-[11.5px] tabular-nums text-white/45">
+                  <span className="mt-0.5 block text-[11.5px] tabular-nums text-white/60">
                     {row.score === null
                       ? "non noté"
                       : `${row.candidate.votes} vote${row.candidate.votes > 1 ? "s" : ""}`}
@@ -437,7 +437,7 @@ export function LiveChart({
             ))}
           </ol>
 
-          <p className="mt-3.5 px-1 text-[11.5px] leading-relaxed text-white/30">
+          <p className="mt-3.5 px-1 text-[11.5px] leading-relaxed text-white/65">
             Le nombre de votes est indicatif : il n&apos;entre pas dans le classement.
           </p>
         </aside>

@@ -45,11 +45,11 @@ export function LiveRanking() {
 
   if (data) {
     return (
-      <div className="fixed inset-0 z-50 overflow-auto bg-[#0d0b08] p-[2vw]">
+      <div className="fixed inset-0 z-50 overflow-auto bg-[#17130d] p-[2vw]">
         <button
           type="button"
           onClick={() => setData(null)}
-          className="absolute right-[2vw] top-[2vh] z-10 rounded-full border border-white/20 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-white/60 transition hover:border-[#d4af37] hover:text-[#f2ca50]"
+          className="absolute right-[2vw] top-[2vh] z-10 rounded-full border border-white/20 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-white/70 transition hover:border-[#d4af37] hover:text-[#f2ca50]"
         >
           Fermer
         </button>

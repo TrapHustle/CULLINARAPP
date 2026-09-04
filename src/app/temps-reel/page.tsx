@@ -29,7 +29,7 @@ export default async function TempsReelPage() {
   const timeline = await computeTimeline();
 
   return (
-    <main className="min-h-full bg-[#0d0b08] px-6 py-8 text-white md:px-10">
+    <main className="min-h-full bg-[#17130d] px-6 py-8 text-white md:px-10">
       <div className="mx-auto max-w-6xl space-y-7">
         <header className="flex flex-wrap items-start justify-between gap-6">
           <div>
@@ -39,7 +39,7 @@ export default async function TempsReelPage() {
             <h1 className="mt-1 font-serif text-3xl font-bold text-white md:text-4xl">
               La course des candidats
             </h1>
-            <p className="mt-2 max-w-2xl text-sm text-white/45">
+            <p className="mt-2 max-w-2xl text-sm text-white/70">
               Chaque point de la courbe est un vote reçu : la note d&apos;un candidat monte ou
               descend à mesure que les jurés se prononcent. Moyenne pondérée sur {timeline.maxTotal},
               un vote du jury spécial comptant double — le même calcul que le palmarès.
@@ -48,7 +48,7 @@ export default async function TempsReelPage() {
 
           <Link
             href="/resultats"
-            className="rounded-lg border border-white/15 px-4 py-2.5 text-sm font-semibold text-white/60 transition hover:border-[#d4af37]/60 hover:text-[#f2ca50]"
+            className="rounded-lg border border-white/15 px-4 py-2.5 text-sm font-semibold text-white/70 transition hover:border-[#d4af37]/60 hover:text-[#f2ca50]"
           >
             ← Retour aux résultats
           </Link>
