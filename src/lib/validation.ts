@@ -168,6 +168,17 @@ export const sessionUpdateSchema = z.object({
  */
 export const voteModeSchema = z.enum(["BY_CANDIDATE", "BY_JUROR"]);
 
+/**
+ * Changement de déroulé demandé par une tablette (`POST /api/vote-mode`).
+ *
+ * Une seule catégorie à la fois : l'organisateur en salle règle celle qu'il a
+ * sous les yeux, sans risquer d'écraser l'autre par un envoi partiel.
+ */
+export const voteModeUpdateSchema = z.object({
+  category: z.enum(["PUBLIC", "SPECIAL"]),
+  mode: voteModeSchema,
+});
+
 export const voteSettingsSchema = z
   .object({
     weightPublic: z.coerce.number().min(0).max(10),
