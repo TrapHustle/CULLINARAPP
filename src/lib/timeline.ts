@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import {
+  computeCriterionAverage,
   maxTotalForCriteria,
   voteTotal,
   weightForTableType,
@@ -25,6 +26,14 @@ export interface TimelineCandidate {
    * c'est tout l'objet de la pondération.
    */
   votes: number;
+  /**
+   * Moyenne par critère, sur 10, à l'instant présent.
+   *
+   * Affichée sous la note globale : elle dit *pourquoi* un candidat est là où
+   * il est — excellent en goût, faible en présentation — ce que la moyenne
+   * seule masque.
+   */
+  byCriterion: { name: string; average: number | null }[];
 }
 
 /**
@@ -129,6 +138,7 @@ export async function computeTimeline(): Promise<TimelinePayload> {
     color: SERIES_COLORS[i % SERIES_COLORS.length],
     photoUrl: candidate.photoUrl,
     votes: 0,
+    byCriterion: criteria.map((criterion) => ({ name: criterion.name, average: null })),
   }));
   const positionById = new Map(series.map((candidate, i) => [candidate.id, i]));
 
@@ -136,6 +146,10 @@ export async function computeTimeline(): Promise<TimelinePayload> {
   // reparcourir tout l'historique à chaque point.
   const weightedSum = new Array(series.length).fill(0);
   const weightTotal = new Array(series.length).fill(0);
+
+  // Votes conservés par candidat : ils servent au détail par critère, calculé
+  // une fois à la fin plutôt qu'à chaque point — seul l'état présent est montré.
+  const votesByCandidate: ScoredVote[][] = series.map(() => []);
 
   const points: TimelinePoint[] = [];
   let index = 0;
@@ -156,6 +170,7 @@ export async function computeTimeline(): Promise<TimelinePayload> {
     weightedSum[position] += voteTotal(scoredVote, criterionIds) * weight;
     weightTotal[position] += weight;
     series[position].votes += 1;
+    votesByCandidate[position].push(scoredVote);
 
     index += 1;
     const current = series.map((_, i) =>
@@ -169,6 +184,13 @@ export async function computeTimeline(): Promise<TimelinePayload> {
       ranks: ranksOf(current),
     });
   }
+
+  series.forEach((candidate, position) => {
+    candidate.byCriterion = criteria.map((criterion) => {
+      const average = computeCriterionAverage(votesByCandidate[position], criterion.id, weights);
+      return { name: criterion.name, average: average === null ? null : round2(average) };
+    });
+  });
 
   return { candidates: series, maxTotal, points, totalVotes: index, expectedVotes };
 }

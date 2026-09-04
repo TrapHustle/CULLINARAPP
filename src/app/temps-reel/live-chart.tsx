@@ -8,6 +8,7 @@ interface TimelineCandidate {
   color: string;
   photoUrl: string | null;
   votes: number;
+  byCriterion: { name: string; average: number | null }[];
 }
 
 interface TimelinePoint {
@@ -73,7 +74,28 @@ export function LiveChart({
   const [live, setLive] = useState(true);
   const [flash, setFlash] = useState(false);
   const [placement, setPlacement] = useState<Placement>(initialPlacement);
+  const [full, setFull] = useState(false);
+  const shell = useRef<HTMLDivElement>(null);
   const previousVotes = useRef(initial.totalVotes);
+
+  // Le plein écran du navigateur, pas une simple surcouche : sur un
+  // vidéoprojecteur, la barre d'adresse et les onglets mangent le haut de
+  // l'image et trahissent qu'on est dans un navigateur.
+  useEffect(() => {
+    const sync = () => setFull(document.fullscreenElement !== null);
+    document.addEventListener("fullscreenchange", sync);
+    return () => document.removeEventListener("fullscreenchange", sync);
+  }, []);
+
+  async function toggleFull() {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await shell.current?.requestFullscreen();
+    } catch {
+      // Refusé par le navigateur ou déjà dans cet état : sans conséquence,
+      // la page reste lisible telle quelle.
+    }
+  }
 
   useEffect(() => {
     const timer = setInterval(async () => {
@@ -131,9 +153,10 @@ export function LiveChart({
 
   return (
     <div
-      className={`grid items-start gap-4 ${
-        placement === "cote" ? "lg:grid-cols-[minmax(0,1fr)_300px]" : "grid-cols-1"
-      }`}
+      ref={shell}
+      className={`grid items-start gap-4 bg-[#17130d] ${
+        full ? "h-screen overflow-auto p-4" : ""
+      } ${placement === "cote" ? "lg:grid-cols-[minmax(0,1fr)_300px]" : "grid-cols-1"}`}
     >
       <section className="rounded-2xl border border-white/15 bg-[#241f18] px-6 pb-7 pt-5">
         {/* ---- En-tête ---- */}
@@ -170,8 +193,31 @@ export function LiveChart({
                 live ? "bg-emerald-400" : "bg-white/30"
               } ${flash ? "animate-ping" : ""}`}
             />
-            {live ? "En direct" : "Reconnexion"} · {data.totalVotes} votes
+            {live ? "En direct" : "Reconnexion"}
           </span>
+
+          <button
+            type="button"
+            onClick={toggleFull}
+            title={full ? "Quitter le plein écran" : "Passer en plein écran"}
+            className="flex-none rounded-full border border-[#d4af37]/40 p-2 text-[#e8cd72] transition hover:border-[#d4af37] hover:bg-[#d4af37]/10"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.9}
+              strokeLinecap="round"
+            >
+              {full ? (
+                <path d="M9 3v6H3M15 3v6h6M9 21v-6H3M15 21v-6h6" />
+              ) : (
+                <path d="M3 9V3h6M21 9V3h-6M3 15v6h6M21 15v6h-6" />
+              )}
+            </svg>
+            <span className="sr-only">{full ? "Quitter le plein écran" : "Plein écran"}</span>
+          </button>
         </div>
 
         {/* ---- Légende : l'identité ne repose jamais sur la seule couleur ---- */}
@@ -273,13 +319,8 @@ export function LiveChart({
                         ) : null}
                       </span>
 
-                      <p className="mx-auto mb-0.5 mt-3 text-center text-[30px] font-semibold tabular-nums text-white">
+                      <p className="mx-auto mb-3 mt-3 text-center text-[30px] font-semibold tabular-nums text-white">
                         {unrated ? "—" : fmt(score)}
-                      </p>
-                      <p className="mb-2.5 text-center text-[11.5px] tabular-nums text-white/65">
-                        {unrated
-                          ? "aucun vote"
-                          : `${candidate.votes} vote${candidate.votes > 1 ? "s" : ""}`}
                       </p>
 
                       <div
@@ -294,6 +335,26 @@ export function LiveChart({
                           transition: `height ${RISE}`,
                         }}
                       >
+                        {/* Le détail par critère vit dans la barre : il dit
+                            pourquoi un candidat est là où il est, ce que la
+                            moyenne seule masque. Masqué si la barre est trop
+                            basse pour l'accueillir sans se chevaucher. */}
+                        {!unrated && score / maxTotal > 0.34 ? (
+                          <div className="absolute inset-x-0 top-0 space-y-1 px-2 pt-2.5">
+                            {candidate.byCriterion.map((criterion) => (
+                              <div
+                                key={criterion.name}
+                                className="flex items-baseline justify-between gap-2 text-[11.5px]"
+                              >
+                                <span className="truncate text-white/70">{criterion.name}</span>
+                                <span className="flex-none font-semibold tabular-nums text-white">
+                                  {criterion.average === null ? "—" : fmt(criterion.average)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
+
                         <span className="absolute inset-x-0 bottom-0 truncate bg-black/45 px-1.5 py-1.5 text-center text-[11.5px] font-semibold uppercase tracking-[0.08em] text-white/90">
                           {candidate.name}
                         </span>
@@ -321,11 +382,7 @@ export function LiveChart({
                   {row.candidate.name}
                 </b>
                 <span className="mt-1 block text-xs text-white/60">
-                  {row.score === null
-                    ? "—"
-                    : `Rang n° ${row.rank} · ${row.candidate.votes} vote${
-                        row.candidate.votes > 1 ? "s" : ""
-                      }`}
+                  {row.score === null ? "Non noté" : `Rang n° ${row.rank}`}
                 </span>
                 <span className="mt-1.5 block text-[11.5px] tabular-nums text-white/65">
                   {row.score === null
@@ -407,10 +464,12 @@ export function LiveChart({
                   <b className="block truncate text-[13.5px] font-semibold text-white">
                     {row.candidate.name}
                   </b>
-                  <span className="mt-0.5 block text-[11.5px] tabular-nums text-white/60">
+                  <span className="mt-0.5 block truncate text-[11.5px] text-white/60">
                     {row.score === null
                       ? "non noté"
-                      : `${row.candidate.votes} vote${row.candidate.votes > 1 ? "s" : ""}`}
+                      : row.candidate.byCriterion
+                          .map((c) => (c.average === null ? "—" : fmt(c.average)))
+                          .join(" · ")}
                   </span>
                 </span>
 
