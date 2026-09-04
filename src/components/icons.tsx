@@ -260,3 +260,13 @@ export function ScreenIcon(props: IconProps) {
     </Svg>
   );
 }
+
+/** Courbe ascendante — classement en temps réel. */
+export function ChartIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M4 5v14h16" />
+      <path d="M7 15l4-5 3 3 5-6" />
+    </Svg>
+  );
+}

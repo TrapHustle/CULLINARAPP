@@ -1,5 +1,5 @@
 import { AutoRefresh } from "@/components/auto-refresh";
-import { DownloadIcon, PrintIcon } from "@/components/icons";
+import { ChartIcon, DownloadIcon, PrintIcon } from "@/components/icons";
 import { RankingTable } from "@/components/ranking-table";
 import { computeResults } from "@/lib/results";
 
@@ -30,6 +30,17 @@ export default async function ResultatsPage() {
         </div>
 
         <div className="flex gap-3 print:hidden">
+          {/* La courbe s'ouvre dans un onglet à part : elle se projette pendant
+              que le dashboard reste piloté sur l'écran du portable. */}
+          <a
+            href="/temps-reel"
+            target="_blank"
+            rel="noreferrer"
+            className="flex h-touch items-center gap-2 rounded-lg border border-outline-variant px-4 text-label-lg text-on-surface-variant transition-colors hover:border-primary/50 hover:text-primary"
+          >
+            <ChartIcon className="h-4 w-4" />
+            Classement en temps réel
+          </a>
           <a
             href="/api/export/excel"
             className="flex h-touch items-center gap-2 rounded-lg border border-outline-variant px-4 text-label-lg text-on-surface-variant transition-colors hover:border-primary/50 hover:text-primary"
