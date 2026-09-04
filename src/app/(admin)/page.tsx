@@ -29,8 +29,9 @@ export default async function PilotagePage() {
     prisma.votingTable.findMany({ orderBy: { name: "asc" } }),
   ]);
 
-  /** Déroulé « juré après juré » : tous les candidats ouverts en même temps. */
-  const byJuror = session.voteMode === "BY_JUROR";
+  /** Vrai dès qu'une des deux catégories attend tous les candidats ouverts. */
+  const byJuror =
+    session.voteModePublic === "BY_JUROR" || session.voteModeSpecial === "BY_JUROR";
 
   const activeIndex = session.activeCandidateId
     ? candidates.findIndex((candidate) => candidate.id === session.activeCandidateId)
@@ -71,7 +72,7 @@ export default async function PilotagePage() {
           <h1 className="font-serif text-headline-md text-primary">Candidats</h1>
           <p className="mt-0.5 text-label-sm text-on-surface-variant">
             {byJuror
-              ? "Déroulé « juré après juré » : ouvrez tous les votes en une fois."
+              ? "Un déroulé « juré après juré » est actif : ouvrez tous les votes."
               : "Ouvrez les votes candidat par candidat."}
           </p>
 
@@ -177,8 +178,8 @@ export default async function PilotagePage() {
             </span>
           )}
 
-          {/* En « juré après juré », aucun candidat n'est « en cours » : tous
-              le sont. Afficher « aucun candidat sélectionné » se lirait comme
+          {/* Sans candidat en cours mais scrutin ouvert, on est en « juré après
+              juré » : afficher « aucun candidat sélectionné » se lirait comme
               une panne alors que la salle vote. */}
           <h2 className="text-center font-serif text-headline-lg text-on-surface">
             {activeCandidate

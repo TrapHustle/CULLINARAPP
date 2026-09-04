@@ -109,19 +109,22 @@ model Session {
   scoreMin Int @default(1)
   scoreMax Int @default(5)
 
-  /// Déroulé du vote, qui décide de ce qu'une tablette rend accessible.
+  /// Déroulé du vote, réglé séparément pour chaque catégorie de table.
   ///
-  /// "BY_CANDIDATE" — l'organisateur ouvre un candidat à la fois, et toute la
-  /// salle le note ensemble avant de passer au suivant. C'est le déroulé
-  /// d'origine, celui d'une dégustation menée au rythme du service.
+  /// "BY_CANDIDATE" — l'organisateur ouvre un candidat à la fois, et la
+  /// catégorie le note avant de passer au suivant. C'est le déroulé d'origine,
+  /// celui d'une dégustation menée au rythme du service.
   ///
-  /// "BY_JUROR" — tous les candidats ouverts sont notables en même temps :
-  /// chaque juré prend la tablette et parcourt l'ensemble des candidats avant
-  /// de la passer au suivant. Suppose d'avoir ouvert les votes pour tous.
+  /// "BY_JUROR" — tous les candidats déjà ouverts sont notables en même temps :
+  /// chaque juré prend la tablette et les parcourt tous avant de la passer.
   ///
-  /// Stocké en String comme `VotingTable.type`, et pour la même raison : un
+  /// Les deux catégories sont indépendantes : le jury spécial peut tout
+  /// déguster puis tout noter pendant que la salle avance plat par plat.
+  ///
+  /// Stockés en String comme `VotingTable.type`, et pour la même raison : un
   /// troisième déroulé ne devra pas coûter une migration de schéma.
-  voteMode String @default("BY_CANDIDATE")
+  voteModePublic  String @default("BY_CANDIDATE")
+  voteModeSpecial String @default("BY_CANDIDATE")
 }
 
 /// Image téléversée depuis le dashboard (affiche de l'événement, portrait d'un

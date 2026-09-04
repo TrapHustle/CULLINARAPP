@@ -174,7 +174,8 @@ export const voteSettingsSchema = z
     weightSpecial: z.coerce.number().min(0).max(10),
     scoreMin: z.coerce.number().int().min(0).max(RAW_ABSOLUTE_MAX - 1),
     scoreMax: z.coerce.number().int().min(1).max(RAW_ABSOLUTE_MAX),
-    voteMode: voteModeSchema,
+    voteModePublic: voteModeSchema,
+    voteModeSpecial: voteModeSchema,
   })
   .refine((data) => data.scoreMax > data.scoreMin, {
     message: "La note maximale doit être supérieure à la note minimale.",

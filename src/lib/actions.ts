@@ -328,8 +328,11 @@ export async function openVotingAction(formData: FormData) {
  *
  * C'est ce que suppose le déroulé « juré après juré » : chaque juré prend la
  * tablette et parcourt l'ensemble des candidats avant de la passer au suivant.
- * Aucun candidat n'est « en cours » dans ce cas — `activeCandidateId` repasse à
- * `null`, et c'est la liste des candidats ouverts qui fait foi côté tablette.
+ *
+ * `activeCandidateId` est **conservé** : les deux catégories peuvent suivre des
+ * déroulés différents, et la salle a encore besoin de son candidat en cours
+ * pendant que le jury spécial les parcourt tous. L'effacer priverait le public
+ * de tout candidat notable.
  *
  * `openedAt` n'est posée que sur les candidats qui ne l'avaient pas : elle
  * atteste de la première ouverture et autorise l'acceptation des votes en
@@ -346,7 +349,7 @@ export async function openAllVotingAction() {
     }),
     prisma.session.update({
       where: { id: SESSION_ID },
-      data: { activeCandidateId: null, votingOpen: true },
+      data: { votingOpen: true },
     }),
   ]);
 
@@ -480,7 +483,8 @@ export async function updateVoteSettingsAction(formData: FormData) {
     weightSpecial: formData.get("weightSpecial"),
     scoreMin: formData.get("scoreMin"),
     scoreMax: formData.get("scoreMax"),
-    voteMode: formData.get("voteMode"),
+    voteModePublic: formData.get("voteModePublic"),
+    voteModeSpecial: formData.get("voteModeSpecial"),
   });
 
   if (!parsed.success) return;

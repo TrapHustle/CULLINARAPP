@@ -420,10 +420,22 @@ export default async function ConfigurationPage() {
               className="flex flex-wrap items-end gap-4"
             >
               <label className="text-label-sm text-on-surface-variant">
-                <span className="mb-1 block">Déroulé</span>
+                <span className="mb-1 block">Déroulé — Public</span>
                 <select
-                  name="voteMode"
-                  defaultValue={session.voteMode}
+                  name="voteModePublic"
+                  defaultValue={session.voteModePublic}
+                  className="rounded-lg border border-outline-variant/60 px-3 py-2 text-body-md"
+                >
+                  <option value="BY_CANDIDATE">Candidat après candidat</option>
+                  <option value="BY_JUROR">Juré après juré</option>
+                </select>
+              </label>
+
+              <label className="text-label-sm text-on-surface-variant">
+                <span className="mb-1 block">Déroulé — Jury spécial</span>
+                <select
+                  name="voteModeSpecial"
+                  defaultValue={session.voteModeSpecial}
                   className="rounded-lg border border-outline-variant/60 px-3 py-2 text-body-md"
                 >
                   <option value="BY_CANDIDATE">Candidat après candidat</option>
@@ -491,10 +503,13 @@ export default async function ConfigurationPage() {
 
             <p className="mt-4 text-label-sm text-outline">
               <strong className="text-on-surface-variant">Candidat après candidat</strong> :
-              l&apos;organisateur ouvre un candidat, toute la salle le note, puis on passe au
+              l&apos;organisateur ouvre un candidat, la catégorie le note, puis on passe au
               suivant. <strong className="text-on-surface-variant">Juré après juré</strong> : chaque
-              juré parcourt tous les candidats avant de passer la tablette — utilisez alors{" "}
-              <em>Ouvrir tous les votes</em> depuis le Pilotage.
+              juré parcourt tous les candidats déjà ouverts avant de passer la tablette — utilisez
+              alors <em>Ouvrir tous les votes</em> depuis le Pilotage.
+              <br />
+              Les deux catégories sont indépendantes : le jury spécial peut tout déguster puis tout
+              noter pendant que la salle avance plat par plat.
             </p>
             <p className="mt-2 text-label-sm text-outline">
               Un critère hors de 1 à 5 perd ses libellés (« Insuffisant »… « Exceptionnel ») sur la
