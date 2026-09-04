@@ -1,0 +1,303 @@
+<title>Course des candidats</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Outfit:wght@300;400;500;600&display=swap">
+
+<style>
+:root{
+  --ground:#0d0b08;
+  --panel:#12100b;
+  --line:rgba(255,255,255,.10);
+  --ink:#f3ead9;
+  --muted:#a2957c;
+  --gold:#d4af37;
+  --serif:"Cormorant Garamond",Georgia,serif;
+  --sans:"Outfit","Segoe UI",system-ui,sans-serif;
+}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);font-weight:300;}
+.wrap{max-width:1320px;margin:0 auto;padding:26px 20px 60px;}
+
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;gap:14px;margin-bottom:20px;}
+header.top h1{font-family:var(--serif);font-size:30px;font-weight:700;margin:0;}
+header.top p{margin:0;color:var(--muted);font-size:14px;}
+
+.grid{display:grid;gap:18px;grid-template-columns:minmax(0,1fr);}
+@media(min-width:1040px){ .grid{grid-template-columns:minmax(0,1fr) 320px;} }
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;}
+.card h2{font-family:var(--serif);font-size:21px;font-weight:700;margin:0;}
+.card .sub{margin:2px 0 0;color:var(--muted);font-size:13px;}
+.cardhead{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;}
+
+.pill{
+  display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(52,211,153,.4);
+  color:#6ee7b7;border-radius:99px;padding:6px 13px;
+  font-size:11.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+}
+.pill i{width:8px;height:8px;border-radius:50%;background:#34d399;display:block;}
+.pill i.beat{animation:beat 1s ease-out;}
+@keyframes beat{0%{transform:scale(1);opacity:1}70%{transform:scale(2.6);opacity:0}100%{transform:scale(1);opacity:1}}
+
+svg{width:100%;height:auto;display:block;}
+.head{transition:transform .85s cubic-bezier(.34,.9,.3,1);}
+.serie{transition:d .85s linear;}
+
+/* ---- Classement latéral ---- */
+.rank{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;}
+.rank li{
+  display:flex;align-items:center;gap:12px;
+  border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.03);
+  border-radius:13px;padding:11px;
+  transition:border-color .4s ease,transform .5s cubic-bezier(.34,.9,.3,1);
+}
+.rank li.lead{border-color:rgba(255,255,255,.26);}
+.rank .face{
+  width:58px;height:58px;flex:none;border-radius:13px;overflow:hidden;
+  display:grid;place-items:center;font-family:var(--serif);font-size:24px;font-weight:700;
+  background:rgba(255,255,255,.05);
+}
+.rank .who{min-width:0;flex:1;}
+.rank .who b{display:block;font-size:14px;font-weight:600;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rank .who span{display:block;margin-top:2px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;}
+.rank .note{text-align:right;flex:none;}
+.rank .note b{display:block;font-family:var(--serif);font-size:21px;font-weight:700;font-variant-numeric:tabular-nums;}
+.rank .note span{display:block;font-size:11px;color:rgba(255,255,255,.35);}
+.foot{margin:14px 2px 0;font-size:12px;line-height:1.5;color:rgba(255,255,255,.35);}
+
+/* ---- Barre de maquette ---- */
+.proto{
+  margin-top:22px;display:flex;flex-wrap:wrap;align-items:center;gap:12px;
+  font-size:13px;color:var(--muted);
+}
+.proto button{
+  font-family:var(--sans);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+  color:#e8cd72;background:transparent;border:1px solid rgba(212,175,55,.45);
+  border-radius:99px;padding:8px 17px;cursor:pointer;
+}
+.proto button:hover{background:rgba(212,175,55,.12);}
+.proto b{color:#e8cd72;font-weight:500;}
+
+/* ---- Emplacements de bouton comparés ---- */
+.stage{
+  position:relative;margin-top:26px;border:1px dashed rgba(212,175,55,.3);
+  border-radius:14px;height:150px;background:
+    radial-gradient(60% 90% at 50% 0%,rgba(212,175,55,.10),transparent 70%),var(--panel);
+}
+.stage .tag{position:absolute;left:14px;top:12px;font-size:11px;letter-spacing:.2em;
+  text-transform:uppercase;color:rgba(255,255,255,.3);}
+.ghost{
+  position:absolute;border:1px solid rgba(212,175,55,.4);background:rgba(212,175,55,.07);
+  color:#e8cd72;border-radius:99px;padding:7px 15px;font-size:11px;
+  letter-spacing:.16em;text-transform:uppercase;white-space:nowrap;
+}
+.ghost.a{top:12px;left:50%;transform:translateX(-50%);}
+.ghost.b{bottom:12px;right:14px;}
+.ghost.c{bottom:12px;left:50%;transform:translateX(-50%);}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+</style>
+
+<div class="wrap">
+
+  <header class="top">
+    <h1>Course des candidats</h1>
+    <p>Maquette — les votes arrivent un par un, la courbe avance vers la droite.</p>
+  </header>
+
+  <div class="grid">
+    <section class="card">
+      <div class="cardhead">
+        <div>
+          <h2>La course</h2>
+          <p class="sub">Chaque point est un vote reçu. La note se recalcule à chacun.</p>
+        </div>
+        <span class="pill"><i id="beat"></i> En direct</span>
+      </div>
+      <svg id="chart" viewBox="0 0 1000 470" role="img"
+           aria-label="Évolution de la note de chaque candidat au fil des votes"></svg>
+    </section>
+
+    <aside class="card">
+      <div class="cardhead" style="margin-bottom:10px">
+        <h2 style="font-size:18px">Classement</h2>
+        <span style="font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.35)">
+          <span id="total">0</span> votes
+        </span>
+      </div>
+      <ol class="rank" id="rank"></ol>
+      <p class="foot">
+        Moyenne pondérée par votant : un vote du jury spécial pèse davantage.
+        Le nombre de votes est indicatif, il n’entre pas dans le classement.
+      </p>
+    </aside>
+  </div>
+
+  <div class="proto">
+    <span>Vitesse&nbsp;: <b>1 vote / 1,2 s</b> — 18 votes attendus</span>
+    <span>·</span>
+    <button id="replay">Rejouer</button>
+    <button id="pause">Pause</button>
+    <span>·</span>
+    <span>Le 3<sup>e</sup> et le 4<sup>e</sup> finissent <b>ex æquo</b>. Un candidat reste <b>non noté</b>.</span>
+  </div>
+
+  <div class="stage">
+    <span class="tag">Emplacements possibles du bouton sur l’écran projeté</span>
+    <span class="ghost a">Classement final</span>
+    <span class="ghost b">Temps réel — B</span>
+    <span class="ghost c">Temps réel — C</span>
+  </div>
+
+</div>
+
+<script>
+"use strict";
+
+/* Jeu d'essai : 4 candidats notés, 1 jamais noté. Les deux derniers finissent
+   ex aequo, cas qui casse les mises en page trop propres. */
+var MAX = 30;            // note maximale d'un vote (3 critères sur 5, doublés)
+var EXPECTED = 18;       // votes attendus : c'est lui qui fixe la largeur
+var CANDIDATES = [
+  {n:"Chef Berthier", c:"#ea580c", i:"CB", target:24.8},
+  {n:"Chef Nakamura", c:"#3b82f6", i:"CN", target:22.1},
+  {n:"Chef Diallo",   c:"#16a34a", i:"CD", target:19.4},
+  {n:"Chef Rossi",    c:"#d946ef", i:"CR", target:19.4},
+  {n:"Chef Ferrand",  c:"#d97706", i:"CF", target:null}
+];
+
+var W=1000, H=470, PAD={top:34,right:78,bottom:36,left:52};
+var HEAD=30, GAP=HEAD*2+6;
+var plotW=W-PAD.left-PAD.right, plotH=H-PAD.top-PAD.bottom;
+
+var votes=[];   // { at: index, scores: [...] }
+var timer=null, running=true;
+
+function xAt(i){
+  // Largeur fixée par le nombre de votes ATTENDUS, non par ceux reçus : la
+  // courbe avance donc vers la droite au lieu d'être toujours pleine, et l'on
+  // voit d'un coup d'oeil où l'on en est du scrutin.
+  return PAD.left + (i/(EXPECTED-1))*plotW;
+}
+function yAt(s){ return PAD.top + (1 - s/MAX)*plotH; }
+
+function smooth(pts){
+  if(!pts.length) return "";
+  if(pts.length===1) return "M "+pts[0].x+" "+pts[0].y;
+  var d="M "+pts[0].x+" "+pts[0].y;
+  for(var i=0;i<pts.length-1;i++){
+    var p0=pts[i-1]||pts[i], p1=pts[i], p2=pts[i+1], p3=pts[i+2]||p2;
+    d+=" C "+(p1.x+(p2.x-p0.x)/6).toFixed(1)+" "+(p1.y+(p2.y-p0.y)/6).toFixed(1)
+      +", "+(p2.x-(p3.x-p1.x)/6).toFixed(1)+" "+(p2.y-(p3.y-p1.y)/6).toFixed(1)
+      +", "+p2.x.toFixed(1)+" "+p2.y.toFixed(1);
+  }
+  return d;
+}
+
+/* Un vote de plus : chaque candidat noté se rapproche de sa cible, avec un
+   soubresaut — une moyenne bouge beaucoup sur les premiers votes, puis se fige. */
+function addVote(){
+  var n=votes.length;
+  if(n>=EXPECTED){ stop(); return; }
+  var progress=(n+1)/EXPECTED;
+  var scores=CANDIDATES.map(function(c){
+    if(c.target===null) return null;
+    if(n===0) return c.target*(0.55+Math.random()*0.5);
+    var previous=votes[n-1].scores[CANDIDATES.indexOf(c)];
+    var noise=(1-progress)*(Math.random()-0.5)*4.5;
+    return Math.max(2, Math.min(MAX, previous+(c.target-previous)*0.45+noise));
+  });
+  votes.push({at:n, scores:scores});
+  draw();
+  var beat=document.getElementById("beat");
+  beat.classList.remove("beat"); void beat.offsetWidth; beat.classList.add("beat");
+}
+
+function draw(){
+  var svg=document.getElementById("chart");
+  var last=votes[votes.length-1];
+  var parts=[];
+
+  // Grille, discrète : elle situe, elle ne se lit pas.
+  [0,.25,.5,.75,1].forEach(function(t){
+    var v=t*MAX, y=yAt(v);
+    parts.push('<line x1="'+PAD.left+'" x2="'+(PAD.left+plotW)+'" y1="'+y+'" y2="'+y+
+      '" stroke="rgba(255,255,255,.07)"/>');
+    parts.push('<text x="'+(PAD.left-11)+'" y="'+(y+4)+'" text-anchor="end" fill="rgba(255,255,255,.32)" font-size="12.5">'+Math.round(v)+'</text>');
+  });
+
+  // Le bout du scrutin, pour que l'avancée ait une destination visible.
+  parts.push('<line x1="'+(PAD.left+plotW)+'" x2="'+(PAD.left+plotW)+'" y1="'+(PAD.top-4)+'" y2="'+(PAD.top+plotH+4)+
+    '" stroke="rgba(255,255,255,.16)" stroke-dasharray="4 5"/>');
+
+  var heads=[];
+  CANDIDATES.forEach(function(c,k){
+    var pts=[];
+    votes.forEach(function(v,i){ if(v.scores[k]!==null) pts.push({x:xAt(i),y:yAt(v.scores[k])}); });
+    if(!pts.length) return;
+    parts.push('<path class="serie" d="'+smooth(pts)+'" fill="none" stroke="'+c.c+
+      '" stroke-width="3" stroke-linecap="round"/>');
+    heads.push({c:c, k:k, x:pts[pts.length-1].x, y:pts[pts.length-1].y, s:last.scores[k]});
+  });
+
+  // Portraits écartés : deux candidats au coude à coude se recouvriraient.
+  heads.sort(function(a,b){ return b.s-a.s; });
+  var placed=[];
+  heads.forEach(function(h,i){
+    placed.push(i===0 ? h.y : Math.max(h.y, placed[i-1]+GAP));
+  });
+  var over=(placed[placed.length-1]||0)-(PAD.top+plotH-HEAD);
+  if(over>0){
+    var shift=Math.min(over, (placed[0]||0)-(PAD.top+HEAD));
+    if(shift>0) placed=placed.map(function(v){ return v-shift; });
+  }
+
+  heads.forEach(function(h,i){
+    var cy=placed[i], cx=h.x;
+    var g='<g class="head" transform="translate('+cx.toFixed(1)+' '+cy.toFixed(1)+')">';
+    if(Math.abs(cy-h.y)>1){
+      g+='<line x1="0" y1="'+(h.y-cy).toFixed(1)+'" x2="0" y2="0" stroke="'+h.c.c+'" stroke-width="1.5" opacity=".5"/>';
+    }
+    g+='<circle r="'+HEAD+'" fill="#12100b" stroke="'+h.c.c+'" stroke-width="2.5"/>';
+    g+='<text text-anchor="middle" dy="6" fill="'+h.c.c+'" font-family="Cormorant Garamond,serif" font-size="24" font-weight="700">'+h.c.i+'</text>';
+    g+='<circle cx="'+(HEAD-6)+'" cy="'+(-HEAD+6)+'" r="11" fill="'+h.c.c+'"/>';
+    g+='<text x="'+(HEAD-6)+'" y="'+(-HEAD+10)+'" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">'+(i+1)+'</text>';
+    g+='</g>';
+    parts.push(g);
+  });
+
+  parts.push('<text x="'+PAD.left+'" y="'+(H-10)+'" fill="rgba(255,255,255,.32)" font-size="12.5" letter-spacing="1.6">1ER VOTE</text>');
+  parts.push('<text x="'+(PAD.left+plotW)+'" y="'+(H-10)+'" text-anchor="end" fill="rgba(255,255,255,.32)" font-size="12.5" letter-spacing="1.6">'+EXPECTED+' ATTENDUS</text>');
+
+  svg.innerHTML=parts.join("");
+  document.getElementById("total").textContent=votes.length;
+  drawRank(heads);
+}
+
+function drawRank(heads){
+  var ol=document.getElementById("rank");
+  ol.innerHTML="";
+  heads.forEach(function(h,i){
+    var li=document.createElement("li");
+    if(i===0) li.className="lead";
+    li.innerHTML=
+      '<span class="face" style="box-shadow:inset 0 0 0 2px '+h.c.c+';color:'+h.c.c+'">'+h.c.i+'</span>'+
+      '<span class="who"><b>'+h.c.n+'</b><span>'+(Math.floor(votes.length/heads.length)+1)+
+        ' votes · <span style="color:'+h.c.c+'">'+(i+1)+(i===0?"er":"e")+'</span></span></span>'+
+      '<span class="note"><b>'+h.s.toFixed(2).replace(".",",")+'</b><span>sur '+MAX+'</span></span>';
+    ol.appendChild(li);
+  });
+}
+
+function start(){ stop(); running=true; timer=setInterval(addVote,1200); document.getElementById("pause").textContent="Pause"; }
+function stop(){ if(timer) clearInterval(timer); timer=null; }
+
+document.getElementById("replay").addEventListener("click",function(){ votes=[]; draw(); start(); });
+document.getElementById("pause").addEventListener("click",function(){
+  if(timer){ stop(); running=false; this.textContent="Reprendre"; }
+  else { start(); }
+});
+
+draw();
+start();
+</script>

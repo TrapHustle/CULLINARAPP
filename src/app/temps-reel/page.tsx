@@ -54,7 +54,7 @@ export default async function TempsReelPage() {
           </Link>
         </header>
 
-        <LiveChart initial={timeline} />
+        <LiveChart initial={timeline} placement="cote" />
       </div>
     </main>
   );

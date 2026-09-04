@@ -1,0 +1,419 @@
+<title>Notes en direct</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap">
+
+<style>
+:root{
+  --ground:#0d0b08;
+  --panel:#12100b;
+  --panel-2:#181410;
+  --line:rgba(255,255,255,.10);
+  --ink:#f3ead9;
+  --muted:#a2957c;
+  --faint:rgba(255,255,255,.32);
+  --gold:#d4af37;
+  --gold-soft:#e8cd72;
+  --serif:"Cormorant Garamond",Georgia,serif;
+  --sans:"Outfit","Segoe UI",system-ui,sans-serif;
+}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);font-weight:300;}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 20px 56px;}
+
+/* ---------- En-tête ---------- */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px 24px 26px;}
+.head{display:flex;align-items:flex-start;gap:14px;margin-bottom:6px;}
+.head .mark{
+  width:38px;height:38px;flex:none;border-radius:11px;display:grid;place-items:center;
+  background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.35);color:var(--gold-soft);
+}
+.head h1{font-family:var(--sans);font-size:19px;font-weight:600;margin:0;letter-spacing:.01em;}
+.head p{margin:3px 0 0;font-size:13px;color:var(--muted);}
+.head .live{
+  margin-left:auto;display:inline-flex;align-items:center;gap:8px;flex:none;
+  border:1px solid rgba(52,211,153,.4);color:#6ee7b7;border-radius:99px;padding:6px 13px;
+  font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+}
+.head .live i{width:8px;height:8px;border-radius:50%;background:#34d399;display:block;}
+.head .live i.beat{animation:beat 1s ease-out;}
+@keyframes beat{0%{transform:scale(1);opacity:1}70%{transform:scale(2.6);opacity:0}100%{transform:scale(1);opacity:1}}
+
+.legend{display:flex;flex-wrap:wrap;gap:16px;margin:14px 0 26px;padding-left:52px;}
+.legend span{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted);}
+.legend i{width:9px;height:9px;border-radius:3px;display:block;}
+
+/* ---------- Le graphique ---------- */
+.plot{position:relative;padding-left:46px;}
+
+.axis{position:absolute;left:0;top:0;bottom:var(--foot);width:46px;}
+.axis span{
+  position:absolute;right:10px;transform:translateY(50%);
+  font-size:11.5px;color:var(--faint);font-variant-numeric:tabular-nums;
+}
+.rules{position:absolute;left:46px;right:0;top:0;bottom:var(--foot);pointer-events:none;}
+.rules div{position:absolute;left:0;right:0;border-top:1px solid rgba(255,255,255,.06);}
+
+/* Ligne de repère : la moyenne générale. */
+.mean{
+  position:absolute;left:46px;right:0;border-top:1px dashed rgba(212,175,55,.5);
+  pointer-events:none;transition:bottom 900ms cubic-bezier(.34,.9,.3,1);
+}
+.mean b{
+  position:absolute;right:0;top:-11px;background:rgba(212,175,55,.16);
+  border:1px solid rgba(212,175,55,.45);color:var(--gold-soft);
+  border-radius:99px;padding:2px 11px;font-size:10.5px;font-weight:600;
+  letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;
+}
+
+.bars{--foot:0px;position:relative;display:flex;align-items:flex-end;gap:18px;height:440px;}
+.col{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;height:100%;}
+
+/* Bloc au-dessus de la barre : pastille meneur, portrait, note, votes. */
+.crown{
+  align-self:center;margin-bottom:8px;
+  background:linear-gradient(180deg,#e8cd72,#b8932e);color:#241a00;
+  border-radius:99px;padding:4px 13px;font-size:10.5px;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;
+  box-shadow:0 6px 18px rgba(212,175,55,.25);
+}
+.crown.off{visibility:hidden;}
+.face{
+  width:74px;height:74px;margin:0 auto;border-radius:50%;position:relative;
+  display:grid;place-items:center;overflow:visible;
+  background:#1b1710;font-family:var(--serif);font-size:29px;font-weight:700;
+}
+.face .rank{
+  position:absolute;bottom:-4px;right:2px;width:24px;height:24px;border-radius:50%;
+  display:grid;place-items:center;color:#fff;font-family:var(--sans);
+  font-size:12px;font-weight:700;border:2px solid var(--panel);
+}
+.score{
+  margin:12px auto 2px;text-align:center;font-size:30px;font-weight:600;
+  font-variant-numeric:tabular-nums;letter-spacing:.02em;
+}
+.votes{text-align:center;font-size:11.5px;color:var(--faint);
+  font-variant-numeric:tabular-nums;margin-bottom:10px;}
+
+/* La barre : extrémité arrondie en haut, ancrée à la ligne de base. */
+.bar{
+  position:relative;border-radius:10px 10px 0 0;overflow:hidden;
+  transition:height 900ms cubic-bezier(.34,.9,.3,1);
+}
+.bar .name{
+  position:absolute;left:0;right:0;bottom:0;padding:7px 6px;
+  background:rgba(0,0,0,.42);text-align:center;
+  font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  color:rgba(255,255,255,.92);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.col.unrated{opacity:.4;}
+.col.unrated .bar{background:rgba(255,255,255,.07)!important;}
+.baseline{margin:0 0 0 46px;border-top:1px solid rgba(255,255,255,.18);}
+
+/* ---------- Cartes du bas ---------- */
+.cards{display:grid;gap:14px;margin-top:18px;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));}
+.tile{
+  background:var(--panel-2);border:1px solid var(--line);border-radius:14px;
+  padding:14px 12px;text-align:center;
+}
+.tile b{display:block;font-family:var(--serif);font-size:18px;font-weight:700;color:var(--ink);}
+.tile .meta{display:block;margin-top:4px;font-size:12px;color:var(--muted);}
+.tile .gap{display:block;margin-top:7px;font-size:11.5px;color:var(--faint);
+  font-variant-numeric:tabular-nums;}
+.tile.lead{border-color:rgba(212,175,55,.45);}
+
+/* ---------- Coquille : le classement à côté, en bas, ou nulle part ---------- */
+.shell{display:grid;gap:16px;align-items:start;}
+.shell.aside-on{grid-template-columns:minmax(0,1fr) 300px;}
+@media(max-width:900px){ .shell.aside-on{grid-template-columns:minmax(0,1fr);} }
+
+.side{
+  background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;
+}
+.side h2{font-family:var(--serif);font-size:19px;font-weight:700;margin:0 0 12px;}
+.side ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px;}
+.side li{
+  display:flex;align-items:center;gap:11px;border:1px solid rgba(255,255,255,.07);
+  background:rgba(255,255,255,.03);border-radius:13px;padding:10px;
+}
+.side li.lead{border-color:rgba(212,175,55,.45);}
+.side .pos{width:18px;text-align:center;font-family:var(--serif);font-size:17px;
+  font-weight:700;color:rgba(255,255,255,.5);font-variant-numeric:tabular-nums;}
+.side .face2{
+  width:42px;height:42px;flex:none;border-radius:11px;display:grid;place-items:center;
+  font-family:var(--serif);font-size:18px;font-weight:700;background:rgba(255,255,255,.05);
+}
+.side .who{min-width:0;flex:1;}
+.side .who b{display:block;font-size:13.5px;font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.side .who span{display:block;margin-top:2px;font-size:11.5px;color:var(--muted);
+  font-variant-numeric:tabular-nums;}
+.side .val{font-family:var(--serif);font-size:19px;font-weight:700;
+  font-variant-numeric:tabular-nums;flex:none;}
+.hide{display:none!important;}
+
+/* ---------- Barre de maquette ---------- */
+.proto{margin-top:22px;display:flex;flex-wrap:wrap;align-items:center;gap:12px;
+  font-size:13px;color:var(--muted);}
+.proto button{
+  font-family:var(--sans);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+  color:#e8cd72;background:transparent;border:1px solid rgba(212,175,55,.45);
+  border-radius:99px;padding:8px 17px;cursor:pointer;
+}
+.proto button:hover{background:rgba(212,175,55,.12);}
+.proto b{color:#e8cd72;font-weight:500;}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+</style>
+
+<div class="wrap">
+  <div class="shell" id="shell">
+  <section class="card">
+
+    <div class="head">
+      <span class="mark" aria-hidden>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>
+        </svg>
+      </span>
+      <div>
+        <h1>Notes en direct</h1>
+        <p>Moyenne pondérée sur <b id="max">30</b> — un vote du jury spécial pèse davantage.</p>
+      </div>
+      <span class="live"><i id="beat"></i> En direct · <span id="total">0</span> votes</span>
+    </div>
+
+    <div class="legend" id="legend"></div>
+
+    <div class="plot">
+      <div class="axis" id="axis" style="--foot:0px"></div>
+      <div class="rules" id="rules" style="--foot:0px"></div>
+      <div class="mean" id="mean" style="bottom:0"><b>Moyenne générale</b></div>
+      <div class="bars" id="bars"></div>
+    </div>
+    <div class="baseline"></div>
+
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <aside class="side hide" id="side">
+    <h2>Classement</h2>
+    <ol id="sidelist"></ol>
+  </aside>
+  </div>
+
+  <div class="proto">
+    <span>Classement&nbsp;:</span>
+    <button id="pos-bas" class="on">En bas</button>
+    <button id="pos-cote">Sur le côté</button>
+    <button id="pos-non">Masqué</button>
+    <span>·</span>
+    <button id="replay">Rejouer</button>
+    <button id="pause">Pause</button>
+    <span>·</span>
+    <span>3<sup>e</sup> et 4<sup>e</sup> <b>ex æquo</b> · un candidat <b>non noté</b> · 18 votes attendus</span>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+var MAX = 30;
+var EXPECTED = 18;
+var CANDIDATES = [
+  {n:"Chef Berthier", c:"#ea580c", i:"CB", target:24.8},
+  {n:"Chef Nakamura", c:"#3b82f6", i:"CN", target:22.1},
+  {n:"Chef Diallo",   c:"#16a34a", i:"CD", target:19.4},
+  {n:"Chef Rossi",    c:"#d946ef", i:"CR", target:19.4},
+  {n:"Chef Ferrand",  c:"#d97706", i:"CF", target:null}
+];
+
+/* Hauteur réservée, au-dessus de chaque barre, au portrait et à la note.
+   Fixe : sans elle, la barre du meneur mangerait la place de son propre
+   portrait et le pousserait hors du cadre. */
+var HEADROOM = 200;
+
+var scores = CANDIDATES.map(function(){ return null; });
+var counts = CANDIDATES.map(function(){ return 0; });
+var received = 0, timer = null;
+
+function fmt(v){ return v.toFixed(2).replace(".", ","); }
+
+(function chrome(){
+  document.getElementById("max").textContent = MAX;
+
+  var legend=document.getElementById("legend");
+  CANDIDATES.forEach(function(c){
+    var s=document.createElement("span");
+    s.innerHTML='<i style="background:'+c.c+'"></i>'+c.n;
+    legend.appendChild(s);
+  });
+
+  var axis=document.getElementById("axis"), rules=document.getElementById("rules");
+  [0,.25,.5,.75,1].forEach(function(t){
+    var a=document.createElement("span");
+    a.style.bottom="calc("+(t*100)+"% - 0px)";
+    a.textContent=Math.round(t*MAX);
+    axis.appendChild(a);
+
+    var r=document.createElement("div");
+    r.style.bottom=(t*100)+"%";
+    rules.appendChild(r);
+  });
+})();
+
+function build(){
+  var host=document.getElementById("bars");
+  host.innerHTML="";
+  CANDIDATES.forEach(function(c,k){
+    var col=document.createElement("div");
+    col.className="col"; col.dataset.k=k;
+    col.innerHTML=
+      '<span class="crown off">🏆 En tête</span>'+
+      '<div class="face" style="box-shadow:inset 0 0 0 2px '+c.c+', 0 0 26px '+c.c+'55;color:'+c.c+'">'+c.i+
+        '<span class="rank" style="background:'+c.c+'"></span></div>'+
+      '<div class="score"></div>'+
+      '<div class="votes"></div>'+
+      '<div class="bar" style="background:linear-gradient(180deg,'+c.c+'ee,'+c.c+'77);height:0">'+
+        '<span class="name">'+c.n+'</span></div>';
+    host.appendChild(col);
+  });
+  render();
+}
+
+function render(){
+  // Rangs à égalité partagée, comme le classement final.
+  var rated=CANDIDATES.map(function(c,k){ return {k:k,s:scores[k]}; })
+    .filter(function(e){ return e.s!==null; })
+    .sort(function(a,b){ return b.s-a.s; });
+
+  var ranks={}, previous=null, previousRank=0;
+  rated.forEach(function(e,i){
+    var r=(previous!==null && Math.abs(e.s-previous)<0.005) ? previousRank : i+1;
+    previous=e.s; previousRank=r; ranks[e.k]=r;
+  });
+  var best = rated.length ? rated[0].s : null;
+
+  document.querySelectorAll(".col").forEach(function(col){
+    var k=Number(col.dataset.k), s=scores[k];
+    col.classList.toggle("unrated", s===null);
+    col.querySelector(".bar").style.height =
+      s===null ? "6px" : "calc((100% - "+HEADROOM+"px) * "+(s/MAX).toFixed(4)+")";
+    col.querySelector(".score").textContent = s===null ? "—" : fmt(s);
+    col.querySelector(".votes").textContent =
+      s===null ? "aucun vote" : counts[k]+" vote"+(counts[k]>1?"s":"");
+    var rank=col.querySelector(".rank");
+    rank.textContent = s===null ? "" : ranks[k];
+    rank.style.display = s===null ? "none" : "grid";
+    col.querySelector(".crown").classList.toggle("off", !(s!==null && ranks[k]===1));
+  });
+
+  // Moyenne générale : la ligne de partage qui a du sens ici, là où un scrutin
+  // afficherait un seuil de majorité.
+  var mean = rated.length
+    ? rated.reduce(function(sum,e){ return sum+e.s; },0)/rated.length
+    : 0;
+  var meanEl=document.getElementById("mean");
+  meanEl.style.bottom = "calc("+HEADROOM+"px + (100% - "+HEADROOM+"px) * "+(mean/MAX).toFixed(4)+")";
+  meanEl.style.opacity = rated.length ? 1 : 0;
+  meanEl.querySelector("b").textContent = "Moyenne générale · "+fmt(mean);
+
+  // Cartes du bas : l'écart au meneur, qui dit ce que le classement tait.
+  var cards=document.getElementById("cards");
+  cards.innerHTML="";
+  CANDIDATES.slice().sort(function(a,b){
+    var sa=scores[CANDIDATES.indexOf(a)], sb=scores[CANDIDATES.indexOf(b)];
+    if(sa===null) return 1; if(sb===null) return -1;
+    return sb-sa;
+  }).forEach(function(c){
+    var k=CANDIDATES.indexOf(c), s=scores[k];
+    var tile=document.createElement("div");
+    tile.className="tile"+(s!==null && ranks[k]===1 ? " lead" : "");
+    var gap = s===null ? "Non noté"
+      : ranks[k]===1 ? "En tête"
+      : "Écart : −"+fmt(best-s)+" pt";
+    tile.innerHTML='<b>'+c.n+'</b>'+
+      '<span class="meta">'+(s===null?"—":"Rang n° "+ranks[k]+" · "+counts[k]+" vote"+(counts[k]>1?"s":""))+'</span>'+
+      '<span class="gap">'+gap+'</span>';
+    cards.appendChild(tile);
+  });
+
+  // Panneau latéral : la même information que les cartes, dans une colonne.
+  var list=document.getElementById("sidelist");
+  list.innerHTML="";
+  CANDIDATES.slice().sort(function(a,b){
+    var sa=scores[CANDIDATES.indexOf(a)], sb=scores[CANDIDATES.indexOf(b)];
+    if(sa===null) return 1; if(sb===null) return -1;
+    return sb-sa;
+  }).forEach(function(c){
+    var k=CANDIDATES.indexOf(c), s=scores[k];
+    var li=document.createElement("li");
+    if(s!==null && ranks[k]===1) li.className="lead";
+    li.innerHTML=
+      '<span class="pos">'+(s===null?"—":ranks[k])+'</span>'+
+      '<span class="face2" style="box-shadow:inset 0 0 0 2px '+c.c+';color:'+c.c+'">'+c.i+'</span>'+
+      '<span class="who"><b>'+c.n+'</b><span>'+
+        (s===null ? "non noté" : counts[k]+" vote"+(counts[k]>1?"s":""))+'</span></span>'+
+      '<span class="val">'+(s===null?"—":fmt(s))+'</span>';
+    list.appendChild(li);
+  });
+
+  document.getElementById("total").textContent=received;
+}
+
+function addVote(){
+  if(received>=EXPECTED){ stop(); return; }
+  received++;
+  var progress=received/EXPECTED;
+
+  CANDIDATES.forEach(function(c,k){
+    if(c.target===null) return;
+    counts[k]++;
+    var noise=(1-progress)*(Math.random()-0.5)*5;
+    scores[k] = scores[k]===null
+      ? c.target*(0.5+Math.random()*0.55)
+      : Math.max(2, Math.min(MAX, scores[k]+(c.target-scores[k])*0.45+noise));
+  });
+
+  render();
+  var beat=document.getElementById("beat");
+  beat.classList.remove("beat"); void beat.offsetWidth; beat.classList.add("beat");
+}
+
+function start(){ stop(); timer=setInterval(addVote,1200); document.getElementById("pause").textContent="Pause"; }
+function stop(){ if(timer) clearInterval(timer); timer=null; }
+
+document.getElementById("replay").addEventListener("click",function(){
+  scores=CANDIDATES.map(function(){return null;});
+  counts=CANDIDATES.map(function(){return 0;});
+  received=0; render(); start();
+});
+document.getElementById("pause").addEventListener("click",function(){
+  if(timer){ stop(); this.textContent="Reprendre"; } else { start(); }
+});
+
+/* Trois positions du classement : en bas, sur le côté, ou nulle part.
+   L'écran projeté n'a pas les mêmes besoins que le poste de l'organisateur —
+   en salle on veut les barres seules, au bureau on veut le détail. */
+function place(where){
+  var shell=document.getElementById("shell");
+  var side=document.getElementById("side");
+  var cards=document.getElementById("cards");
+
+  shell.classList.toggle("aside-on", where==="cote");
+  side.classList.toggle("hide", where!=="cote");
+  cards.classList.toggle("hide", where!=="bas");
+
+  ["bas","cote","non"].forEach(function(key){
+    document.getElementById("pos-"+key).classList.toggle("on", key===where);
+  });
+}
+
+document.getElementById("pos-bas").addEventListener("click",function(){ place("bas"); });
+document.getElementById("pos-cote").addEventListener("click",function(){ place("cote"); });
+document.getElementById("pos-non").addEventListener("click",function(){ place("non"); });
+
+build();
+place("bas");
+start();
+</script>

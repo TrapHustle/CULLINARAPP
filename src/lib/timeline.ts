@@ -49,6 +49,14 @@ export interface TimelinePayload {
   maxTotal: number;
   points: TimelinePoint[];
   totalVotes: number;
+  /**
+   * Votes attendus sur tout le concours : jurés attendus × candidats.
+   *
+   * C'est lui qui fixe la largeur de la courbe, et non le nombre de votes
+   * reçus. Sans ça la courbe serait toujours pleine, et l'on ne verrait jamais
+   * où en est le scrutin — un vote sur cent occuperait l'écran entier.
+   */
+  expectedVotes: number;
 }
 
 /**
@@ -91,7 +99,7 @@ const SERIES_COLORS = [
  * votes ne doit pas faire bondir sa table à la fin de la courbe.
  */
 export async function computeTimeline(): Promise<TimelinePayload> {
-  const [candidates, criteria, votes, session] = await Promise.all([
+  const [candidates, criteria, votes, session, tables] = await Promise.all([
     prisma.candidate.findMany({ orderBy: { order: "asc" } }),
     prisma.criterion.findMany({ orderBy: { order: "asc" } }),
     prisma.vote.findMany({
@@ -99,7 +107,13 @@ export async function computeTimeline(): Promise<TimelinePayload> {
       orderBy: [{ createdAt: "asc" }, { id: "asc" }],
     }),
     prisma.session.findUnique({ where: { id: "singleton" } }),
+    prisma.votingTable.findMany({ select: { expectedJurors: true } }),
   ]);
+
+  // Chaque juré note chaque candidat : le total attendu est le produit des
+  // deux. Il sert de repère à la courbe, jamais au calcul des notes.
+  const expectedVotes =
+    tables.reduce((sum, table) => sum + table.expectedJurors, 0) * candidates.length;
 
   const weights: WeightsByType = {
     LAMBDA: session?.weightPublic ?? 1,
@@ -156,7 +170,7 @@ export async function computeTimeline(): Promise<TimelinePayload> {
     });
   }
 
-  return { candidates: series, maxTotal, points, totalVotes: index };
+  return { candidates: series, maxTotal, points, totalVotes: index, expectedVotes };
 }
 
 /**
