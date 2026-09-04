@@ -22,9 +22,15 @@ export const dynamic = "force-dynamic";
  * suffisent alors à couvrir quatre tables. L'exclusivité porte sur la table,
  * jamais sur la tablette.
  *
- * Une table déjà tenue par un autre appareil est refusée (409). Elle se libère
- * depuis le dashboard, page Connexion — une tablette ne peut pas en déloger une
- * autre, sous peine qu'un juré curieux déconnecte une table en plein vote.
+ * Une table déjà tenue par un autre appareil est refusée (409) : une tablette
+ * ne déloge pas une autre par accident, sous peine qu'un juré curieux
+ * déconnecte une table en plein vote.
+ *
+ * Elle peut en revanche être **reprise** délibérément, avec `takeover: true` —
+ * c'est le remplacement d'une tablette hors service, décidé en salle derrière
+ * le code staff. Le serveur ne peut pas trancher lui-même : une tablette
+ * silencieuse et une tablette morte lui ressemblent. Les votes déjà remontés
+ * appartiennent à la table, pas à la tablette : ils restent en place.
  */
 export async function POST(
   request: NextRequest,
@@ -44,14 +50,16 @@ export async function POST(
     return Response.json({ error: "Identifiant d'appareil manquant" }, { status: 400 });
   }
 
-  const { deviceId } = parsed.data;
+  const { deviceId, takeover } = parsed.data;
 
   const table = await prisma.votingTable.findUnique({ where: { id: tableId } });
   if (!table) {
     return Response.json({ error: "Table inconnue" }, { status: 404 });
   }
 
-  if (table.assignedDeviceId && table.assignedDeviceId !== deviceId) {
+  const heldByAnother = table.assignedDeviceId !== null && table.assignedDeviceId !== deviceId;
+
+  if (heldByAnother && !takeover) {
     return Response.json(
       {
         error: "Table déjà prise par une autre tablette",
@@ -67,9 +75,16 @@ export async function POST(
   //
   // L'exclusivité reste entière dans l'autre sens : une table n'appartient
   // qu'à une tablette, ce qui est la garantie recherchée.
+  //
+  // Une reprise repart d'un `assignedAt` neuf : la page Connexion du dashboard
+  // affiche depuis quand la table est servie, et c'est la nouvelle tablette qui
+  // la sert désormais.
   await prisma.votingTable.update({
     where: { id: tableId },
-    data: { assignedDeviceId: deviceId, assignedAt: table.assignedAt ?? new Date() },
+    data: {
+      assignedDeviceId: deviceId,
+      assignedAt: heldByAnother ? new Date() : (table.assignedAt ?? new Date()),
+    },
   });
 
   return Response.json({

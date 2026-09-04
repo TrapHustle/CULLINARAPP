@@ -233,6 +233,13 @@ export const validateTableSchema = z.object({
  */
 export const claimTableSchema = z.object({
   deviceId: z.string().min(8).max(64),
+  // Reprise d'une table déjà tenue par une autre tablette. Absent ou faux, le
+  // serveur refuse (409) : c'est le cas normal, celui d'une tablette qui se
+  // trompe de table. Vrai, la tablette dit avoir vu l'autre hors service et
+  // demande à la remplacer — la décision est prise en salle, derrière le code
+  // staff, parce que le serveur ne peut pas distinguer une tablette morte
+  // d'une tablette simplement silencieuse.
+  takeover: z.boolean().optional(),
 });
 
 export type IncomingVote = z.infer<typeof incomingVoteSchema>;
