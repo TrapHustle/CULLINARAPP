@@ -92,10 +92,25 @@ export const devalidateSchema = z.object({
  */
 export const PURGE_TABLETS_CONFIRMATION = "PURGER";
 
+/**
+ * Champ de confirmation d'un effacement.
+ *
+ * La comparaison ignore les espaces autour et la casse : le garde-fou est de
+ * **recopier le mot**, pas de retrouver la touche Maj. Un « purger » saisi au
+ * clavier minuscule était refusé sans que rien ne bouge à l'écran, ce qui se
+ * lit comme une panne du bouton plutôt que comme un refus.
+ */
+function confirmationField(word: string) {
+  return z
+    .string()
+    .transform((value) => value.trim().toUpperCase())
+    .refine((value) => value === word, {
+      message: `Saisissez « ${word} » pour confirmer.`,
+    });
+}
+
 export const purgeTabletsSchema = z.object({
-  confirmation: z.string().refine((value) => value === PURGE_TABLETS_CONFIRMATION, {
-    message: `Saisissez « ${PURGE_TABLETS_CONFIRMATION} » pour confirmer.`,
-  }),
+  confirmation: confirmationField(PURGE_TABLETS_CONFIRMATION),
 });
 
 /**
@@ -109,9 +124,7 @@ export const purgeTabletsSchema = z.object({
 export const RELEASE_TABLES_CONFIRMATION = "LIBERER";
 
 export const releaseTablesSchema = z.object({
-  confirmation: z.string().refine((value) => value === RELEASE_TABLES_CONFIRMATION, {
-    message: `Saisissez « ${RELEASE_TABLES_CONFIRMATION} » pour confirmer.`,
-  }),
+  confirmation: confirmationField(RELEASE_TABLES_CONFIRMATION),
 });
 
 /**
@@ -121,9 +134,7 @@ export const releaseTablesSchema = z.object({
 export const RESET_CONFIRMATION = "EFFACER";
 
 export const resetVotesSchema = z.object({
-  confirmation: z.string().refine((value) => value === RESET_CONFIRMATION, {
-    message: `Saisissez « ${RESET_CONFIRMATION} » pour confirmer.`,
-  }),
+  confirmation: confirmationField(RESET_CONFIRMATION),
 });
 
 /**
@@ -136,9 +147,7 @@ export const resetVotesSchema = z.object({
 export const RESET_EVENT_CONFIRMATION = "REINITIALISER";
 
 export const resetEventSchema = z.object({
-  confirmation: z.string().refine((value) => value === RESET_EVENT_CONFIRMATION, {
-    message: `Saisissez « ${RESET_EVENT_CONFIRMATION} » pour confirmer.`,
-  }),
+  confirmation: confirmationField(RESET_EVENT_CONFIRMATION),
 });
 
 export const sessionUpdateSchema = z.object({
