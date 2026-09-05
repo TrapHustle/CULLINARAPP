@@ -66,9 +66,26 @@ function useCountUp(target: number, durationMs = 700) {
 
 export function DirectDisplay({ initial }: { initial: DirectPayload }) {
   const [data, setData] = useState(initial);
+  const [full, setFull] = useState(false);
+  const shell = useRef<HTMLElement>(null);
   // Une coupure ne doit jamais vider l'écran : on garde le dernier état connu
   // et on le signale discrètement, sans rien effacer.
   const [stale, setStale] = useState(false);
+
+  useEffect(() => {
+    const sync = () => setFull(document.fullscreenElement !== null);
+    document.addEventListener("fullscreenchange", sync);
+    return () => document.removeEventListener("fullscreenchange", sync);
+  }, []);
+
+  async function toggleFull() {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await shell.current?.requestFullscreen();
+    } catch {
+      // Certains navigateurs refusent le plein écran : l'écran reste utilisable.
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -98,7 +115,7 @@ export function DirectDisplay({ initial }: { initial: DirectPayload }) {
   const counted = useCountUp(data.received);
 
   if (!data.candidate) {
-    return <Standby stale={stale} />;
+    return <Standby stale={stale} full={full} shell={shell} onToggleFull={toggleFull} />;
   }
 
   const { candidate } = data;
@@ -106,7 +123,12 @@ export function DirectDisplay({ initial }: { initial: DirectPayload }) {
   const complete = data.allValidated || (data.expected > 0 && data.received >= data.expected);
 
   return (
-    <main className="relative flex min-h-screen flex-col overflow-hidden bg-[#0d0b08] text-[#fff]">
+    <main
+      ref={shell}
+      className={`relative flex min-h-screen flex-col overflow-hidden bg-[#0d0b08] text-[#fff] ${
+        full ? "h-screen" : ""
+      }`}
+    >
       {/* Fond en mouvement lent : il occupe le regard quand le compteur, lui,
           n'a rien de neuf à montrer. */}
       <div aria-hidden className="direct-halo pointer-events-none absolute inset-0" />
@@ -116,6 +138,8 @@ export function DirectDisplay({ initial }: { initial: DirectPayload }) {
       <Header
         stale={stale}
         state={complete ? "complete" : data.votingOpen ? "live" : "closed"}
+        full={full}
+        onToggleFull={toggleFull}
       />
 
       <div className="relative grid flex-1 items-center gap-[4vw] px-[4vw] pb-[3vh] lg:grid-cols-[minmax(0,34%)_minmax(0,1fr)]">
@@ -207,7 +231,17 @@ export function DirectDisplay({ initial }: { initial: DirectPayload }) {
 }
 
 /** Bandeau supérieur : le titre, et l'état du scrutin en un coup d'œil. */
-function Header({ state, stale }: { state: "live" | "closed" | "complete"; stale: boolean }) {
+function Header({
+  state,
+  stale,
+  full,
+  onToggleFull,
+}: {
+  state: "live" | "closed" | "complete";
+  stale: boolean;
+  full: boolean;
+  onToggleFull: () => void;
+}) {
   const badge =
     state === "live"
       ? { label: "Vote en cours", tone: "text-[#ff6b6b] border-[#ff6b6b]/40 bg-[#ff6b6b]/10" }
@@ -231,18 +265,76 @@ function Header({ state, stale }: { state: "live" | "closed" | "complete"; stale
           ) : null}
           {badge.label}
         </span>
+        <button
+          type="button"
+          onClick={onToggleFull}
+          title={full ? "Quitter le plein écran" : "Passer en plein écran"}
+          aria-label={full ? "Quitter le plein écran" : "Passer en plein écran"}
+          className="rounded-full border border-[#d4af37]/40 p-[1vh] text-[#e8cd72] transition hover:border-[#d4af37] hover:bg-[#d4af37]/10"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            className="h-[2.2vh] w-[2.2vh]"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.9}
+            strokeLinecap="round"
+          >
+            {full ? (
+              <path d="M9 3v6H3M15 3v6h6M9 21v-6H3M15 21v-6h6" />
+            ) : (
+              <path d="M3 9V3h6M21 9V3h-6M3 15v6h6M21 15v6h-6" />
+            )}
+          </svg>
+        </button>
       </div>
     </header>
   );
 }
 
 /** Écran d'attente : aucun candidat n'est ouvert au vote. */
-function Standby({ stale }: { stale: boolean }) {
+function Standby({
+  stale,
+  full,
+  shell,
+  onToggleFull,
+}: {
+  stale: boolean;
+  full: boolean;
+  shell: React.RefObject<HTMLElement | null>;
+  onToggleFull: () => void;
+}) {
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#0d0b08] px-[6vw] text-center text-[#fff]">
+    <main
+      ref={shell}
+      className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#0d0b08] px-[6vw] text-center text-[#fff]"
+    >
       <div aria-hidden className="direct-halo pointer-events-none absolute inset-0" />
       <Proclamation />
       <LiveRanking />
+
+      <button
+        type="button"
+        onClick={onToggleFull}
+        title={full ? "Quitter le plein écran" : "Passer en plein écran"}
+        aria-label={full ? "Quitter le plein écran" : "Passer en plein écran"}
+        className="absolute right-[4vw] top-[3vh] z-10 rounded-full border border-[#d4af37]/40 p-[1vh] text-[#e8cd72] transition hover:border-[#d4af37] hover:bg-[#d4af37]/10"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          className="h-[2.2vh] w-[2.2vh]"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.9}
+          strokeLinecap="round"
+        >
+          {full ? (
+            <path d="M9 3v6H3M15 3v6h6M9 21v-6H3M15 21v-6h6" />
+          ) : (
+            <path d="M3 9V3h6M21 9V3h-6M3 15v6h6M21 15v6h-6" />
+          )}
+        </svg>
+      </button>
 
       <p className="relative text-[1.8vh] uppercase tracking-[0.5em] text-[#d4af37]">Soirée</p>
       <h1 className="relative mt-[2vh] font-serif text-[10vh] leading-none text-[#d4af37]">

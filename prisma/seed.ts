@@ -30,24 +30,41 @@ async function main() {
     }
   }
 
-  const candidates = ["Candidat 1", "Candidat 2", "Candidat 3", "Candidat 4"];
+  const candidates = [
+    "DOUA ANGE TRIPHÈNE",
+    "TEKPO DONALD",
+    "SANGARE FERIMA",
+    "KADJA HUGUES",
+  ];
   for (const [index, name] of candidates.entries()) {
-    const existing = await prisma.candidate.findFirst({ where: { name } });
-    if (!existing) {
+    const existing = await prisma.candidate.findFirst({ where: { order: index + 1 } });
+    if (existing) {
+      await prisma.candidate.update({
+        where: { id: existing.id },
+        data: { name, order: index + 1 },
+      });
+    } else {
       await prisma.candidate.create({ data: { name, order: index + 1 } });
     }
   }
 
   const tables = [
-    { name: "Table 1", type: "LAMBDA", expectedJurors: 5 },
-    { name: "Table 2", type: "LAMBDA", expectedJurors: 5 },
-    { name: "Table 3", type: "LAMBDA", expectedJurors: 5 },
-    { name: "Jury spécial", type: "SPECIAL", expectedJurors: 3 },
+    ...Array.from({ length: 29 }, (_, index) => ({
+      name: `Table ${index + 1}`,
+      type: "LAMBDA",
+      expectedJurors: 10,
+    })),
+    { name: "Jury spécial", type: "SPECIAL", expectedJurors: 10 },
   ];
   for (const table of tables) {
     const existing = await prisma.votingTable.findFirst({ where: { name: table.name } });
     if (!existing) {
       await prisma.votingTable.create({ data: table });
+    } else if (table.name.startsWith("Table ")) {
+      await prisma.votingTable.update({
+        where: { id: existing.id },
+        data: { expectedJurors: table.expectedJurors },
+      });
     }
   }
 
