@@ -355,7 +355,7 @@ export function LiveChart({
                           </div>
                         ) : null}
 
-                        <span className="absolute inset-x-0 bottom-0 truncate bg-black/45 px-1.5 py-1.5 text-center text-[11.5px] font-semibold uppercase tracking-[0.08em] text-white/90">
+                        <span className="absolute inset-x-0 bottom-0 truncate bg-black/45 px-1.5 py-1.5 text-center text-[14px] font-bold uppercase tracking-[0.08em] text-white/95">
                           {candidate.name}
                         </span>
                       </div>
