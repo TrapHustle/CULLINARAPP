@@ -142,9 +142,9 @@ export function DirectDisplay({ initial }: { initial: DirectPayload }) {
         onToggleFull={toggleFull}
       />
 
-      <div className="relative grid flex-1 items-center gap-[4vw] px-[4vw] pb-[3vh] lg:grid-cols-[minmax(0,34%)_minmax(0,1fr)]">
+      <div className="relative grid flex-1 items-center gap-6 px-5 pb-8 sm:px-[4vw] sm:pb-[3vh] lg:grid-cols-[minmax(0,34%)_minmax(0,1fr)] lg:gap-[4vw]">
         {/* Le portrait : c'est lui qui donne un visage à regarder. */}
-        <div className="relative mx-auto w-full max-w-[38vh] overflow-hidden rounded-[2vh] border-2 border-[#d4af37]/50 bg-[#17130e] shadow-[0_0_6vh_rgba(212,175,55,0.18)] lg:max-w-none">
+        <div className="relative mx-auto w-full max-w-[340px] overflow-hidden rounded-2xl border-2 border-[#d4af37]/50 bg-[#17130e] shadow-[0_0_6vh_rgba(212,175,55,0.18)] sm:max-w-[38vh] sm:rounded-[2vh] lg:max-w-none">
           <div className="aspect-4/5 w-full">
             {candidate.photoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -162,33 +162,33 @@ export function DirectDisplay({ initial }: { initial: DirectPayload }) {
         </div>
 
         <div className="min-w-0">
-          <p className="text-[1.6vh] uppercase tracking-[0.4em] text-[#d4af37]">
+          <p className="text-xs uppercase tracking-[0.25em] text-[#d4af37] sm:text-[1.6vh] sm:tracking-[0.4em]">
             Candidat {candidate.position} sur {candidate.total}
           </p>
 
-          <h1 className="mt-[1vh] truncate font-serif text-[7vh] leading-none text-[#fff]">
+          <h1 className="mt-2 break-words font-serif text-5xl leading-none text-[#fff] sm:mt-[1vh] sm:truncate sm:text-[7vh]">
             {candidate.name}
           </h1>
 
-          <p className="mt-[4vh] text-[1.5vh] uppercase tracking-[0.35em] text-[#fff]/45">
+          <p className="mt-8 text-xs uppercase tracking-[0.25em] text-[#fff]/45 sm:mt-[4vh] sm:text-[1.5vh] sm:tracking-[0.35em]">
             {complete ? "Votes complets" : "Votes reçus"}
           </p>
 
-          <div className="flex items-baseline gap-[1.5vw]">
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0 sm:gap-[1.5vw]">
             <span
-              className={`font-serif text-[18vh] leading-[0.9] tabular-nums text-[#d4af37] ${
+              className={`font-serif text-[8rem] leading-[0.9] tabular-nums text-[#d4af37] sm:text-[18vh] ${
                 data.votingOpen && !complete ? "direct-breathe" : ""
               }`}
               style={{ textShadow: "0 0 6vh rgba(212,175,55,0.35)" }}
             >
               {counted}
             </span>
-            <span className="text-[2.4vh] text-[#fff]/50">sur {data.expected} attendus</span>
+            <span className="text-lg text-[#fff]/50 sm:text-[2.4vh]">sur {data.expected} attendus</span>
           </div>
 
           {/* La jauge : c'est elle qui porte la tension, bien plus qu'un
               compteur de deux chiffres qui ne « défile » jamais vraiment. */}
-          <div className="mt-[3vh] h-[1.4vh] w-full overflow-hidden rounded-full bg-[#fff]/10">
+          <div className="mt-5 h-2 w-full overflow-hidden rounded-full bg-[#fff]/10 sm:mt-[3vh] sm:h-[1.4vh]">
             <div
               className="relative h-full overflow-hidden rounded-full bg-gradient-to-r from-[#b8932e] via-[#d4af37] to-[#e8cd72] transition-[width] duration-700 ease-out"
               style={{ width: `${Math.min(100, progress)}%` }}
@@ -201,18 +201,18 @@ export function DirectDisplay({ initial }: { initial: DirectPayload }) {
             </div>
           </div>
 
-          <ul className="mt-[3.5vh] flex flex-wrap gap-[1vw]">
+          <ul className="mt-6 flex flex-wrap gap-2 sm:mt-[3.5vh] sm:gap-[1vw]">
             {data.tables.map((table) => (
               <li
                 key={table.id}
-                className={`flex items-center gap-[0.7vw] rounded-full border px-[1.4vw] py-[1vh] text-[1.9vh] transition-colors duration-500 ${
+                className={`flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm transition-colors duration-500 sm:gap-[0.7vw] sm:px-[1.4vw] sm:py-[1vh] sm:text-[1.9vh] ${
                   table.validated
                     ? "border-[#d4af37] bg-[#d4af37]/15 text-[#e8cd72]"
                     : "border-[#fff]/15 bg-[#fff]/5 text-[#fff]/45"
                 }`}
               >
                 <span
-                  className={`inline-block h-[1.1vh] w-[1.1vh] rounded-full ${
+                  className={`inline-block h-2.5 w-2.5 rounded-full sm:h-[1.1vh] sm:w-[1.1vh] ${
                     table.validated ? "bg-[#d4af37]" : "bg-[#fff]/25"
                   }`}
                 />
@@ -250,18 +250,18 @@ function Header({
         : { label: "Votes clos", tone: "text-[#fff]/60 border-[#fff]/20 bg-[#fff]/5" };
 
   return (
-    <header className="flex items-center justify-between px-[4vw] py-[3vh]">
-      <span className="font-serif text-[3vh] text-[#d4af37]">Concours culinaire</span>
+    <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-5 py-5 sm:flex sm:justify-between sm:px-[4vw] sm:py-[3vh]">
+      <span className="font-serif text-2xl leading-tight text-[#d4af37] sm:text-[3vh]">Concours culinaire</span>
 
-      <div className="flex items-center gap-[1.5vw]">
+      <div className="flex items-center gap-2 sm:gap-[1.5vw]">
         {stale ? (
           <span className="text-[1.6vh] text-[#fff]/35">reconnexion…</span>
         ) : null}
         <span
-          className={`flex items-center gap-[0.8vw] rounded-full border px-[1.6vw] py-[1vh] text-[1.7vh] uppercase tracking-[0.25em] ${badge.tone}`}
+          className={`flex items-center gap-1.5 rounded-full border px-3 py-2 text-[11px] uppercase tracking-[0.12em] sm:gap-[0.8vw] sm:px-[1.6vw] sm:py-[1vh] sm:text-[1.7vh] sm:tracking-[0.25em] ${badge.tone}`}
         >
           {state === "live" ? (
-            <span className="inline-block h-[1.1vh] w-[1.1vh] animate-pulse rounded-full bg-[#ff6b6b]" />
+            <span className="inline-block h-2.5 w-2.5 animate-pulse rounded-full bg-[#ff6b6b] sm:h-[1.1vh] sm:w-[1.1vh]" />
           ) : null}
           {badge.label}
         </span>
@@ -270,11 +270,11 @@ function Header({
           onClick={onToggleFull}
           title={full ? "Quitter le plein écran" : "Passer en plein écran"}
           aria-label={full ? "Quitter le plein écran" : "Passer en plein écran"}
-          className="rounded-full border border-[#d4af37]/40 p-[1vh] text-[#e8cd72] transition hover:border-[#d4af37] hover:bg-[#d4af37]/10"
+          className="rounded-full border border-[#d4af37]/40 p-2.5 text-[#e8cd72] transition hover:border-[#d4af37] hover:bg-[#d4af37]/10 sm:p-[1vh]"
         >
           <svg
             viewBox="0 0 24 24"
-            className="h-[2.2vh] w-[2.2vh]"
+            className="h-5 w-5 sm:h-[2.2vh] sm:w-[2.2vh]"
             fill="none"
             stroke="currentColor"
             strokeWidth={1.9}

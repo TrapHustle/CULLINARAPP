@@ -270,6 +270,10 @@ canvas {
    lecture verticale : les colonnes Tailwind reprennent naturellement leur
    version `grid-cols-1` et les actions gardent une cible tactile confortable. */
 @media (max-width: 639px) {
+  :root {
+    --chart-headroom: 125px;
+  }
+
   html {
     font-size: 16px;
   }

@@ -36,7 +36,7 @@ export type Placement = "bas" | "cote" | "non";
  * Fixe et soustraite de la hauteur disponible : sans elle, la barre du meneur
  * pousserait son propre portrait hors du cadre dès qu'il approche du maximum.
  */
-const HEADROOM = 236;
+const HEADROOM = "var(--chart-headroom, 236px)";
 
 /** Cadence de rafraîchissement : assez court pour voir monter, assez long pour ne pas marteler. */
 const REFRESH_MS = 4000;
@@ -158,12 +158,12 @@ export function LiveChart({
         full ? "h-screen overflow-auto p-4" : ""
       } ${placement === "cote" ? "lg:grid-cols-[minmax(0,1fr)_300px]" : "grid-cols-1"}`}
     >
-      <section className="rounded-2xl border border-white/15 bg-[#241f18] px-6 pb-7 pt-5">
+      <section className="rounded-2xl border border-white/15 bg-[#241f18] px-4 pb-5 pt-4 sm:px-6 sm:pb-7 sm:pt-5">
         {/* ---- En-tête ---- */}
-        <div className="flex items-start gap-3.5">
+        <div className="flex items-start gap-2.5 sm:gap-3.5">
           <span
             aria-hidden
-            className="grid h-10 w-10 flex-none place-items-center rounded-xl border border-[#d4af37]/35 bg-[#d4af37]/10 p-2 text-[#e8cd72]"
+            className="grid h-9 w-9 flex-none place-items-center rounded-xl border border-[#d4af37]/35 bg-[#d4af37]/10 p-2 text-[#e8cd72] sm:h-10 sm:w-10"
           >
             <svg
               viewBox="0 0 24 24"
@@ -177,14 +177,14 @@ export function LiveChart({
           </span>
 
           <div className="min-w-0">
-            <h2 className="text-lg font-semibold text-white">Notes en direct</h2>
+            <h2 className="text-base font-semibold text-white sm:text-lg">Notes en direct</h2>
             <p className="mt-0.5 text-[13px] text-white/60">
               Moyenne pondérée sur {maxTotal} — un vote du jury spécial pèse davantage.
             </p>
           </div>
 
           <span
-            className={`ml-auto flex flex-none items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] ${
+            className={`ml-auto flex flex-none items-center gap-1.5 rounded-full border px-2 py-1.5 text-[9px] font-semibold uppercase tracking-[0.1em] sm:gap-2 sm:px-3 sm:text-[11px] sm:tracking-[0.16em] ${
               live ? "border-emerald-400/40 text-emerald-300" : "border-white/15 text-white/55"
             }`}
           >
@@ -221,7 +221,7 @@ export function LiveChart({
         </div>
 
         {/* ---- Légende : l'identité ne repose jamais sur la seule couleur ---- */}
-        <div className="mb-6 mt-3.5 flex flex-wrap gap-4 pl-[52px]">
+        <div className="mb-4 mt-3.5 flex flex-wrap gap-x-3 gap-y-1 sm:mb-6 sm:gap-4 sm:pl-[52px]">
           {candidates.map((candidate) => (
             <span
               key={candidate.id}
@@ -242,9 +242,9 @@ export function LiveChart({
           <p className="py-24 text-center text-white/55">Aucun vote reçu pour l&apos;instant.</p>
         ) : (
           <>
-            <div className="relative pl-[46px]">
+            <div className="relative pl-[34px] sm:pl-[46px]">
               {/* Graduations et grille : elles situent, elles ne se lisent pas. */}
-              <div className="pointer-events-none absolute inset-y-0 left-0 w-[46px]">
+              <div className="pointer-events-none absolute inset-y-0 left-0 w-[34px] sm:w-[46px]">
                 {ticks.map((tick) => (
                   <span
                     key={tick}
@@ -255,7 +255,7 @@ export function LiveChart({
                   </span>
                 ))}
               </div>
-              <div className="pointer-events-none absolute inset-y-0 left-[46px] right-0">
+              <div className="pointer-events-none absolute inset-y-0 left-[34px] right-0 sm:left-[46px]">
                 {ticks.map((tick) => (
                   <div
                     key={tick}
@@ -265,7 +265,7 @@ export function LiveChart({
                 ))}
               </div>
 
-              <div className="relative flex h-[440px] items-end gap-[18px]">
+              <div className="relative flex h-[300px] items-end gap-2 sm:h-[440px] sm:gap-[18px]">
                 {rows.map((row) => {
                   const { candidate, score, rank } = row;
                   const unrated = score === null;
@@ -280,7 +280,7 @@ export function LiveChart({
                       {/* Réserve sa place même invisible : sinon toutes les
                           barres se décalent dès qu'un candidat prend la tête. */}
                       <span
-                        className={`mb-2 self-center whitespace-nowrap rounded-full bg-gradient-to-b from-[#e8cd72] to-[#b8932e] px-3 py-1 text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#241a00] shadow-[0_6px_18px_rgba(212,175,55,.25)] ${
+                        className={`mb-1 self-center whitespace-nowrap rounded-full bg-gradient-to-b from-[#e8cd72] to-[#b8932e] px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-[0.08em] text-[#241a00] shadow-[0_6px_18px_rgba(212,175,55,.25)] sm:mb-2 sm:px-3 sm:py-1 sm:text-[10.5px] sm:tracking-[0.14em] ${
                           rank === 1 ? "" : "invisible"
                         }`}
                       >
@@ -288,7 +288,7 @@ export function LiveChart({
                       </span>
 
                       <span
-                        className="relative mx-auto grid h-[108px] w-[108px] place-items-center rounded-full bg-[#332c22]"
+                        className="relative mx-auto grid h-[58px] w-[58px] place-items-center rounded-full bg-[#332c22] sm:h-[108px] sm:w-[108px]"
                         style={{
                           boxShadow: `inset 0 0 0 3px ${candidate.color}, 0 0 34px ${candidate.color}55`,
                         }}
@@ -311,7 +311,7 @@ export function LiveChart({
 
                         {rank !== null ? (
                           <span
-                            className="absolute -bottom-1 right-1 grid h-7 w-7 place-items-center rounded-full border-2 border-[#241f18] text-[13px] font-bold text-white"
+                            className="absolute -bottom-1 right-0 grid h-5 w-5 place-items-center rounded-full border-2 border-[#241f18] text-[10px] font-bold text-white sm:right-1 sm:h-7 sm:w-7 sm:text-[13px]"
                             style={{ background: candidate.color }}
                           >
                             {rank}
@@ -319,7 +319,7 @@ export function LiveChart({
                         ) : null}
                       </span>
 
-                      <p className="mx-auto mb-3 mt-3 text-center text-[30px] font-semibold tabular-nums text-white">
+                      <p className="mx-auto mb-1 mt-1 text-center text-base font-semibold tabular-nums text-white sm:mb-3 sm:mt-3 sm:text-[30px]">
                         {unrated ? "—" : fmt(score)}
                       </p>
 
@@ -328,7 +328,7 @@ export function LiveChart({
                         style={{
                           height: unrated
                             ? "6px"
-                            : `calc((100% - ${HEADROOM}px) * ${score / maxTotal})`,
+                            : `calc((100% - ${HEADROOM}) * ${score / maxTotal})`,
                           background: unrated
                             ? "rgba(255,255,255,.07)"
                             : `linear-gradient(180deg, ${candidate.color}ee, ${candidate.color}77)`,
@@ -340,7 +340,7 @@ export function LiveChart({
                             moyenne seule masque. Masqué si la barre est trop
                             basse pour l'accueillir sans se chevaucher. */}
                         {!unrated && score / maxTotal > 0.34 ? (
-                          <div className="absolute inset-x-0 top-0 space-y-1 px-2 pt-2.5">
+                          <div className="absolute inset-x-0 top-0 hidden space-y-1 px-2 pt-2.5 sm:block">
                             {candidate.byCriterion.map((criterion) => (
                               <div
                                 key={criterion.name}
@@ -355,7 +355,7 @@ export function LiveChart({
                           </div>
                         ) : null}
 
-                        <span className="absolute inset-x-0 bottom-0 truncate bg-black/45 px-1.5 py-1.5 text-center text-[14px] font-bold uppercase tracking-[0.08em] text-white/95">
+                        <span className="absolute inset-x-0 bottom-0 truncate bg-black/45 px-0.5 py-1 text-center text-[9px] font-bold uppercase tracking-[0.04em] text-white/95 sm:px-1.5 sm:py-1.5 sm:text-[14px] sm:tracking-[0.08em]">
                           {candidate.name}
                         </span>
                       </div>
@@ -364,7 +364,7 @@ export function LiveChart({
                 })}
               </div>
             </div>
-            <div className="ml-[46px] border-t border-white/25" />
+            <div className="ml-[34px] border-t border-white/25 sm:ml-[46px]" />
           </>
         )}
 
