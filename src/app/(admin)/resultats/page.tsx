@@ -84,7 +84,7 @@ export default async function ResultatsPage() {
       {results.criteria.length > 0 && hasVotes ? (
         <section className="overflow-hidden rounded-xl bg-surface-container gold-border">
           <h2 className="border-b border-outline-variant/30 px-6 py-4 font-serif text-headline-md text-primary">
-            Détail par critère (moyennes sur {results.scoreMax})
+            Détail par critère (chaque critère sur son maximum)
           </h2>
 
           <div className="custom-scrollbar overflow-x-auto">
@@ -94,7 +94,7 @@ export default async function ResultatsPage() {
                   <th className="px-6 py-3 font-medium">Candidat</th>
                   {results.criteria.map((criterion) => (
                     <th key={criterion.id} className="px-6 py-3 font-medium">
-                      {criterion.name}
+                      {criterion.name} /{criterion.maxPoints}
                     </th>
                   ))}
                 </tr>

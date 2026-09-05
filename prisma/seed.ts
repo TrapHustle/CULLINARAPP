@@ -23,20 +23,20 @@ async function main() {
   });
 
   const criteria = [
-    "Maîtrise culinaire & technique",
-    "Créativité & valorisation des produits locaux",
-    "Présentation, hygiène & organisation",
-    "Personnalité & potentiel talent traiteur",
-    "Potentiel audiovisuel",
+    { name: "Maîtrise culinaire & technique", maxPoints: 20 },
+    { name: "Créativité & valorisation des produits locaux", maxPoints: 15 },
+    { name: "Présentation, hygiène & organisation", maxPoints: 15 },
+    { name: "Personnalité & potentiel talent traiteur", maxPoints: 15 },
+    { name: "Potentiel audiovisuel", maxPoints: 10 },
   ];
-  for (const [index, name] of criteria.entries()) {
+  for (const [index, criterion] of criteria.entries()) {
     const existing = await prisma.criterion.findFirst({ where: { order: index + 1 } });
     if (!existing) {
-      await prisma.criterion.create({ data: { name, order: index + 1 } });
+      await prisma.criterion.create({ data: { ...criterion, order: index + 1 } });
     } else {
       await prisma.criterion.update({
         where: { id: existing.id },
-        data: { name, order: index + 1 },
+        data: { ...criterion, order: index + 1 },
       });
     }
   }

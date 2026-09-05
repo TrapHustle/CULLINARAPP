@@ -1,7 +1,7 @@
 import { prisma } from "./prisma";
 import {
   computeCriterionAverage,
-  maxTotalForCriteria,
+  maxTotalForScales,
   voteTotal,
   shareForTableType,
   round2,
@@ -128,9 +128,11 @@ export async function computeTimeline(): Promise<TimelinePayload> {
     LAMBDA: session?.sharePublic ?? 40,
     SPECIAL: session?.shareSpecial ?? 60,
   };
-  const scoreMax = session?.scoreMax ?? 5;
   const criterionIds = criteria.map((criterion) => criterion.id);
-  const maxTotal = maxTotalForCriteria(criteria.length, scoreMax);
+  const maxPointsById = Object.fromEntries(
+    criteria.map((criterion) => [criterion.id, criterion.maxPoints]),
+  );
+  const maxTotal = maxTotalForScales(criteria);
 
   const series: TimelineCandidate[] = candidates.map((candidate, i) => ({
     id: candidate.id,
@@ -195,7 +197,7 @@ export async function computeTimeline(): Promise<TimelinePayload> {
     const scoredVote: ScoredVote = { tableType: vote.table.type as TableType, scores };
     const type = scoredVote.tableType;
 
-    sums[type][position] += voteTotal(scoredVote, criterionIds);
+    sums[type][position] += voteTotal(scoredVote, criterionIds, maxPointsById);
     counts[type][position] += 1;
     series[position].votes += 1;
     votesByCandidate[position].push(scoredVote);
@@ -213,7 +215,12 @@ export async function computeTimeline(): Promise<TimelinePayload> {
 
   series.forEach((candidate, position) => {
     candidate.byCriterion = criteria.map((criterion) => {
-      const average = computeCriterionAverage(votesByCandidate[position], criterion.id, shares);
+      const average = computeCriterionAverage(
+        votesByCandidate[position],
+        criterion.id,
+        shares,
+        criterion.maxPoints,
+      );
       return { name: criterion.name, average: average === null ? null : round2(average) };
     });
   });

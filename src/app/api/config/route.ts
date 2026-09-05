@@ -42,6 +42,7 @@ export async function GET() {
       id: criterion.id,
       name: criterion.name,
       order: criterion.order,
+      maxPoints: criterion.maxPoints,
     })),
     // Bornes de la note qu'un juré peut saisir, réglables depuis
     // Configuration → Vote (1 à 5 par défaut). La tablette en tire le nombre

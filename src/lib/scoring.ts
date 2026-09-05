@@ -44,6 +44,8 @@ export const RAW_UNSCORED = 0;
  */
 export type SharesByType = Record<TableType, number>;
 
+export type CriterionScale = { id: string; maxPoints: number };
+
 /** Parts de départ, avant tout réglage depuis Configuration → Vote (§4.2). */
 export const DEFAULT_SHARES: SharesByType = {
   LAMBDA: 40,
@@ -69,6 +71,10 @@ export function maxTotalForCriteria(criteriaCount: number, scoreMax: number = RA
   return criteriaCount * scoreMax;
 }
 
+export function maxTotalForScales(scales: CriterionScale[]): number {
+  return scales.reduce((total, criterion) => total + criterion.maxPoints, 0);
+}
+
 /** Un vote tel qu'il est consommé par le moteur de calcul. */
 export interface ScoredVote {
   /** Type de la table émettrice — détermine le poids du vote. */
@@ -83,9 +89,16 @@ export interface ScoredVote {
  * Total d'un vote, sur `maxTotalForCriteria(criterionIds.length, scoreMax)`.
  * Un critère absent du vote compte pour 0 (§11).
  */
-export function voteTotal(vote: ScoredVote, criterionIds: string[]): number {
+export function voteTotal(
+  vote: ScoredVote,
+  criterionIds: string[],
+  maxPointsById: Record<string, number> = {},
+): number {
   return criterionIds.reduce(
-    (total, criterionId) => total + (vote.scores[criterionId] ?? RAW_UNSCORED),
+    (total, criterionId) =>
+      total +
+      ((vote.scores[criterionId] ?? RAW_UNSCORED) / RAW_MAX) *
+        (maxPointsById[criterionId] ?? RAW_MAX),
     0,
   );
 }
@@ -163,10 +176,15 @@ export function computeCandidateScore(
   votes: ScoredVote[],
   criterionIds: string[],
   shares: SharesByType = DEFAULT_SHARES,
+  maxPointsById: Record<string, number> = {},
 ): CandidateScore | null {
   if (votes.length === 0) return null;
 
-  const combined = combineByShare(votes, (vote) => voteTotal(vote, criterionIds), shares);
+  const combined = combineByShare(
+    votes,
+    (vote) => voteTotal(vote, criterionIds, maxPointsById),
+    shares,
+  );
   if (combined === null) return null;
 
   return {
@@ -184,12 +202,13 @@ export function computeCriterionAverage(
   votes: ScoredVote[],
   criterionId: string,
   shares: SharesByType = DEFAULT_SHARES,
+  maxPoints = RAW_MAX,
 ): number | null {
   if (votes.length === 0) return null;
 
   const combined = combineByShare(
     votes,
-    (vote) => vote.scores[criterionId] ?? RAW_UNSCORED,
+    (vote) => ((vote.scores[criterionId] ?? RAW_UNSCORED) / RAW_MAX) * maxPoints,
     shares,
   );
 
@@ -215,10 +234,11 @@ export function rankCandidates<T>(
   entries: { candidate: T; votes: ScoredVote[] }[],
   criterionIds: string[],
   shares: SharesByType = DEFAULT_SHARES,
+  maxPointsById: Record<string, number> = {},
 ): RankedCandidate<T>[] {
   const scored = entries.map((entry) => ({
     candidate: entry.candidate,
-    score: computeCandidateScore(entry.votes, criterionIds, shares),
+    score: computeCandidateScore(entry.votes, criterionIds, shares, maxPointsById),
   }));
 
   const rated = scored

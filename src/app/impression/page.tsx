@@ -65,14 +65,14 @@ export default async function ImpressionPage() {
 
       {results.criteria.length > 0 ? (
         <section className="mb-10 break-inside-avoid">
-          <h2 className="mb-3 text-lg font-semibold">Détail par critère (sur {results.scoreMax})</h2>
+          <h2 className="mb-3 text-lg font-semibold">Détail par critère (chaque critère sur son maximum)</h2>
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="border-b-2 border-slate-400 text-left">
                 <th className="py-2 pr-3">Candidat</th>
                 {results.criteria.map((criterion) => (
                   <th key={criterion.id} className="py-2 pr-3">
-                    {criterion.name}
+                    {criterion.name} /{criterion.maxPoints}
                   </th>
                 ))}
               </tr>

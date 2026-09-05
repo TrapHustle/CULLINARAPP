@@ -31,7 +31,6 @@ import {
   uploadCandidatePhotoAction,
 } from "@/lib/actions";
 import { getOrCreateSession, prisma } from "@/lib/prisma";
-import { maxTotalForCriteria } from "@/lib/scoring";
 import {
   ACCEPTED_IMAGE_TYPES,
   PURGE_TABLETS_CONFIRMATION,
@@ -284,15 +283,11 @@ export default async function ConfigurationPage() {
               </div>
 
               <p className="px-5 pt-4 text-label-sm text-on-surface-variant">
-                Noté de {session.scoreMin} à {session.scoreMax}. Total d&apos;un vote :{" "}
+                Saisie de {session.scoreMin} à {session.scoreMax}. Total officiel d&apos;un vote :{" "}
                 <strong className="text-primary">
-                  {maxTotalForCriteria(criteria.length, session.scoreMax)} points
+                  {criteria.reduce((total, criterion) => total + criterion.maxPoints, 0)} points
                 </strong>
-                . Réglable dans l&apos;onglet{" "}
-                <a href="#vote" className="text-primary underline-offset-2 hover:underline">
-                  Vote
-                </a>
-                .
+                . La tablette conserve les choix 1 à {session.scoreMax} et le serveur applique le maximum de chaque critère.
               </p>
 
               <ul className="divide-y divide-outline-variant/20 px-5">

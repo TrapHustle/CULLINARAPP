@@ -141,7 +141,7 @@ export function RankingTable({
                           </p>
                           <p className="mt-1 font-serif text-headline-md text-on-surface">
                             {formatScore(criterion.averageOutOf5)}
-                            <span className="ml-1 text-label-sm text-outline">/{results.scoreMax}</span>
+                            <span className="ml-1 text-label-sm text-outline">/{criterion.maxPoints}</span>
                           </p>
                         </div>
                       ))}
