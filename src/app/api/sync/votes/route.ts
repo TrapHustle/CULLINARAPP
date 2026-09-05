@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { scoreChoicesForMax } from "@/lib/scoring";
 import { syncVotesSchema, type IncomingVote } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
@@ -47,21 +48,17 @@ export async function POST(request: NextRequest) {
   }
 
   // Chargement en une fois des référentiels, pour éviter une requête par vote.
-  const [tables, candidates, criteria, session] = await Promise.all([
+  const [tables, candidates, criteria] = await Promise.all([
     prisma.votingTable.findMany({ select: { id: true } }),
     prisma.candidate.findMany({ select: { id: true, openedAt: true } }),
-    prisma.criterion.findMany({ select: { id: true } }),
-    prisma.session.findUnique({ where: { id: "singleton" }, select: { scoreMax: true } }),
+    prisma.criterion.findMany({ select: { id: true, maxPoints: true } }),
   ]);
 
   const tableIds = new Set(tables.map((table) => table.id));
-  const criterionIds = new Set(criteria.map((criterion) => criterion.id));
+  const criterionMaxById = new Map(criteria.map((criterion) => [criterion.id, criterion.maxPoints]));
   const openedByCandidate = new Map(
     candidates.map((candidate) => [candidate.id, candidate.openedAt !== null]),
   );
-  // Le zod du corps de requête n'accepte qu'un plafond absolu générique : la
-  // vraie borne, réglable depuis Configuration → Vote, ne vit qu'en base.
-  const scoreMax = session?.scoreMax ?? 5;
 
   const accepted: string[] = [];
   const rejected: RejectedVote[] = [];
@@ -69,9 +66,8 @@ export async function POST(request: NextRequest) {
   for (const vote of votes) {
     const rejection = validateAgainstReferences(vote, {
       tableIds,
-      criterionIds,
+      criterionMaxById,
       openedByCandidate,
-      scoreMax,
     });
 
     if (rejection) {
@@ -100,9 +96,8 @@ function validateAgainstReferences(
   vote: IncomingVote,
   refs: {
     tableIds: Set<string>;
-    criterionIds: Set<string>;
+    criterionMaxById: Map<string, number>;
     openedByCandidate: Map<string, boolean>;
-    scoreMax: number;
   },
 ): RejectedVote | null {
   if (!refs.tableIds.has(vote.tableId)) {
@@ -111,13 +106,17 @@ function validateAgainstReferences(
 
   // 0 reste accepté quelle que soit l'échelle : c'est la valeur du critère
   // laissé vide à l'expiration du chronomètre (§11), pas une note choisie.
-  const outOfRange = vote.scores.find(
-    (score) => score.rawValue !== 0 && score.rawValue > refs.scoreMax,
-  );
-  if (outOfRange) {
+  const invalidScore = vote.scores.find((score) => {
+    const maxPoints = refs.criterionMaxById.get(score.criterionId);
+    return maxPoints === undefined || !scoreChoicesForMax(maxPoints).includes(score.rawValue);
+  });
+  if (invalidScore) {
+    const maxPoints = refs.criterionMaxById.get(invalidScore.criterionId);
     return {
       id: vote.id,
-      reason: `Note hors barème (max ${refs.scoreMax}) pour le critère ${outOfRange.criterionId}`,
+      reason: maxPoints === undefined
+        ? `Critère inconnu : ${invalidScore.criterionId}`
+        : `Note hors barème pour le critère ${invalidScore.criterionId}`,
       retryable: false,
     };
   }
@@ -134,15 +133,6 @@ function validateAgainstReferences(
     return {
       id: vote.id,
       reason: "Les votes n'ont jamais été ouverts pour ce candidat",
-      retryable: false,
-    };
-  }
-
-  const unknownCriterion = vote.scores.find((score) => !refs.criterionIds.has(score.criterionId));
-  if (unknownCriterion) {
-    return {
-      id: vote.id,
-      reason: `Critère inconnu : ${unknownCriterion.criterionId}`,
       retryable: false,
     };
   }

@@ -57,6 +57,16 @@ describe("total d'un vote", () => {
 /* ========================================================================== */
 
 describe("notes maximales dans une seule catégorie", () => {
+  it("moyenne trois votes spéciaux au lieu de les additionner", () => {
+    const score = computeCandidateScore(
+      [special(5, 5, 5), special(4, 5, 5), special(5, 4, 5)],
+      CRITERIA,
+      PARTS_40_60,
+    );
+
+    expect(score?.averageRaw).toBeCloseTo(14.3333333333, 10);
+  });
+
   it("donne la note maximale quand tout le monde met 5 partout", () => {
     const score = computeCandidateScore(
       [...repeat(lambda(5, 5, 5), 12), ...repeat(special(5, 5, 5), 3)],

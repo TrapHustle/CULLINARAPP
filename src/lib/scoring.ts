@@ -46,6 +46,14 @@ export type SharesByType = Record<TableType, number>;
 
 export type CriterionScale = { id: string; maxPoints: number };
 
+/** Valeurs proposées au juré pour une échelle officielle. */
+export function scoreChoicesForMax(maxPoints: number): number[] {
+  if (maxPoints === 20) return [0, 5, 10, 15, 20];
+  if (maxPoints === 15) return [0, 4, 8, 12, 15];
+  if (maxPoints === 10) return [0, 2, 4, 6, 8, 10];
+  return Array.from({ length: maxPoints + 1 }, (_, value) => value);
+}
+
 /** Parts de départ, avant tout réglage depuis Configuration → Vote (§4.2). */
 export const DEFAULT_SHARES: SharesByType = {
   LAMBDA: 40,
@@ -97,8 +105,7 @@ export function voteTotal(
   return criterionIds.reduce(
     (total, criterionId) =>
       total +
-      ((vote.scores[criterionId] ?? RAW_UNSCORED) / RAW_MAX) *
-        (maxPointsById[criterionId] ?? RAW_MAX),
+      (vote.scores[criterionId] ?? RAW_UNSCORED),
     0,
   );
 }
@@ -208,7 +215,7 @@ export function computeCriterionAverage(
 
   const combined = combineByShare(
     votes,
-    (vote) => ((vote.scores[criterionId] ?? RAW_UNSCORED) / RAW_MAX) * maxPoints,
+    (vote) => vote.scores[criterionId] ?? RAW_UNSCORED,
     shares,
   );
 

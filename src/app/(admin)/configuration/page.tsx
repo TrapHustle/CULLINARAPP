@@ -283,11 +283,11 @@ export default async function ConfigurationPage() {
               </div>
 
               <p className="px-5 pt-4 text-label-sm text-on-surface-variant">
-                Saisie de {session.scoreMin} à {session.scoreMax}. Total officiel d&apos;un vote :{" "}
+                Chaque critère possède son propre barème. Total officiel d&apos;un vote :{" "}
                 <strong className="text-primary">
                   {criteria.reduce((total, criterion) => total + criterion.maxPoints, 0)} points
                 </strong>
-                . La tablette conserve les choix 1 à {session.scoreMax} et le serveur applique le maximum de chaque critère.
+                . La tablette affiche uniquement les paliers de chaque critère (par exemple 0, 5, 10, 15, 20).
               </p>
 
               <ul className="divide-y divide-outline-variant/20 px-5">
@@ -312,10 +312,18 @@ export default async function ConfigurationPage() {
                           defaultValue: criterion.order,
                           min: 0,
                         },
+                        {
+                          kind: "number",
+                          name: "maxPoints",
+                          label: "Barème",
+                          defaultValue: criterion.maxPoints,
+                          min: 1,
+                          max: 20,
+                        },
                       ]}
                     >
                       <span className="w-8 text-label-sm text-outline">#{criterion.order}</span>
-                      <span className="flex-1 text-body-md text-on-surface">{criterion.name}</span>
+                      <span className="flex-1 text-body-md text-on-surface">{criterion.name} <span className="text-outline">/{criterion.maxPoints}</span></span>
                     </RowEditor>
                     <DeleteButton
                       action={deleteCriterionAction}
@@ -344,6 +352,7 @@ export default async function ConfigurationPage() {
                       defaultValue: criteria.length + 1,
                       min: 0,
                     },
+                    { kind: "number", name: "maxPoints", label: "Barème", defaultValue: 5, min: 1, max: 20 },
                   ]}
                 />
               </div>

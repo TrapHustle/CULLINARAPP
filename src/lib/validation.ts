@@ -59,6 +59,7 @@ export const tableSchema = z.object({
 export const criterionSchema = z.object({
   name: z.string().min(1, "Le nom est obligatoire"),
   order: z.coerce.number().int().min(0).default(0),
+  maxPoints: z.coerce.number().int().min(1).max(RAW_ABSOLUTE_MAX).default(5),
 });
 
 /**

@@ -145,7 +145,10 @@ export async function updateCandidateAction(
 
   await prisma.candidate.update({
     where: { id: parsed.data.id },
-    data: { name: parsed.data.name, order: parsed.data.order },
+    data: {
+      name: parsed.data.name,
+      order: parsed.data.order,
+    },
   });
 
   revalidatePath("/configuration");
@@ -240,6 +243,7 @@ export async function createCriterionAction(
   const parsed = criterionSchema.safeParse({
     name: formData.get("name"),
     order: formData.get("order") || 0,
+    maxPoints: formData.get("maxPoints") || 5,
   });
 
   if (!parsed.success) {
@@ -268,6 +272,7 @@ export async function updateCriterionAction(
     id: formData.get("id"),
     name: formData.get("name"),
     order: formData.get("order") || 0,
+    maxPoints: formData.get("maxPoints") || 5,
   });
 
   if (!parsed.success) {
@@ -276,7 +281,11 @@ export async function updateCriterionAction(
 
   await prisma.criterion.update({
     where: { id: parsed.data.id },
-    data: { name: parsed.data.name, order: parsed.data.order },
+    data: {
+      name: parsed.data.name,
+      order: parsed.data.order,
+      maxPoints: parsed.data.maxPoints,
+    },
   });
 
   revalidatePath("/configuration");
