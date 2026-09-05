@@ -33,7 +33,7 @@ export interface TimelineCandidate {
    * il est — excellent en goût, faible en présentation — ce que la moyenne
    * seule masque.
    */
-  byCriterion: { name: string; average: number | null }[];
+  byCriterion: { name: string; maxPoints: number; average: number | null }[];
 }
 
 /**
@@ -140,7 +140,11 @@ export async function computeTimeline(): Promise<TimelinePayload> {
     color: SERIES_COLORS[i % SERIES_COLORS.length],
     photoUrl: candidate.photoUrl,
     votes: 0,
-    byCriterion: criteria.map((criterion) => ({ name: criterion.name, average: null })),
+    byCriterion: criteria.map((criterion) => ({
+      name: criterion.name,
+      maxPoints: criterion.maxPoints,
+      average: null,
+    })),
   }));
   const positionById = new Map(series.map((candidate, i) => [candidate.id, i]));
 
@@ -221,7 +225,11 @@ export async function computeTimeline(): Promise<TimelinePayload> {
         shares,
         criterion.maxPoints,
       );
-      return { name: criterion.name, average: average === null ? null : round2(average) };
+      return {
+        name: criterion.name,
+        maxPoints: criterion.maxPoints,
+        average: average === null ? null : round2(average),
+      };
     });
   });
 

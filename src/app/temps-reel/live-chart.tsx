@@ -8,7 +8,7 @@ interface TimelineCandidate {
   color: string;
   photoUrl: string | null;
   votes: number;
-  byCriterion: { name: string; average: number | null }[];
+  byCriterion: { name: string; maxPoints: number; average: number | null }[];
 }
 
 interface TimelinePoint {
@@ -346,7 +346,9 @@ export function LiveChart({
                                 key={criterion.name}
                                 className="flex items-baseline justify-between gap-2 text-[11.5px]"
                               >
-                                <span className="truncate text-white/70">{criterion.name}</span>
+                                <span className="truncate text-white/70">
+                                  {criterion.name} /{criterion.maxPoints}
+                                </span>
                                 <span className="flex-none font-semibold tabular-nums text-white">
                                   {criterion.average === null ? "—" : fmt(criterion.average)}
                                 </span>
