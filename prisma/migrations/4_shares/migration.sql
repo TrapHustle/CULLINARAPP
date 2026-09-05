@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "Session" DROP COLUMN "weightPublic",
+DROP COLUMN "weightSpecial",
+ADD COLUMN     "sharePublic" DOUBLE PRECISION NOT NULL DEFAULT 40,
+ADD COLUMN     "shareSpecial" DOUBLE PRECISION NOT NULL DEFAULT 60;
+

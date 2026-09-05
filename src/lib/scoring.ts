@@ -29,18 +29,30 @@ export const RAW_MAX = 5;
 /** Valeur enregistrée pour un critère laissé vide à l'expiration du chrono (§11). */
 export const RAW_UNSCORED = 0;
 
-/** Poids d'un vote selon le type de table dont il provient. */
-export type WeightsByType = Record<TableType, number>;
+/**
+ * Part de chaque catégorie dans la note finale, en pourcentage.
+ *
+ * Ce n'est **pas** un poids par vote : c'est la part que pèse la *moyenne* de
+ * la catégorie. « Jury spécial 60 % » signifie que l'avis du jury compte pour
+ * 60 % de la note, qu'il soit composé de 3 personnes ou de 15.
+ *
+ * La distinction est décisive. Avec un poids par vote, l'influence d'un jury de
+ * 3 personnes face à 15 convives dépend de sa taille, pas de ce qu'on a voulu
+ * lui accorder : le doubler ne suffit pas à le faire peser. Avec une part, la
+ * volonté de l'organisateur est respectée quel que soit le nombre de votants
+ * de chaque côté.
+ */
+export type SharesByType = Record<TableType, number>;
 
-/** Poids de départ, avant tout réglage depuis Configuration → Vote (§4.2). */
-export const DEFAULT_WEIGHTS: WeightsByType = {
-  LAMBDA: 1,
-  SPECIAL: 2,
+/** Parts de départ, avant tout réglage depuis Configuration → Vote (§4.2). */
+export const DEFAULT_SHARES: SharesByType = {
+  LAMBDA: 40,
+  SPECIAL: 60,
 };
 
-/** Poids d'un vote selon le type de table dont il provient (§4.2). */
-export function weightForTableType(type: TableType, weights: WeightsByType = DEFAULT_WEIGHTS): number {
-  return weights[type] ?? weights.LAMBDA;
+/** Part de la catégorie dans la note finale, en pourcentage (§4.2). */
+export function shareForTableType(type: TableType, shares: SharesByType = DEFAULT_SHARES): number {
+  return shares[type] ?? 0;
 }
 
 /**
@@ -84,8 +96,13 @@ export interface CandidateScore {
   averageRaw: number;
   /** Nombre de personnes ayant voté (non pondéré) — affiché à titre indicatif. */
   voterCount: number;
-  /** Somme des poids, c'est-à-dire le diviseur réellement utilisé. */
-  weightTotal: number;
+  /**
+   * Somme des parts réellement retenues, c'est-à-dire le diviseur utilisé.
+   *
+   * Vaut 100 quand toutes les catégories ont voté, moins sinon : les parts sont
+   * renormalisées sur celles qui se sont prononcées.
+   */
+  shareTotal: number;
 }
 
 /**
@@ -100,28 +117,62 @@ export interface CandidateScore {
  * affiché « non noté », jamais 0, sous peine de fausser le classement (§11).
  * Ce retour `null` protège également de toute division par zéro.
  */
+/**
+ * Moyenne d'une catégorie, puis combinaison des catégories selon leurs parts.
+ *
+ * Deux temps, et l'ordre compte : on moyenne **d'abord** à l'intérieur de
+ * chaque catégorie, on applique **ensuite** les parts. C'est ce qui rend
+ * l'influence d'un jury indépendante de sa taille.
+ *
+ * Les parts sont renormalisées sur les seules catégories ayant voté. Sans
+ * cela, un candidat noté par le public mais pas encore par le jury verrait sa
+ * note amputée de la part du jury — comme si celui-ci lui avait mis zéro.
+ */
+function combineByShare(
+  votes: ScoredVote[],
+  valueOf: (vote: ScoredVote) => number,
+  shares: SharesByType,
+): { mean: number; shareTotal: number; voterCount: number } | null {
+  const byType = new Map<TableType, { sum: number; count: number }>();
+
+  for (const vote of votes) {
+    const bucket = byType.get(vote.tableType) ?? { sum: 0, count: 0 };
+    bucket.sum += valueOf(vote);
+    bucket.count += 1;
+    byType.set(vote.tableType, bucket);
+  }
+
+  let weighted = 0;
+  let shareTotal = 0;
+
+  for (const [type, bucket] of byType) {
+    const share = shareForTableType(type, shares);
+    // Une catégorie à 0 % est neutralisée : elle ne compte ni au numérateur ni
+    // au dénominateur, et ne peut donc pas tirer la note vers le bas.
+    if (share <= 0 || bucket.count === 0) continue;
+    weighted += (bucket.sum / bucket.count) * share;
+    shareTotal += share;
+  }
+
+  if (shareTotal === 0) return null;
+
+  return { mean: weighted / shareTotal, shareTotal, voterCount: votes.length };
+}
+
 export function computeCandidateScore(
   votes: ScoredVote[],
   criterionIds: string[],
-  weights: WeightsByType = DEFAULT_WEIGHTS,
+  shares: SharesByType = DEFAULT_SHARES,
 ): CandidateScore | null {
   if (votes.length === 0) return null;
 
-  let weightedSum = 0;
-  let weightTotal = 0;
-
-  for (const vote of votes) {
-    const weight = weightForTableType(vote.tableType, weights);
-    weightedSum += voteTotal(vote, criterionIds) * weight;
-    weightTotal += weight;
-  }
-
-  if (weightTotal === 0) return null;
+  const combined = combineByShare(votes, (vote) => voteTotal(vote, criterionIds), shares);
+  if (combined === null) return null;
 
   return {
-    averageRaw: weightedSum / weightTotal,
-    voterCount: votes.length,
-    weightTotal,
+    averageRaw: combined.mean,
+    voterCount: combined.voterCount,
+    shareTotal: combined.shareTotal,
   };
 }
 
@@ -132,20 +183,17 @@ export function computeCandidateScore(
 export function computeCriterionAverage(
   votes: ScoredVote[],
   criterionId: string,
-  weights: WeightsByType = DEFAULT_WEIGHTS,
+  shares: SharesByType = DEFAULT_SHARES,
 ): number | null {
   if (votes.length === 0) return null;
 
-  let weightedSum = 0;
-  let weightTotal = 0;
+  const combined = combineByShare(
+    votes,
+    (vote) => vote.scores[criterionId] ?? RAW_UNSCORED,
+    shares,
+  );
 
-  for (const vote of votes) {
-    const weight = weightForTableType(vote.tableType, weights);
-    weightedSum += (vote.scores[criterionId] ?? RAW_UNSCORED) * weight;
-    weightTotal += weight;
-  }
-
-  return weightTotal === 0 ? null : weightedSum / weightTotal;
+  return combined === null ? null : combined.mean;
 }
 
 /** Une ligne du classement général. */
@@ -166,11 +214,11 @@ export interface RankedCandidate<T> {
 export function rankCandidates<T>(
   entries: { candidate: T; votes: ScoredVote[] }[],
   criterionIds: string[],
-  weights: WeightsByType = DEFAULT_WEIGHTS,
+  shares: SharesByType = DEFAULT_SHARES,
 ): RankedCandidate<T>[] {
   const scored = entries.map((entry) => ({
     candidate: entry.candidate,
-    score: computeCandidateScore(entry.votes, criterionIds, weights),
+    score: computeCandidateScore(entry.votes, criterionIds, shares),
   }));
 
   const rated = scored

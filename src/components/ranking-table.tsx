@@ -72,8 +72,10 @@ export function RankingTable({
                       {entry.name}
                     </span>
                     <span className="text-label-sm text-outline">
-                      {entry.voterCount} votant{entry.voterCount > 1 ? "s" : ""} · poids total{" "}
-                      {entry.weightTotal}
+                      {entry.voterCount} votant{entry.voterCount > 1 ? "s" : ""}
+                      {entry.shareTotal < 100
+                        ? ` · ${entry.shareTotal} % des parts (une catégorie n'a pas voté)`
+                        : null}
                     </span>
                   </span>
 

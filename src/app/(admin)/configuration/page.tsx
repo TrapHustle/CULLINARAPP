@@ -444,30 +444,38 @@ export default async function ConfigurationPage() {
               </label>
 
               <label className="text-label-sm text-on-surface-variant">
-                <span className="mb-1 block">Poids — Public (tables normales)</span>
+                <span className="mb-1 block">Part — Public (%)</span>
                 <input
                   type="number"
-                  name="weightPublic"
+                  name="sharePublic"
                   min={0}
-                  max={10}
-                  step={0.5}
-                  defaultValue={session.weightPublic}
+                  max={100}
+                  step={5}
+                  defaultValue={session.sharePublic}
                   className="w-28 rounded-lg border border-outline-variant/60 px-3 py-2 text-body-md"
                 />
               </label>
 
               <label className="text-label-sm text-on-surface-variant">
-                <span className="mb-1 block">Poids — Jury spécial</span>
+                <span className="mb-1 block">Part — Jury spécial (%)</span>
                 <input
                   type="number"
-                  name="weightSpecial"
+                  name="shareSpecial"
                   min={0}
-                  max={10}
-                  step={0.5}
-                  defaultValue={session.weightSpecial}
+                  max={100}
+                  step={5}
+                  defaultValue={session.shareSpecial}
                   className="w-28 rounded-lg border border-outline-variant/60 px-3 py-2 text-body-md"
                 />
               </label>
+
+              <p className="w-full text-label-sm text-on-surface-variant">
+                Ces parts portent sur la <strong className="text-on-surface">moyenne</strong> de
+                chaque catégorie, pas sur chaque vote : « jury 60 % » vaut que le jury compte 3 ou
+                15 personnes. Elles n&apos;ont pas à totaliser 100, le calcul les ramène à
+                l&apos;échelle — et une catégorie qui n&apos;a pas encore voté est ignorée plutôt
+                que comptée zéro.
+              </p>
 
               <label className="text-label-sm text-on-surface-variant">
                 <span className="mb-1 block">Note minimale</span>

@@ -7,7 +7,7 @@ import {
   round2,
   type ScoredVote,
   type TableType,
-  type WeightsByType,
+  type SharesByType,
 } from "./scoring";
 
 export interface CriterionBreakdown {
@@ -50,7 +50,8 @@ export interface CandidateResult {
   /** Moyenne des seules tables normales (le public), sur `maxTotal`. `null` si aucune. */
   publicScore: number | null;
   voterCount: number;
-  weightTotal: number;
+  /** Somme des parts retenues — 100 si toutes les catégories ont voté. */
+  shareTotal: number;
   byCriterion: CriterionBreakdown[];
   byTable: TableBreakdown[];
 }
@@ -80,11 +81,11 @@ export async function computeResults(): Promise<ResultsPayload> {
     prisma.session.findUnique({ where: { id: "singleton" } }),
   ]);
 
-  // Poids et échelle réglés depuis Configuration → Vote — à défaut (avant la
+  // Parts et échelle réglées depuis Configuration → Vote — à défaut (avant la
   // toute première écriture de la session), les valeurs de départ (§4.2, §4.1).
-  const weights: WeightsByType = {
-    LAMBDA: session?.weightPublic ?? 1,
-    SPECIAL: session?.weightSpecial ?? 2,
+  const shares: SharesByType = {
+    LAMBDA: session?.sharePublic ?? 40,
+    SPECIAL: session?.shareSpecial ?? 60,
   };
   const scoreMax = session?.scoreMax ?? 5;
 
@@ -122,7 +123,7 @@ export async function computeResults(): Promise<ResultsPayload> {
       votes: votesByCandidate.get(candidate.id) ?? [],
     })),
     criterionIds,
-    weights,
+    shares,
   );
 
   const tables = await prisma.votingTable.findMany({ orderBy: { name: "asc" } });
@@ -131,7 +132,7 @@ export async function computeResults(): Promise<ResultsPayload> {
     const candidateVotes = votesByCandidate.get(entry.candidate.id) ?? [];
 
     const byCriterion: CriterionBreakdown[] = criteria.map((criterion) => {
-      const average = computeCriterionAverage(candidateVotes, criterion.id, weights);
+      const average = computeCriterionAverage(candidateVotes, criterion.id, shares);
       return {
         criterionId: criterion.id,
         name: criterion.name,
@@ -141,7 +142,7 @@ export async function computeResults(): Promise<ResultsPayload> {
 
     const byTable: TableBreakdown[] = tables.map((table) => {
       const tableVotes = candidateVotes.filter((vote) => vote.tableId === table.id);
-      const score = computeCandidateScore(tableVotes, criterionIds, weights);
+      const score = computeCandidateScore(tableVotes, criterionIds, shares);
 
       const jurorVotes: JurorVote[] = tableVotes
         .slice()
@@ -169,12 +170,12 @@ export async function computeResults(): Promise<ResultsPayload> {
     const specialScore = computeCandidateScore(
       candidateVotes.filter((vote) => vote.tableType === "SPECIAL"),
       criterionIds,
-      weights,
+      shares,
     );
     const publicScore = computeCandidateScore(
       candidateVotes.filter((vote) => vote.tableType === "LAMBDA"),
       criterionIds,
-      weights,
+      shares,
     );
 
     return {
@@ -186,7 +187,7 @@ export async function computeResults(): Promise<ResultsPayload> {
       specialScore: specialScore === null ? null : round2(specialScore.averageRaw),
       publicScore: publicScore === null ? null : round2(publicScore.averageRaw),
       voterCount: entry.score?.voterCount ?? 0,
-      weightTotal: entry.score?.weightTotal ?? 0,
+      shareTotal: entry.score?.shareTotal ?? 0,
       byCriterion,
       byTable,
     };

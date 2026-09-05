@@ -479,8 +479,8 @@ export async function updateVoteSettingsAction(formData: FormData) {
   await getOrCreateSession();
 
   const parsed = voteSettingsSchema.safeParse({
-    weightPublic: formData.get("weightPublic"),
-    weightSpecial: formData.get("weightSpecial"),
+    sharePublic: formData.get("sharePublic"),
+    shareSpecial: formData.get("shareSpecial"),
     scoreMin: formData.get("scoreMin"),
     scoreMax: formData.get("scoreMax"),
     voteModePublic: formData.get("voteModePublic"),

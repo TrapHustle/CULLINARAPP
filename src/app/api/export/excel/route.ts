@@ -41,7 +41,7 @@ export async function GET() {
       special: entry.specialScore ?? "non noté",
       public: entry.publicScore ?? "non noté",
       voters: entry.voterCount,
-      weight: entry.weightTotal,
+      weight: entry.shareTotal,
     });
   }
 

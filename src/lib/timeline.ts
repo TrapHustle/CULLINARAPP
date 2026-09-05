@@ -3,11 +3,11 @@ import {
   computeCriterionAverage,
   maxTotalForCriteria,
   voteTotal,
-  weightForTableType,
+  shareForTableType,
   round2,
   type ScoredVote,
   type TableType,
-  type WeightsByType,
+  type SharesByType,
 } from "./scoring";
 
 /** Un candidat suivi par la courbe, avec la couleur qui lui est réservée. */
@@ -124,9 +124,9 @@ export async function computeTimeline(): Promise<TimelinePayload> {
   const expectedVotes =
     tables.reduce((sum, table) => sum + table.expectedJurors, 0) * candidates.length;
 
-  const weights: WeightsByType = {
-    LAMBDA: session?.weightPublic ?? 1,
-    SPECIAL: session?.weightSpecial ?? 2,
+  const shares: SharesByType = {
+    LAMBDA: session?.sharePublic ?? 40,
+    SPECIAL: session?.shareSpecial ?? 60,
   };
   const scoreMax = session?.scoreMax ?? 5;
   const criterionIds = criteria.map((criterion) => criterion.id);
@@ -142,10 +142,38 @@ export async function computeTimeline(): Promise<TimelinePayload> {
   }));
   const positionById = new Map(series.map((candidate, i) => [candidate.id, i]));
 
-  // Cumuls courants : la moyenne se recalcule en O(1) par vote, plutôt que de
-  // reparcourir tout l'historique à chaque point.
-  const weightedSum = new Array(series.length).fill(0);
-  const weightTotal = new Array(series.length).fill(0);
+  // Cumuls courants, **par catégorie** : la note se recompose en O(1) par vote,
+  // plutôt que de reparcourir tout l'historique à chaque point.
+  //
+  // On moyenne d'abord à l'intérieur de chaque catégorie, on applique ensuite
+  // les parts — le même ordre que le moteur du palmarès, sans quoi la courbe et
+  // le classement final se contrediraient.
+  const sums: Record<TableType, number[]> = {
+    LAMBDA: new Array(series.length).fill(0),
+    SPECIAL: new Array(series.length).fill(0),
+  };
+  const counts: Record<TableType, number[]> = {
+    LAMBDA: new Array(series.length).fill(0),
+    SPECIAL: new Array(series.length).fill(0),
+  };
+
+  /** Note d'un candidat à cet instant, ou `null` s'il n'a pas encore de vote. */
+  function scoreAt(position: number): number | null {
+    let weighted = 0;
+    let shareTotal = 0;
+
+    for (const type of ["LAMBDA", "SPECIAL"] as const) {
+      const count = counts[type][position];
+      const share = shareForTableType(type, shares);
+      // Une catégorie muette ou neutralisée ne compte pas : les parts sont
+      // renormalisées sur celles qui se sont prononcées.
+      if (count === 0 || share <= 0) continue;
+      weighted += (sums[type][position] / count) * share;
+      shareTotal += share;
+    }
+
+    return shareTotal === 0 ? null : round2(weighted / shareTotal);
+  }
 
   // Votes conservés par candidat : ils servent au détail par critère, calculé
   // une fois à la fin plutôt qu'à chaque point — seul l'état présent est montré.
@@ -165,17 +193,15 @@ export async function computeTimeline(): Promise<TimelinePayload> {
       scores[score.criterionId] = score.rawValue;
     }
     const scoredVote: ScoredVote = { tableType: vote.table.type as TableType, scores };
-    const weight = weightForTableType(scoredVote.tableType, weights);
+    const type = scoredVote.tableType;
 
-    weightedSum[position] += voteTotal(scoredVote, criterionIds) * weight;
-    weightTotal[position] += weight;
+    sums[type][position] += voteTotal(scoredVote, criterionIds);
+    counts[type][position] += 1;
     series[position].votes += 1;
     votesByCandidate[position].push(scoredVote);
 
     index += 1;
-    const current = series.map((_, i) =>
-      weightTotal[i] === 0 ? null : round2(weightedSum[i] / weightTotal[i]),
-    );
+    const current = series.map((_, i) => scoreAt(i));
 
     points.push({
       index,
@@ -187,7 +213,7 @@ export async function computeTimeline(): Promise<TimelinePayload> {
 
   series.forEach((candidate, position) => {
     candidate.byCriterion = criteria.map((criterion) => {
-      const average = computeCriterionAverage(votesByCandidate[position], criterion.id, weights);
+      const average = computeCriterionAverage(votesByCandidate[position], criterion.id, shares);
       return { name: criterion.name, average: average === null ? null : round2(average) };
     });
   });

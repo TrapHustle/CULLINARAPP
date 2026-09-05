@@ -181,8 +181,11 @@ export const voteModeUpdateSchema = z.object({
 
 export const voteSettingsSchema = z
   .object({
-    weightPublic: z.coerce.number().min(0).max(10),
-    weightSpecial: z.coerce.number().min(0).max(10),
+    // Parts en pourcentage. Elles n'ont pas à totaliser 100 : le calcul les
+    // renormalise, ce qui évite un formulaire qui refuse une saisie
+    // intermédiaire pendant qu'on ajuste les deux champs.
+    sharePublic: z.coerce.number().min(0).max(100),
+    shareSpecial: z.coerce.number().min(0).max(100),
     scoreMin: z.coerce.number().int().min(0).max(RAW_ABSOLUTE_MAX - 1),
     scoreMax: z.coerce.number().int().min(1).max(RAW_ABSOLUTE_MAX),
     voteModePublic: voteModeSchema,

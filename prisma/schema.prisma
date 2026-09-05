@@ -95,13 +95,17 @@ model Session {
   /// d'abord envoyé ce qu'elles avaient en attente.
   dataGeneration    String    @default("1")
 
-  /// Poids d'un vote selon le type de table dont il provient (§4.2).
-  /// LAMBDA (les tables normales, « le public ») pèse 1 par défaut ; SPECIAL
-  /// (le jury spécial) pèse 2. Modifiable depuis Configuration → Vote plutôt
-  /// que figé dans le code, pour s'adapter d'un concours à l'autre sans
-  /// redéploiement.
-  weightPublic  Float @default(1)
-  weightSpecial Float @default(2)
+  /// Part de chaque catégorie dans la note finale, en pourcentage (§4.2).
+  ///
+  /// Ce n'est pas un poids par vote : c'est la part que pèse la *moyenne* de la
+  /// catégorie. « Jury spécial 60 » signifie que l'avis du jury compte pour
+  /// 60 % de la note, qu'il soit composé de 3 personnes ou de 15 — ce qu'un
+  /// poids par vote ne permet pas de garantir.
+  ///
+  /// Les deux parts n'ont pas à totaliser 100 : le calcul les renormalise, y
+  /// compris lorsqu'une catégorie n'a pas encore voté.
+  sharePublic  Float @default(40)
+  shareSpecial Float @default(60)
 
   /// Bornes de la note brute qu'un juré peut saisir sur un critère.
   /// 1 à 5 par défaut ; élargir jusqu'à 0–10, par exemple, ne change que ces
