@@ -60,9 +60,10 @@ model VotingTable {
 }
 
 model Criterion {
-  id    String @id @default(cuid())
-  name  String
-  order Int    @default(0)
+  id        String @id @default(cuid())
+  name      String
+  order     Int    @default(0)
+  maxPoints Int    @default(5)
 
   scores VoteScore[]
 

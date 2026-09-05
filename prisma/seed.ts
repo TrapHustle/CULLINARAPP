@@ -22,11 +22,22 @@ async function main() {
     create: { id: "singleton", votingOpen: false, timerEnabled: true, timerSeconds: 30 },
   });
 
-  const criteria = ["Goût", "Présentation", "Créativité"];
+  const criteria = [
+    "Maîtrise culinaire & technique",
+    "Créativité & valorisation des produits locaux",
+    "Présentation, hygiène & organisation",
+    "Personnalité & potentiel talent traiteur",
+    "Potentiel audiovisuel",
+  ];
   for (const [index, name] of criteria.entries()) {
-    const existing = await prisma.criterion.findFirst({ where: { name } });
+    const existing = await prisma.criterion.findFirst({ where: { order: index + 1 } });
     if (!existing) {
       await prisma.criterion.create({ data: { name, order: index + 1 } });
+    } else {
+      await prisma.criterion.update({
+        where: { id: existing.id },
+        data: { name, order: index + 1 },
+      });
     }
   }
 
