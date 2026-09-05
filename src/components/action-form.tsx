@@ -53,8 +53,8 @@ export function FieldInput({ field }: { field: Field }) {
       defaultValue={field.defaultValue}
       min={field.kind === "number" ? field.min : undefined}
       max={field.kind === "number" ? field.max : undefined}
-      className={`rounded-lg border border-outline-variant/60 px-3 py-2 text-body-md ${
-        field.kind === "number" ? "w-24" : "w-56"
+      className={`w-full rounded-lg border border-outline-variant/60 px-3 py-2 text-body-md sm:w-auto ${
+        field.kind === "number" ? "sm:w-24" : "sm:w-56"
       }`}
     />
   );
@@ -91,7 +91,7 @@ export function ActionForm({
   return (
     <form ref={formRef} action={formAction} className="flex flex-wrap items-end gap-3">
       {fields.map((field) => (
-        <label key={field.name} className="text-label-sm text-on-surface-variant">
+        <label key={field.name} className="w-full text-label-sm text-on-surface-variant sm:w-auto">
           <span className="mb-1 block">{field.label}</span>
 
           <FieldInput field={field} />
@@ -101,7 +101,7 @@ export function ActionForm({
       <button
         type="submit"
         disabled={pending}
-        className="gold-gradient flex h-touch items-center gap-2 rounded-lg px-4 text-label-lg transition hover:brightness-105 disabled:opacity-60"
+        className="gold-gradient flex h-touch w-full items-center justify-center gap-2 rounded-lg px-4 text-label-lg transition hover:brightness-105 disabled:opacity-60 sm:w-auto"
       >
         <PlusIcon className="h-4 w-4" />
         {pending ? "…" : submitLabel}

@@ -21,7 +21,7 @@ export function MainNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-wrap gap-6">
+    <nav className="grid w-full grid-cols-2 gap-x-3 gap-y-1 sm:flex sm:w-auto sm:flex-wrap sm:gap-6">
       {NAV_LINKS.map((link) => {
         const active = pathname === link.href;
         return (
@@ -31,8 +31,8 @@ export function MainNav() {
             aria-current={active ? "page" : undefined}
             className={
               active
-                ? "border-b-2 border-primary pb-1 text-label-lg text-primary transition-colors"
-                : "border-b-2 border-transparent pb-1 text-label-lg text-on-surface-variant transition-colors hover:text-primary"
+                ? "min-h-touch border-b-2 border-primary py-2 text-center text-label-lg text-primary transition-colors sm:min-h-0 sm:pb-1 sm:pt-0 sm:text-left"
+                : "min-h-touch border-b-2 border-transparent py-2 text-center text-label-lg text-on-surface-variant transition-colors hover:text-primary sm:min-h-0 sm:pb-1 sm:pt-0 sm:text-left"
             }
           >
             {link.label}

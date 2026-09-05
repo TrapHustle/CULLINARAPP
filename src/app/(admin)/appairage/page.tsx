@@ -126,8 +126,8 @@ export default async function ConnexionPage() {
 
         <ul className="divide-y divide-outline-variant/20">
           {tables.map((table) => (
-            <li key={table.id} className="flex items-center gap-3 py-3">
-              <span className="flex-1 text-body-md text-on-surface">{table.name}</span>
+            <li key={table.id} className="flex flex-wrap items-center gap-3 py-3">
+              <span className="min-w-0 flex-1 text-body-md text-on-surface">{table.name}</span>
 
               {table.assignedDeviceId ? (
                 <>
@@ -142,11 +142,11 @@ export default async function ConnexionPage() {
                   <span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-label-sm text-primary">
                     tablette connectée
                   </span>
-                  <form action={releaseTableAction}>
+                  <form action={releaseTableAction} className="w-full sm:w-auto">
                     <input type="hidden" name="tableId" value={table.id} />
                     <button
                       type="submit"
-                      className="rounded-lg border border-outline-variant px-3 py-1.5 text-label-sm text-on-surface-variant transition-colors hover:border-error/50 hover:text-error"
+                      className="min-h-touch w-full rounded-lg border border-outline-variant px-3 py-1.5 text-label-sm text-on-surface-variant transition-colors hover:border-error/50 hover:text-error sm:min-h-0 sm:w-auto"
                     >
                       Libérer
                     </button>

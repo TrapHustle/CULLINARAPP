@@ -62,7 +62,7 @@ export function RowEditor({
       <input type="hidden" name="id" value={id} />
 
       {fields.map((field) => (
-        <label key={field.name} className="text-label-sm text-on-surface-variant">
+        <label key={field.name} className="w-full text-label-sm text-on-surface-variant sm:w-auto">
           <span className="mb-1 block">{field.label}</span>
           <FieldInput field={field} />
         </label>
@@ -71,7 +71,7 @@ export function RowEditor({
       <button
         type="submit"
         disabled={pending}
-        className="h-touch rounded-lg border border-primary/40 px-4 text-label-lg text-primary transition-colors hover:bg-primary/5 disabled:opacity-60"
+        className="h-touch w-full rounded-lg border border-primary/40 px-4 text-label-lg text-primary transition-colors hover:bg-primary/5 disabled:opacity-60 sm:w-auto"
       >
         {pending ? "…" : "Enregistrer"}
       </button>

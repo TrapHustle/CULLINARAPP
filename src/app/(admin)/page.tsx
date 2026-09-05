@@ -258,11 +258,11 @@ export default async function PilotagePage() {
             ) : null}
 
             {session.votingOpen ? (
-              <form action={closeVotingAction}>
+              <form action={closeVotingAction} className="w-full sm:w-auto">
                 <button
                   type="submit"
                   title="Ferme les votes sans changer de candidat"
-                  className="flex h-touch items-center justify-center gap-2 rounded-lg border border-outline-variant px-4 text-label-lg text-on-surface-variant transition-colors hover:border-error/50 hover:text-error"
+                  className="flex h-touch w-full items-center justify-center gap-2 rounded-lg border border-outline-variant px-4 text-label-lg text-on-surface-variant transition-colors hover:border-error/50 hover:text-error sm:w-auto"
                 >
                   <StopIcon className="h-4 w-4" />
                   Suspendre

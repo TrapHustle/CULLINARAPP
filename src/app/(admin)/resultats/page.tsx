@@ -29,21 +29,21 @@ export default async function ResultatsPage() {
           </p>
         </div>
 
-        <div className="flex gap-3 print:hidden">
+        <div className="flex w-full flex-wrap gap-3 print:hidden sm:w-auto">
           {/* La courbe s'ouvre dans un onglet à part : elle se projette pendant
               que le dashboard reste piloté sur l'écran du portable. */}
           <a
             href="/temps-reel"
             target="_blank"
             rel="noreferrer"
-            className="flex h-touch items-center gap-2 rounded-lg border border-outline-variant px-4 text-label-lg text-on-surface-variant transition-colors hover:border-primary/50 hover:text-primary"
+            className="flex h-touch flex-1 items-center justify-center gap-2 rounded-lg border border-outline-variant px-4 text-label-lg text-on-surface-variant transition-colors hover:border-primary/50 hover:text-primary sm:flex-none"
           >
             <ChartIcon className="h-4 w-4" />
             Classement en temps réel
           </a>
           <a
             href="/api/export/excel"
-            className="flex h-touch items-center gap-2 rounded-lg border border-outline-variant px-4 text-label-lg text-on-surface-variant transition-colors hover:border-primary/50 hover:text-primary"
+            className="flex h-touch flex-1 items-center justify-center gap-2 rounded-lg border border-outline-variant px-4 text-label-lg text-on-surface-variant transition-colors hover:border-primary/50 hover:text-primary sm:flex-none"
           >
             <DownloadIcon className="h-4 w-4" />
             Exporter en Excel
@@ -52,7 +52,7 @@ export default async function ResultatsPage() {
             href="/impression"
             target="_blank"
             rel="noreferrer"
-            className="gold-gradient flex h-touch items-center gap-2 rounded-lg px-4 text-label-lg transition hover:brightness-105"
+            className="gold-gradient flex h-touch flex-1 items-center justify-center gap-2 rounded-lg px-4 text-label-lg transition hover:brightness-105 sm:flex-none"
           >
             <PrintIcon className="h-4 w-4" />
             Imprimer le PDF

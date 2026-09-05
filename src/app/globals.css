@@ -248,6 +248,52 @@ body {
     var(--surface);
   color: var(--on-surface);
   font-family: "Outfit", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Les cartes, tableaux et formulaires sont souvent remplis de noms longs.
+   Cette base évite qu'un seul contenu force le viewport à défiler de côté. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+/* Téléphone courant (360–430 px). Le dashboard reste complet, mais passe en
+   lecture verticale : les colonnes Tailwind reprennent naturellement leur
+   version `grid-cols-1` et les actions gardent une cible tactile confortable. */
+@media (max-width: 639px) {
+  html {
+    font-size: 16px;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 10vw, 2.6rem);
+    line-height: 1.08;
+  }
+
+  .custom-scrollbar {
+    scrollbar-width: thin;
+  }
+
+  input,
+  select,
+  textarea {
+    max-width: 100%;
+  }
+
+  /* Les panneaux de listes n'emprisonnent pas une grande partie de la page
+     sur un petit écran : on les laisse se dérouler avec le document. */
+  .max-h-\[70vh\] {
+    max-height: none;
+  }
 }
 
 /* Titres serif, esprit carton d'invitation. */

@@ -47,7 +47,7 @@ function DangerAction({
         <div className="text-label-sm text-error">{warning}</div>
 
         <form action={formAction} className="flex flex-wrap items-end gap-3">
-          <label className="text-label-sm text-on-surface-variant">
+          <label className="w-full text-label-sm text-on-surface-variant sm:w-auto">
             <span className="mb-1 block">
               Saisissez <strong className="text-error">{confirmationWord}</strong> pour confirmer
             </span>
@@ -56,14 +56,14 @@ function DangerAction({
               name="confirmation"
               autoComplete="off"
               placeholder={confirmationWord}
-              className="w-56 rounded-lg border border-error/40 px-3 py-2 text-body-md"
+              className="w-full rounded-lg border border-error/40 px-3 py-2 text-body-md sm:w-56"
             />
           </label>
 
           <button
             type="submit"
             disabled={pending}
-            className="h-touch rounded-lg border border-error/50 px-4 text-label-lg text-error transition-colors hover:bg-error/10 disabled:opacity-60"
+            className="h-touch w-full rounded-lg border border-error/50 px-4 text-label-lg text-error transition-colors hover:bg-error/10 disabled:opacity-60 sm:w-auto"
           >
             {pending ? pendingLabel : submitLabel}
           </button>

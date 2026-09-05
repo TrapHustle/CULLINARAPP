@@ -14,7 +14,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-[color:var(--c-line)] bg-[color:var(--header-bg)] backdrop-blur">
-        <div className="mx-auto flex w-full max-w-[1440px] flex-wrap items-center gap-x-8 gap-y-3 px-6 py-3 lg:px-12">
+        <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-3 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-8 sm:px-6 lg:px-12">
           <span className="flex items-center gap-2 font-serif text-headline-md text-primary">
             <ChefHatIcon className="h-6 w-6" />
             Concours culinaire
@@ -22,7 +22,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
           <MainNav />
 
-          <div className="ml-auto flex items-center gap-3">
+          <div className="flex w-full items-center justify-between gap-2 sm:ml-auto sm:w-auto sm:justify-start sm:gap-3">
             {/* Ouvre l'écran suivi par la salle dans un onglet séparé : le
                 dashboard reste affiché sur le portable pendant que la
                 projection vit de son côté, sur le second écran. */}
@@ -31,7 +31,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               target="_blank"
               rel="noopener"
               title="Ouvrir l'écran public dans un nouvel onglet"
-              className="flex items-center gap-2 rounded-lg border border-primary/40 px-3 py-1.5 text-label-sm text-primary transition-colors hover:border-primary hover:text-gold-soft"
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-primary/40 px-3 py-1.5 text-label-sm text-primary transition-colors hover:border-primary hover:text-gold-soft sm:flex-none"
             >
               <ScreenIcon className="h-4 w-4" />
               Écran public
@@ -50,9 +50,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-[1440px] flex-1 px-6 py-gutter lg:px-12">{children}</main>
+      <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-4 sm:px-6 sm:py-gutter lg:px-12">{children}</main>
 
-      <footer className="mx-auto w-full max-w-[1440px] px-6 py-6 text-label-sm text-outline lg:px-12">
+      <footer className="mx-auto w-full max-w-[1440px] px-4 py-6 text-label-sm text-outline sm:px-6 lg:px-12">
         Concours culinaire — espace organisateur.
       </footer>
     </>
