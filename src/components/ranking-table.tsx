@@ -10,7 +10,7 @@ function formatScore(value: number | null) {
 /** Mention honorifique des trois premières places, comme sur un palmarès imprimé. */
 const MEDALS = ["Médaille d'or", "Médaille d'argent", "Médaille de bronze"];
 
-const GRID = "sm:grid-cols-[4rem_1fr_7rem_7rem_9rem_6rem]";
+const GRID = "sm:grid-cols-[4.5rem_minmax(14rem,1fr)_8rem_8rem_11rem_7rem]";
 
 /**
  * Palmarès général : trois colonnes de note — Jury spécial, Public, puis Note
@@ -25,9 +25,9 @@ export function RankingTable({
   results: { ranking: CandidateResult[]; maxTotal: number; scoreMax: number };
 }) {
   return (
-    <section className="overflow-hidden rounded-xl bg-surface-container gold-border">
+    <section className="ranking-shell overflow-hidden rounded-xl bg-surface-container gold-border">
       <div
-        className={`hidden border-b border-outline-variant/30 px-6 py-3 text-label-sm uppercase tracking-wider text-outline sm:grid ${GRID}`}
+        className={`hidden border-b border-outline-variant/30 bg-surface-high px-7 py-4 text-label-sm uppercase tracking-[0.16em] text-outline sm:grid ${GRID}`}
       >
         <span>Rang</span>
         <span>Candidat</span>
@@ -45,14 +45,14 @@ export function RankingTable({
           return (
             <li
               key={entry.candidateId}
-              className={first ? "border-l-2 border-primary bg-primary/5" : undefined}
+              className={`ranking-row ${first ? "ranking-row--winner border-l-2 border-primary bg-primary/5" : ""}`}
             >
               <details className="group">
                 <summary
-                  className={`grid cursor-pointer list-none items-center gap-x-4 gap-y-2 px-6 py-4 transition-colors hover:bg-surface-high/40 sm:grid ${GRID}`}
+                  className={`grid min-h-28 cursor-pointer list-none items-center gap-x-5 gap-y-3 px-7 py-6 transition-colors hover:bg-surface-high/50 sm:grid ${GRID}`}
                 >
                   <span
-                    className={`grid h-9 w-9 place-items-center rounded-full text-label-lg ${
+                    className={`ranking-badge grid h-12 w-12 place-items-center rounded-full text-headline-sm ${
                       first
                         ? "gold-gradient"
                         : podium
@@ -85,20 +85,20 @@ export function RankingTable({
                     <span className="font-serif text-headline-sm text-on-surface-variant sm:hidden">
                       Jury spécial{" "}
                     </span>
-                    <span className="text-on-surface-variant">{formatScore(entry.specialScore)}</span>
+                    <span className="text-headline-sm text-on-surface-variant">{formatScore(entry.specialScore)}</span>
                   </span>
 
                   <span className="text-right">
                     <span className="font-serif text-headline-sm text-on-surface-variant sm:hidden">
                       Public{" "}
                     </span>
-                    <span className="text-on-surface-variant">{formatScore(entry.publicScore)}</span>
+                    <span className="text-headline-sm text-on-surface-variant">{formatScore(entry.publicScore)}</span>
                   </span>
 
                   <span className="text-right">
                     <span
                       className={`font-serif ${
-                        first ? "text-display-lg text-primary" : "text-headline-lg text-on-surface"
+                        first ? "text-display-lg text-primary gold-text-glow" : "text-display-sm text-on-surface"
                       }`}
                     >
                       {formatScore(entry.finalScore)}
