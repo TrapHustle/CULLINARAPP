@@ -1,5 +1,6 @@
 import { AutoRefresh } from "@/components/auto-refresh";
 import { ChartIcon, DownloadIcon, PrintIcon } from "@/components/icons";
+import { ImportVotesButton } from "@/components/import-votes-button";
 import { RankingTable } from "@/components/ranking-table";
 import { computeResults } from "@/lib/results";
 
@@ -48,6 +49,7 @@ export default async function ResultatsPage() {
             <DownloadIcon className="h-4 w-4" />
             Exporter en Excel
           </a>
+          <ImportVotesButton />
           <a
             href="/impression"
             target="_blank"
