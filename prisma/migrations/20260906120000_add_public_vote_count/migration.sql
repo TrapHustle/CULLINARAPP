@@ -1,0 +1,1 @@
+ALTER TABLE "Candidate" ADD COLUMN "publicVoteCount" INTEGER NOT NULL DEFAULT 0;

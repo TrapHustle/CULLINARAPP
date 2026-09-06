@@ -22,7 +22,13 @@ const GRID = "sm:grid-cols-[4.5rem_minmax(14rem,1fr)_8rem_8rem_11rem_7rem]";
 export function RankingTable({
   results,
 }: {
-  results: { ranking: CandidateResult[]; maxTotal: number; scoreMax: number };
+  results: {
+    ranking: CandidateResult[];
+    maxTotal: number;
+    scoreMax: number;
+    totalVotes: number;
+    publicVoteTotal: number;
+  };
 }) {
   return (
     <section className="ranking-shell overflow-hidden rounded-xl bg-surface-container gold-border">
@@ -72,7 +78,9 @@ export function RankingTable({
                       {entry.name}
                     </span>
                     <span className="text-label-sm text-outline">
-                      {entry.voterCount} votant{entry.voterCount > 1 ? "s" : ""}
+                      {entry.publicVoteCount || entry.voterCount} vote{(entry.publicVoteCount || entry.voterCount) > 1 ? "s" : ""} / {results.publicVoteTotal > 0
+                        ? (((entry.publicVoteCount || entry.voterCount) / results.publicVoteTotal) * 100).toFixed(2).replace(".", ",")
+                        : "0,00"} %
                       {entry.shareTotal < 100
                         ? ` · ${entry.shareTotal} % des parts (une catégorie n'a pas voté)`
                         : null}

@@ -52,6 +52,7 @@ export interface CandidateResult {
   /** Moyenne des seules tables normales (le public), sur `maxTotal`. `null` si aucune. */
   publicScore: number | null;
   voterCount: number;
+  publicVoteCount: number;
   /** Somme des parts retenues — 100 si toutes les catégories ont voté. */
   shareTotal: number;
   byCriterion: CriterionBreakdown[];
@@ -64,6 +65,8 @@ export interface ResultsPayload {
   scoreMax: number;
   /** Total maximal d'un vote — `criteria.length × scoreMax`. */
   maxTotal: number;
+  /** Total des votes publics externes affichés dans le classement. */
+  publicVoteTotal: number;
   ranking: CandidateResult[];
   totals: { votes: number; candidates: number; tables: number };
 }
@@ -97,6 +100,7 @@ export async function computeResults(): Promise<ResultsPayload> {
   );
   const criterionNameById = new Map(criteria.map((criterion) => [criterion.id, criterion.name]));
   const maxTotal = maxTotalForScales(criteria);
+  const publicVoteTotal = candidates.reduce((total, candidate) => total + candidate.publicVoteCount, 0);
 
   // Regroupement des votes par candidat, en gardant le juré et la table pour
   // le détail affiché dans la popup.
@@ -196,6 +200,7 @@ export async function computeResults(): Promise<ResultsPayload> {
       specialScore: specialScore === null ? null : round2(specialScore.averageRaw),
       publicScore: publicScore === null ? null : round2(publicScore.averageRaw),
       voterCount: entry.score?.voterCount ?? 0,
+      publicVoteCount: entry.candidate.publicVoteCount,
       shareTotal: entry.score?.shareTotal ?? 0,
       byCriterion,
       byTable,
@@ -210,6 +215,7 @@ export async function computeResults(): Promise<ResultsPayload> {
     })),
     scoreMax,
     maxTotal,
+    publicVoteTotal,
     ranking,
     totals: { votes: votes.length, candidates: candidates.length, tables: tableCount },
   };

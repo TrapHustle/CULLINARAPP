@@ -20,6 +20,11 @@ model Candidate {
   photoUrl String?
   order    Int     @default(0)
 
+  /// Nombre de votes publics provenant du scrutin externe affiché au classement.
+  /// Ces votes sont comptés séparément des notes des jurés et ne modifient pas
+  /// la note moyenne sur 75.
+  publicVoteCount Int @default(0)
+
   /// Date de la première ouverture des votes pour ce candidat.
   /// Reste `null` tant que l'organisateur ne l'a jamais ouvert : le serveur
   /// rejette alors ses votes (§11). Une fois renseignée, elle n'est plus

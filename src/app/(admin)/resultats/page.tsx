@@ -80,7 +80,13 @@ export default async function ResultatsPage() {
 
       {/* Classement général, avec des onglets pour lire la note finale, celle
           du jury spécial, ou celle du public. */}
-      <RankingTable results={results} />
+      <RankingTable
+        results={{
+          ...results,
+          totalVotes: results.totals.votes,
+          publicVoteTotal: results.publicVoteTotal,
+        }}
+      />
 
       {/* Récapitulatif par critère : la lecture croisée que le classement ne donne pas. */}
       {results.criteria.length > 0 && hasVotes ? (
