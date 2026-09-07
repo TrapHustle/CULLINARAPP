@@ -1,6 +1,6 @@
 /**
  * Scénario de bout en bout contre le serveur HTTP réel.
- * Vérifie les garanties du §14 : rejet avant ouverture, idempotence,
+ * Vérifie les garanties du §14 : synchronisation hors ligne, idempotence,
  * pondération ×2 et équité de la moyenne.
  */
 import { randomUUID } from "node:crypto";
@@ -62,19 +62,12 @@ async function main() {
     scores: scores(s[0], s[1], s[2]),
   });
 
-  console.log("\n--- 1. Vote refusé tant que le candidat n'a jamais été ouvert ---");
+  console.log("\n--- 1. Vote hors ligne accepté sans ouverture préalable ---");
   const early = await syncVotes([makeVote(lambdaTables[0].id, candidate.id, 1, [4, 4, 4])]);
   check(
-    "vote rejeté, non réessayable",
-    early.accepted.length === 0 && early.rejected[0]?.retryable === false,
-    early.rejected[0]?.reason,
+    "vote accepté",
+    early.accepted.length === 1 && early.rejected.length === 0,
   );
-
-  // L'organisateur ouvre les votes (équivalent de l'action serveur).
-  await prisma.candidate.updateMany({
-    where: { id: { in: [candidate.id, other.id] } },
-    data: { openedAt: new Date() },
-  });
 
   console.log("\n--- 2. Exemple chiffré du §4.3 : 3 lambda + 1 spécial ---");
   const batch = [

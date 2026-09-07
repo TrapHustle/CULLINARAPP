@@ -26,10 +26,9 @@ model Candidate {
   publicVoteCount Int @default(0)
 
   /// Date de la première ouverture des votes pour ce candidat.
-  /// Reste `null` tant que l'organisateur ne l'a jamais ouvert : le serveur
-  /// rejette alors ses votes (§11). Une fois renseignée, elle n'est plus
-  /// modifiée, ce qui permet d'accepter les votes arrivant en retard après
-  /// la fermeture — cas normal d'une tablette qui se resynchronise.
+  /// Elle sert à refléter le déroulé du concours, mais ne bloque jamais la
+  /// synchronisation : une tablette peut avoir travaillé hors ligne pendant
+  /// l'ouverture ou après la fermeture.
   openedAt DateTime?
 
   votes       Vote[]

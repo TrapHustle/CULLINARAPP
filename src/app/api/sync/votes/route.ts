@@ -50,15 +50,13 @@ export async function POST(request: NextRequest) {
   // Chargement en une fois des référentiels, pour éviter une requête par vote.
   const [tables, candidates, criteria] = await Promise.all([
     prisma.votingTable.findMany({ select: { id: true } }),
-    prisma.candidate.findMany({ select: { id: true, openedAt: true } }),
+    prisma.candidate.findMany({ select: { id: true } }),
     prisma.criterion.findMany({ select: { id: true, maxPoints: true } }),
   ]);
 
   const tableIds = new Set(tables.map((table) => table.id));
   const criterionMaxById = new Map(criteria.map((criterion) => [criterion.id, criterion.maxPoints]));
-  const openedByCandidate = new Map(
-    candidates.map((candidate) => [candidate.id, candidate.openedAt !== null]),
-  );
+  const candidateIds = new Set(candidates.map((candidate) => candidate.id));
 
   const accepted: string[] = [];
   const rejected: RejectedVote[] = [];
@@ -67,7 +65,7 @@ export async function POST(request: NextRequest) {
     const rejection = validateAgainstReferences(vote, {
       tableIds,
       criterionMaxById,
-      openedByCandidate,
+      candidateIds,
     });
 
     if (rejection) {
@@ -97,7 +95,7 @@ function validateAgainstReferences(
   refs: {
     tableIds: Set<string>;
     criterionMaxById: Map<string, number>;
-    openedByCandidate: Map<string, boolean>;
+    candidateIds: Set<string>;
   },
 ): RejectedVote | null {
   if (!refs.tableIds.has(vote.tableId)) {
@@ -121,21 +119,12 @@ function validateAgainstReferences(
     };
   }
 
-  const opened = refs.openedByCandidate.get(vote.candidateId);
-  if (opened === undefined) {
+  if (!refs.candidateIds.has(vote.candidateId)) {
     return { id: vote.id, reason: "Candidat inconnu", retryable: false };
   }
 
-  // Un vote pour un candidat dont le vote n'a jamais été ouvert est refusé.
-  // En revanche, un vote arrivant après la fermeture est accepté : c'est le cas
-  // normal d'une tablette qui se resynchronise en retard (§11).
-  if (!opened) {
-    return {
-      id: vote.id,
-      reason: "Les votes n'ont jamais été ouverts pour ce candidat",
-      retryable: false,
-    };
-  }
+  // Les votes conservés hors ligne sont acceptés même si les votes n'étaient
+  // pas ouverts, ou sont désormais fermés, à leur arrivée sur le serveur.
 
   return null;
 }
