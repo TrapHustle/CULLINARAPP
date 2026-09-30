@@ -7,6 +7,7 @@ import { getOrCreateSession, prisma, SESSION_ID } from "./prisma";
 import { getSession } from "./session";
 import {
   ACCEPTED_IMAGE_TYPES,
+  archiveVoteEventSchema,
   candidatePhotoSchema,
   candidateSchema,
   candidateUpdateSchema,
@@ -23,6 +24,7 @@ import {
   tableUpdateSchema,
   voteSettingsSchema,
 } from "./validation";
+import { computeResults } from "./results";
 
 export interface ActionState {
   error?: string;
@@ -102,6 +104,7 @@ export async function createCandidateAction(
     name: formData.get("name"),
     order: formData.get("order") || 0,
     photoUrl: formData.get("photoUrl") || null,
+    city: formData.get("city"),
   });
 
   if (!parsed.success) {
@@ -113,6 +116,7 @@ export async function createCandidateAction(
       name: parsed.data.name,
       order: parsed.data.order,
       photoUrl: parsed.data.photoUrl || null,
+      city: parsed.data.city,
     },
   });
 
@@ -137,6 +141,7 @@ export async function updateCandidateAction(
     id: formData.get("id"),
     name: formData.get("name"),
     order: formData.get("order") || 0,
+    city: formData.get("city"),
   });
 
   if (!parsed.success) {
@@ -148,11 +153,13 @@ export async function updateCandidateAction(
     data: {
       name: parsed.data.name,
       order: parsed.data.order,
+      city: parsed.data.city,
     },
   });
 
   revalidatePath("/configuration");
   revalidatePath("/");
+  revalidatePath("/voter");
   return { success: `Candidat « ${parsed.data.name} » modifié.` };
 }
 
@@ -448,6 +455,63 @@ export async function closeVotingAction() {
     data: { votingOpen: false },
   });
   revalidatePath("/");
+}
+
+/**
+ * Clôture le scrutin et en conserve un instantané complet dans les archives.
+ *
+ * L'archive ne déplace ni n'efface les données actives : elle est une copie
+ * autonome des résultats et de tous les éléments qui permettent de les relire.
+ * Il faut donc l'utiliser après avoir vérifié que les tablettes n'ont plus de
+ * votes en attente de synchronisation.
+ */
+export async function archiveVoteEventAction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAuth();
+
+  const parsed = archiveVoteEventSchema.safeParse({
+    name: formData.get("name"),
+    eventDate: formData.get("eventDate"),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Informations invalides." };
+  }
+
+  const [session, candidates, tables, criteria, votes, results] = await Promise.all([
+    getOrCreateSession(),
+    prisma.candidate.findMany({ orderBy: { order: "asc" } }),
+    prisma.votingTable.findMany({ orderBy: { name: "asc" } }),
+    prisma.criterion.findMany({ orderBy: { order: "asc" } }),
+    prisma.vote.findMany({ include: { scores: true }, orderBy: { createdAt: "asc" } }),
+    computeResults(),
+  ]);
+
+  // Prisma JSON ne conserve pas les objets Date. On sérialise explicitement
+  // pour garder les dates et le contenu de l'archive lisibles dans le temps.
+  const snapshot = JSON.parse(
+    JSON.stringify({ session, candidates, tables, criteria, votes, results }),
+  );
+
+  await prisma.$transaction([
+    prisma.voteEventArchive.create({
+      data: {
+        name: parsed.data.name,
+        eventDate: parsed.data.eventDate,
+        snapshot,
+      },
+    }),
+    prisma.session.update({
+      where: { id: SESSION_ID },
+      data: { votingOpen: false },
+    }),
+  ]);
+
+  revalidatePath("/");
+  revalidatePath("/resultats");
+  revalidatePath("/archives");
+  return { success: "Concours clôturé et archivé." };
 }
 
 export async function updateTimerAction(formData: FormData) {

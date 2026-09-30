@@ -1,4 +1,5 @@
 import { AutoRefresh } from "@/components/auto-refresh";
+import { ArchiveEventForm } from "@/components/archive-event-form";
 import { ConfirmButton } from "@/components/confirm-button";
 import {
   ArrowRightIcon,
@@ -11,6 +12,7 @@ import {
   WarningIcon,
 } from "@/components/icons";
 import {
+  archiveVoteEventAction,
   closeAndAdvanceAction,
   closeVotingAction,
   devalidateTableAction,
@@ -361,6 +363,16 @@ export default async function PilotagePage() {
             </ul>
           )}
         </div>
+      </section>
+
+      <section className="rounded-xl bg-surface-container p-5 gold-border lg:col-span-12">
+        <h2 className="font-serif text-headline-md text-primary">Clôture et archivage</h2>
+        <p className="mt-2 max-w-3xl text-label-sm text-on-surface-variant">
+          Ferme les votes et crée une copie immuable du concours dans les Archives des concours :
+          configuration, notes reçues et classement. Avant de continuer, vérifiez que chaque
+          tablette affiche 0 vote en attente de synchronisation.
+        </p>
+        <ArchiveEventForm action={archiveVoteEventAction} />
       </section>
     </div>
   );

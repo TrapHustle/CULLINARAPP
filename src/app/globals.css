@@ -26,6 +26,15 @@
   font-weight: 300 800;
   font-display: swap;
 }
+/* Italique réelle, pour la « Carte du menu » de la page de vote du public :
+   sans elle, le navigateur penche la romaine, ce qui se voit. */
+@font-face {
+  font-family: "Cormorant Garamond";
+  src: url("/fonts/CormorantGaramond-Italic.ttf") format("truetype");
+  font-weight: 300 700;
+  font-style: italic;
+  font-display: swap;
+}
 @font-face {
   font-family: "Outfit";
   src: url("/fonts/Outfit.ttf") format("truetype");

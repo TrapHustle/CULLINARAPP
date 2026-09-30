@@ -1,4 +1,11 @@
 import { z } from "zod";
+import {
+  MAX_VOTE_PRICE,
+  MAX_VOTES_PER_PAYMENT,
+  MIN_VOTE_PRICE,
+  PAYMENT_METHODS,
+  PUBLIC_VOTE_STYLES,
+} from "./public-vote-core";
 import { RAW_UNSCORED } from "./scoring";
 
 /**
@@ -40,10 +47,20 @@ export const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as
 /** Taille maximale d'une photo, en octets. */
 export const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 
+/** Texte facultatif : vide ou absent devient `null`, jamais une chaîne vide en base. */
+const optionalText = (max: number, message: string) =>
+  z
+    .string()
+    .trim()
+    .max(max, message)
+    .nullish()
+    .transform((value) => value || null);
+
 export const candidateSchema = z.object({
   name: z.string().min(1, "Le nom est obligatoire"),
   photoUrl: imagePathSchema.nullish().or(z.literal("")),
   order: z.coerce.number().int().min(0).default(0),
+  city: optionalText(60, "La ville ne doit pas dépasser 60 caractères."),
 });
 
 export const candidatePhotoSchema = z.object({
@@ -151,6 +168,12 @@ export const resetEventSchema = z.object({
   confirmation: confirmationField(RESET_EVENT_CONFIRMATION),
 });
 
+/** Informations affichées dans les archives d'un concours clos. */
+export const archiveVoteEventSchema = z.object({
+  name: z.string().trim().min(1, "Donnez un nom au concours.").max(120),
+  eventDate: z.coerce.date(),
+});
+
 export const sessionUpdateSchema = z.object({
   activeCandidateId: z.string().nullish(),
   votingOpen: z.boolean().optional(),
@@ -247,3 +270,66 @@ export const claimTableSchema = z.object({
 });
 
 export type IncomingVote = z.infer<typeof incomingVoteSchema>;
+
+/* ------------------------------------------------------------------ */
+/* Vote du public en ligne                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Paiement demandé depuis la page `/voter`.
+ *
+ * Seuls le candidat, le nombre de votes et le moyen de paiement viennent de la
+ * page : le prix et le montant sont toujours recalculés par le serveur.
+ */
+export const publicVotePaymentSchema = z.object({
+  candidateId: z.string().min(1, "Choisissez un candidat."),
+  votes: z.coerce
+    .number()
+    .int("Le nombre de votes doit être un nombre entier.")
+    .min(1, "Votez au moins une fois.")
+    .max(MAX_VOTES_PER_PAYMENT, `${MAX_VOTES_PER_PAYMENT} votes au maximum par paiement.`),
+  method: z.enum(PAYMENT_METHODS, "Choisissez un moyen de paiement."),
+  /** Numéro qui paie, tel que saisi : il est ramené à 10 chiffres par le serveur. */
+  phone: z.string("Indiquez votre numéro.").trim().min(1, "Indiquez votre numéro.").max(30, "Numéro invalide."),
+});
+
+/**
+ * Heure de clôture saisie dans le dashboard (« 2026-10-01T22:00 »).
+ *
+ * Elle est lue à l'heure d'Abidjan, qui est l'heure GMT toute l'année : le
+ * résultat ne dépend ni du fuseau du portable de l'organisateur, ni de celui du
+ * serveur (UTC chez Vercel).
+ */
+const closingTimeSchema = z
+  .string()
+  .trim()
+  .transform((value, context) => {
+    if (value === "") return null;
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(value)) {
+      context.addIssue({ code: "custom", message: "Heure de clôture invalide." });
+      return z.NEVER;
+    }
+    const date = new Date(`${value.length === 16 ? `${value}:00` : value}Z`);
+    if (Number.isNaN(date.getTime())) {
+      context.addIssue({ code: "custom", message: "Heure de clôture invalide." });
+      return z.NEVER;
+    }
+    return date;
+  });
+
+/** Réglages de la page `/voter` (dashboard → Vote public). */
+export const publicVoteSettingsSchema = z.object({
+  publicVoteOpen: z.boolean(),
+  eventName: optionalText(120, "Le titre ne doit pas dépasser 120 caractères."),
+  publicVoteTagline: optionalText(120, "La ligne du haut ne doit pas dépasser 120 caractères."),
+  publicVoteSubtitle: optionalText(120, "Le sous-titre ne doit pas dépasser 120 caractères."),
+  publicVotePrice: z.coerce
+    .number("Indiquez le prix d'un vote.")
+    .int("Le prix d'un vote est un nombre entier de FCFA.")
+    .min(MIN_VOTE_PRICE, `Un vote coûte au moins ${MIN_VOTE_PRICE} FCFA.`)
+    .max(MAX_VOTE_PRICE, `Un vote ne peut pas dépasser ${MAX_VOTE_PRICE} FCFA.`),
+  publicVoteClosesAt: closingTimeSchema,
+  publicVoteShowCounts: z.boolean(),
+  publicVoteStyle: z.enum(PUBLIC_VOTE_STYLES),
+  publicVoteMethods: z.array(z.enum(PAYMENT_METHODS)),
+});

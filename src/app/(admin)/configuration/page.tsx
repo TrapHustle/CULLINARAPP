@@ -124,6 +124,12 @@ export default async function ConfigurationPage() {
                         defaultValue: candidate.name,
                       },
                       {
+                        kind: "text",
+                        name: "city",
+                        label: "Ville",
+                        defaultValue: candidate.city ?? "",
+                      },
+                      {
                         kind: "number",
                         name: "order",
                         label: "Ordre",
@@ -133,7 +139,12 @@ export default async function ConfigurationPage() {
                     ]}
                   >
                     <span className="w-8 text-label-sm text-outline">#{candidate.order}</span>
-                    <span className="flex-1 text-body-md text-on-surface">{candidate.name}</span>
+                    <span className="flex-1 text-body-md text-on-surface">
+                      {candidate.name}
+                      {candidate.city ? (
+                        <span className="ml-2 text-label-sm text-outline">{candidate.city}</span>
+                      ) : null}
+                    </span>
                     {candidate.openedAt ? (
                       <span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-label-sm text-primary">
                         déjà ouvert
@@ -160,6 +171,7 @@ export default async function ConfigurationPage() {
                 submitLabel="Ajouter le candidat"
                 fields={[
                   { kind: "text", name: "name", label: "Nom", required: true, placeholder: "Chef…" },
+                  { kind: "text", name: "city", label: "Ville", placeholder: "Bouaké" },
                   {
                     kind: "number",
                     name: "order",

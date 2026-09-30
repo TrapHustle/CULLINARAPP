@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { onlineVotesByCandidate } from "./public-vote";
 import {
   computeCandidateScore,
   computeCriterionAverage,
@@ -52,6 +53,7 @@ export interface CandidateResult {
   /** Moyenne des seules tables normales (le public), sur `maxTotal`. `null` si aucune. */
   publicScore: number | null;
   voterCount: number;
+  /** Votes du public : importés + payés en ligne (hors paiements simulés). */
   publicVoteCount: number;
   /** Somme des parts retenues — 100 si toutes les catégories ont voté. */
   shareTotal: number;
@@ -78,13 +80,19 @@ export interface ResultsPayload {
  * poids est dérivé ici du type de la table, jamais lu depuis le vote (§0.3).
  */
 export async function computeResults(): Promise<ResultsPayload> {
-  const [candidates, criteria, votes, tableCount, session] = await Promise.all([
+  const [candidates, criteria, votes, tableCount, session, onlineVotes] = await Promise.all([
     prisma.candidate.findMany({ orderBy: { order: "asc" } }),
     prisma.criterion.findMany({ orderBy: { order: "asc" } }),
     prisma.vote.findMany({ include: { scores: true, table: true } }),
     prisma.votingTable.count(),
     prisma.session.findUnique({ where: { id: "singleton" } }),
+    // Les votes payés sur /voter comptent ; les paiements simulés (répétitions,
+    // démonstrations) n'entrent jamais dans un résultat officiel.
+    onlineVotesByCandidate({ includeSimulated: false }),
   ]);
+
+  const publicVotesOf = (candidate: { id: string; publicVoteCount: number }) =>
+    candidate.publicVoteCount + (onlineVotes.get(candidate.id) ?? 0);
 
   // Parts et échelle réglées depuis Configuration → Vote — à défaut (avant la
   // toute première écriture de la session), les valeurs de départ (§4.2, §4.1).
@@ -100,7 +108,7 @@ export async function computeResults(): Promise<ResultsPayload> {
   );
   const criterionNameById = new Map(criteria.map((criterion) => [criterion.id, criterion.name]));
   const maxTotal = maxTotalForScales(criteria);
-  const publicVoteTotal = candidates.reduce((total, candidate) => total + candidate.publicVoteCount, 0);
+  const publicVoteTotal = candidates.reduce((total, candidate) => total + publicVotesOf(candidate), 0);
 
   // Regroupement des votes par candidat, en gardant le juré et la table pour
   // le détail affiché dans la popup.
@@ -200,7 +208,7 @@ export async function computeResults(): Promise<ResultsPayload> {
       specialScore: specialScore === null ? null : round2(specialScore.averageRaw),
       publicScore: publicScore === null ? null : round2(publicScore.averageRaw),
       voterCount: entry.score?.voterCount ?? 0,
-      publicVoteCount: entry.candidate.publicVoteCount,
+      publicVoteCount: publicVotesOf(entry.candidate),
       shareTotal: entry.score?.shareTotal ?? 0,
       byCriterion,
       byTable,

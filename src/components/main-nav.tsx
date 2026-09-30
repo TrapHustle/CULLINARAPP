@@ -8,6 +8,8 @@ const NAV_LINKS = [
   { href: "/configuration", label: "Configuration" },
   { href: "/appairage", label: "Connexion" },
   { href: "/resultats", label: "Résultats" },
+  { href: "/vote-public", label: "Vote public" },
+  { href: "/archives", label: "Archives" },
 ];
 
 /**

@@ -20,9 +20,15 @@ model Candidate {
   photoUrl String?
   order    Int     @default(0)
 
+  /// Ville d'origine, affichée sous le nom sur la page de vote du public.
+  city String?
+
   /// Nombre de votes publics provenant du scrutin externe affiché au classement.
   /// Ces votes sont comptés séparément des notes des jurés et ne modifient pas
   /// la note moyenne sur 75.
+  ///
+  /// Les votes payés sur la page `/voter` s'y ajoutent sans le modifier : ils
+  /// vivent dans `PublicVotePayment`, ce champ garde les votes importés.
   publicVoteCount Int @default(0)
 
   /// Date de la première ouverture des votes pour ce candidat.
@@ -31,8 +37,9 @@ model Candidate {
   /// l'ouverture ou après la fermeture.
   openedAt DateTime?
 
-  votes       Vote[]
-  validations TableValidation[]
+  votes              Vote[]
+  validations        TableValidation[]
+  publicVotePayments PublicVotePayment[]
 
   @@index([order])
 }
@@ -98,7 +105,7 @@ model Session {
   /// sans manipuler chaque tablette une par une, entre une répétition et le
   /// jour J. Les tablettes hors ligne obéissent à leur retour, après avoir
   /// d'abord envoyé ce qu'elles avaient en attente.
-  dataGeneration    String    @default("1")
+  dataGeneration String @default("1")
 
   /// Part de chaque catégorie dans la note finale, en pourcentage (§4.2).
   ///
@@ -134,6 +141,85 @@ model Session {
   /// troisième déroulé ne devra pas coûter une migration de schéma.
   voteModePublic  String @default("BY_CANDIDATE")
   voteModeSpecial String @default("BY_CANDIDATE")
+
+  /// Vote du public en ligne (page `/voter`), réglé depuis le dashboard.
+  ///
+  /// Fermé par défaut : la page n'accepte aucun paiement tant que
+  /// l'organisateur ne l'a pas ouverte.
+  publicVoteOpen       Boolean   @default(false)
+  /// Prix d'un vote, en FCFA. Le montant est toujours recalculé par le
+  /// serveur : la page n'envoie qu'un nombre de votes.
+  publicVotePrice      Int       @default(200)
+  /// Fin du vote. `null` : pas d'heure de fin, seul l'interrupteur compte.
+  publicVoteClosesAt   DateTime?
+  /// Masqués, les compteurs ne quittent jamais le serveur : la page suit
+  /// alors l'ordre de passage et ne laisse rien deviner du classement.
+  publicVoteShowCounts Boolean   @default(true)
+  /// Présentation de la page : "MENU" (Carte du menu, retenue) | "CARTES".
+  publicVoteStyle      String    @default("MENU")
+  /// Moyens de paiement proposés : "WAVE" | "ORANGE_MONEY" | "MTN" | "CARD".
+  /// La carte est en maintenance chez le prestataire : décochée par défaut.
+  publicVoteMethods    String[]  @default(["WAVE", "ORANGE_MONEY", "MTN"])
+  /// Ligne au-dessus du titre, par exemple « Kabowd Production · 7ᵉ édition ».
+  publicVoteTagline    String?
+  /// Ligne sous le titre, par exemple « 1ʳᵉ sélection · Bouaké ».
+  publicVoteSubtitle   String?
+}
+
+/// Paiement d'un lot de votes du public, pour un seul candidat.
+///
+/// Un vote n'existe qu'à travers son paiement : il compte quand le paiement
+/// est confirmé (`status` = "CONFIRMED"), jamais avant. Une même personne peut
+/// payer autant de lots qu'elle le souhaite.
+///
+/// Le nom du candidat est recopié à l'enregistrement : un paiement reste une
+/// trace comptable, il survit à la suppression du candidat (le lien passe
+/// alors à `null`).
+model PublicVotePayment {
+  id                String  @id @default(cuid())
+  /// Référence remise au votant, de la forme « VP-9NF24H ».
+  reference         String  @unique
+  candidateId       String?
+  candidateName     String
+  votes             Int
+  /// Prix d'un vote au moment du paiement, en FCFA.
+  unitPrice         Int
+  /// `votes × unitPrice`, calculé par le serveur.
+  amount            Int
+  /// "WAVE" | "ORANGE_MONEY" | "MTN" | "CARD".
+  method            String
+  /// Numéro débité, 10 chiffres. Jamais renvoyé à la page publique.
+  phone             String?
+  /// "PENDING" | "CONFIRMED" | "FAILED".
+  status            String  @default("PENDING")
+  /// Paiement simulé (aucun prestataire branché) : il s'affiche sur la page
+  /// publique mais n'entre jamais dans les résultats officiels.
+  simulated         Boolean @default(false)
+  /// Identifiant de la transaction chez le prestataire de paiement.
+  providerReference String?
+
+  createdAt   DateTime  @default(now())
+  confirmedAt DateTime?
+
+  candidate Candidate? @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+
+  @@index([candidateId, status])
+  @@index([createdAt])
+  // Limite anti-abus : demandes récentes pour un même numéro.
+  @@index([phone, createdAt])
+}
+
+/// Instantané immuable d'un concours clos. Le scrutin actif reste volontairement
+/// séparé : l'organisateur peut préparer le suivant sans modifier son historique.
+model VoteEventArchive {
+  id        String   @id @default(cuid())
+  name      String
+  eventDate DateTime
+  closedAt  DateTime @default(now())
+  snapshot  Json
+
+  @@index([eventDate])
+  @@index([closedAt])
 }
 
 /// Image téléversée depuis le dashboard (affiche de l'événement, portrait d'un
