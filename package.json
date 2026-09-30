@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node scripts/serve-lan.mjs dev",
     "build": "next build",
-    "vercel-build": "prisma migrate deploy && next build",
+    "vercel-build": "node scripts/vercel-build.mjs && next build",
     "start": "node scripts/serve-lan.mjs start",
     "start:web-only": "next start",
     "beacon": "node scripts/discovery-beacon.mjs",
