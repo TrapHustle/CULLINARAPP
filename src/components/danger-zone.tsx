@@ -13,7 +13,7 @@ const initialState: ActionState = {};
  * page que l'organisateur ouvre le plus souvent avant l'événement, et le geste
  * est irréversible. Recopier un mot demande une intention, pas un réflexe.
  */
-function DangerAction({
+export function DangerAction({
   action,
   confirmationWord,
   title,

@@ -18,7 +18,11 @@ import {
 } from "./public-vote-core";
 import { getSession } from "./session";
 import { createSirapPayment } from "./sirap";
-import { publicVotePaymentSchema, publicVoteSettingsSchema } from "./validation";
+import {
+  publicVotePaymentSchema,
+  publicVoteSettingsSchema,
+  resetOnlineVotesSchema,
+} from "./validation";
 
 async function requireAuth() {
   const session = await getSession();
@@ -290,6 +294,39 @@ export async function clearSimulatedPaymentsAction(): Promise<void> {
 
   revalidatePath("/vote-public");
   revalidatePath("/voter");
+}
+
+/**
+ * Remet à zéro **tous** les votes du public en ligne : efface les paiements
+ * (simulés comme réels) et remet les compteurs importés des candidats à zéro.
+ *
+ * Contrairement au bouton « paiements simulés », celui-ci efface aussi les
+ * paiements réels — c'est la remise à zéro entre une répétition et le vrai
+ * événement. Protégé par un mot de confirmation, car ces lignes sont des
+ * traces comptables qu'on ne détruit pas par accident.
+ */
+export async function resetOnlineVotesAction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAuth();
+
+  const parsed = resetOnlineVotesSchema.safeParse({
+    confirmation: formData.get("confirmation") ?? "",
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Confirmation invalide." };
+  }
+
+  await prisma.$transaction([
+    prisma.publicVotePayment.deleteMany({}),
+    prisma.candidate.updateMany({ data: { publicVoteCount: 0 } }),
+  ]);
+
+  revalidatePath("/vote-public");
+  revalidatePath("/voter");
+  revalidatePath("/resultats");
+  return { success: "Votes du public en ligne remis à zéro." };
 }
 
 /** Redemande à la passerelle le statut des paiements en attente (bouton du dashboard). */

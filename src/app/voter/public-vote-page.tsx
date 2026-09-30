@@ -320,10 +320,10 @@ function ClearView({ view, open, closing, closedMessage, onVote }: ViewProps) {
       <header className={styles.clTop}>
         <div className={styles.clIn}>
           <span className={styles.clMark} aria-hidden="true">
-            GC
+            TT
           </span>
           <div className={styles.clBrand}>
-            <b>Grand Concours Culinaire</b>
+            <b>Talent Traiteur</b>
             <span>Vote du public en ligne</span>
           </div>
         </div>

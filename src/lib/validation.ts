@@ -168,6 +168,17 @@ export const resetEventSchema = z.object({
   confirmation: confirmationField(RESET_EVENT_CONFIRMATION),
 });
 
+/**
+ * Remise à zéro des votes du public en ligne (paiements + compteurs importés).
+ * Le mot diffère des autres : ces lignes sont des traces de paiements réels,
+ * on ne les efface pas par un clic machinal.
+ */
+export const RESET_ONLINE_CONFIRMATION = "VOTES EN LIGNE";
+
+export const resetOnlineVotesSchema = z.object({
+  confirmation: confirmationField(RESET_ONLINE_CONFIRMATION),
+});
+
 /** Informations affichées dans les archives d'un concours clos. */
 export const archiveVoteEventSchema = z.object({
   name: z.string().trim().min(1, "Donnez un nom au concours.").max(120),

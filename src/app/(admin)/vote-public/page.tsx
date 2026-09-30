@@ -10,8 +10,11 @@ import { getPublicVoteDashboard } from "@/lib/public-vote";
 import {
   clearSimulatedPaymentsAction,
   refreshPendingPaymentsAction,
+  resetOnlineVotesAction,
   updatePublicVoteSettingsAction,
 } from "@/lib/public-vote-actions";
+import { DangerAction } from "@/components/danger-zone";
+import { RESET_ONLINE_CONFIRMATION } from "@/lib/validation";
 import {
   enabledMethods,
   formatNumber,
@@ -339,6 +342,36 @@ export default async function PublicVoteAdminPage() {
             </table>
           </div>
         )}
+      </section>
+
+      <section className="rounded-xl border border-error/40 bg-error-container/10">
+        <div className="flex items-center gap-3 border-b border-error/20 px-5 py-4">
+          <WarningIcon className="h-5 w-5 text-error" />
+          <h2 className="flex-1 font-serif text-headline-md text-error">Remise à zéro des votes en ligne</h2>
+        </div>
+        <div className="px-5 py-4">
+          <DangerAction
+            action={resetOnlineVotesAction}
+            confirmationWord={RESET_ONLINE_CONFIRMATION}
+            title="Effacer tous les votes en ligne"
+            badge={`${formatNumber(data.importedVotes + data.onlineVotes + data.simulatedVotes)} votes en ligne`}
+            description={
+              <>
+                Efface <strong className="text-on-surface">tous</strong> les paiements du public en
+                ligne — simulés <strong className="text-on-surface">et réels</strong> — et remet à
+                zéro les compteurs des candidats. À faire entre une répétition et le vrai événement.
+              </>
+            }
+            warning={
+              <p>
+                Irréversible. Les paiements réels sont des traces comptables : n&apos;effacez qu&apos;une
+                fois sûr de repartir de zéro. Le classement du jury n&apos;est pas touché.
+              </p>
+            }
+            submitLabel="Effacer les votes en ligne"
+            pendingLabel="Effacement…"
+          />
+        </div>
       </section>
     </div>
   );
