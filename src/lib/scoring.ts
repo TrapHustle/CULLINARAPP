@@ -22,6 +22,14 @@
 
 export type TableType = "LAMBDA" | "SPECIAL";
 
+/**
+ * Catégories qui composent la note finale. Aux deux catégories de jury
+ * (tables « lambda » et « jury spécial ») s'ajoute le **vote du public en
+ * ligne**, payant : ce n'est pas un jury, mais il pèse dans le classement au
+ * même titre, selon sa part.
+ */
+export type ScoreCategory = TableType | "ONLINE";
+
 /** Note brute minimale par défaut. Le réglage effectif vit sur `Session.scoreMin`. */
 export const RAW_MIN = 1;
 /** Note brute maximale par défaut. Le réglage effectif vit sur `Session.scoreMax`. */
@@ -42,7 +50,7 @@ export const RAW_UNSCORED = 0;
  * volonté de l'organisateur est respectée quel que soit le nombre de votants
  * de chaque côté.
  */
-export type SharesByType = Record<TableType, number>;
+export type SharesByType = Record<ScoreCategory, number>;
 
 export type CriterionScale = { id: string; maxPoints: number };
 
@@ -56,13 +64,14 @@ export function scoreChoicesForMax(maxPoints: number): number[] {
 
 /** Parts de départ, avant tout réglage depuis Configuration → Vote (§4.2). */
 export const DEFAULT_SHARES: SharesByType = {
-  LAMBDA: 40,
   SPECIAL: 60,
+  LAMBDA: 20,
+  ONLINE: 20,
 };
 
 /** Part de la catégorie dans la note finale, en pourcentage (§4.2). */
-export function shareForTableType(type: TableType, shares: SharesByType = DEFAULT_SHARES): number {
-  return shares[type] ?? 0;
+export function shareForCategory(category: ScoreCategory, shares: SharesByType = DEFAULT_SHARES): number {
+  return shares[category] ?? 0;
 }
 
 /**
@@ -81,6 +90,28 @@ export function maxTotalForCriteria(criteriaCount: number, scoreMax: number = RA
 
 export function maxTotalForScales(scales: CriterionScale[]): number {
   return scales.reduce((total, criterion) => total + criterion.maxPoints, 0);
+}
+
+/**
+ * Note du vote en ligne d'un candidat, ramenée à l'échelle des notes du jury.
+ *
+ * Le vote en ligne compte des **voix**, pas des notes : on le traduit en note
+ * en prenant la **part** du candidat dans l'ensemble des voix en ligne, puis en
+ * l'étirant sur `maxTotal` (le maximum d'un vote de jury). Le candidat qui
+ * rassemble toutes les voix obtient la note maximale sur cette catégorie ; celui
+ * qui en a la moitié, la moitié.
+ *
+ * Retourne `null` si le candidat n'a reçu **aucune** voix en ligne : la
+ * catégorie est alors absente pour lui et ses parts sont renormalisées, plutôt
+ * que de lui infliger un zéro (même règle que pour un jury qui n'a pas voté).
+ */
+export function onlineScoreFor(
+  candidateOnlineVotes: number,
+  totalOnlineVotes: number,
+  maxTotal: number,
+): number | null {
+  if (candidateOnlineVotes <= 0 || totalOnlineVotes <= 0) return null;
+  return (candidateOnlineVotes / totalOnlineVotes) * maxTotal;
 }
 
 /** Un vote tel qu'il est consommé par le moteur de calcul. */
@@ -152,6 +183,13 @@ function combineByShare(
   votes: ScoredVote[],
   valueOf: (vote: ScoredVote) => number,
   shares: SharesByType,
+  /**
+   * Note déjà calculée du vote en ligne, sur la même échelle que les votes du
+   * jury (`null` quand ce candidat n'a reçu aucun vote en ligne : la catégorie
+   * est alors absente et les parts sont renormalisées, comme pour un jury qui
+   * n'a pas voté).
+   */
+  onlineScore: number | null = null,
 ): { mean: number; shareTotal: number; voterCount: number } | null {
   const byType = new Map<TableType, { sum: number; count: number }>();
 
@@ -166,12 +204,22 @@ function combineByShare(
   let shareTotal = 0;
 
   for (const [type, bucket] of byType) {
-    const share = shareForTableType(type, shares);
+    const share = shareForCategory(type, shares);
     // Une catégorie à 0 % est neutralisée : elle ne compte ni au numérateur ni
     // au dénominateur, et ne peut donc pas tirer la note vers le bas.
     if (share <= 0 || bucket.count === 0) continue;
     weighted += (bucket.sum / bucket.count) * share;
     shareTotal += share;
+  }
+
+  // Le vote en ligne, s'il existe pour ce candidat, entre comme une catégorie
+  // de plus — sa « moyenne » est déjà la note fournie.
+  if (onlineScore !== null) {
+    const share = shareForCategory("ONLINE", shares);
+    if (share > 0) {
+      weighted += onlineScore * share;
+      shareTotal += share;
+    }
   }
 
   if (shareTotal === 0) return null;
@@ -184,13 +232,17 @@ export function computeCandidateScore(
   criterionIds: string[],
   shares: SharesByType = DEFAULT_SHARES,
   maxPointsById: Record<string, number> = {},
+  /** Note du vote en ligne (même échelle que le jury), `null` si aucun. */
+  onlineScore: number | null = null,
 ): CandidateScore | null {
-  if (votes.length === 0) return null;
+  // Non noté seulement si le candidat n'a NI vote de jury NI vote en ligne.
+  if (votes.length === 0 && onlineScore === null) return null;
 
   const combined = combineByShare(
     votes,
     (vote) => voteTotal(vote, criterionIds, maxPointsById),
     shares,
+    onlineScore,
   );
   if (combined === null) return null;
 
@@ -238,14 +290,20 @@ export interface RankedCandidate<T> {
  * Les ex æquo partagent le même rang.
  */
 export function rankCandidates<T>(
-  entries: { candidate: T; votes: ScoredVote[] }[],
+  entries: { candidate: T; votes: ScoredVote[]; onlineScore?: number | null }[],
   criterionIds: string[],
   shares: SharesByType = DEFAULT_SHARES,
   maxPointsById: Record<string, number> = {},
 ): RankedCandidate<T>[] {
   const scored = entries.map((entry) => ({
     candidate: entry.candidate,
-    score: computeCandidateScore(entry.votes, criterionIds, shares, maxPointsById),
+    score: computeCandidateScore(
+      entry.votes,
+      criterionIds,
+      shares,
+      maxPointsById,
+      entry.onlineScore ?? null,
+    ),
   }));
 
   const rated = scored

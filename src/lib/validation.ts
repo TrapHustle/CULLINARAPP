@@ -210,6 +210,7 @@ export const voteSettingsSchema = z
     // intermédiaire pendant qu'on ajuste les deux champs.
     sharePublic: z.coerce.number().min(0).max(100),
     shareSpecial: z.coerce.number().min(0).max(100),
+    shareOnline: z.coerce.number().min(0).max(100),
     scoreMin: z.coerce.number().int().min(0).max(RAW_ABSOLUTE_MAX - 1),
     scoreMax: z.coerce.number().int().min(1).max(RAW_ABSOLUTE_MAX),
     voteModePublic: voteModeSchema,

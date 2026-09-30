@@ -554,6 +554,7 @@ export async function updateVoteSettingsAction(formData: FormData) {
   const parsed = voteSettingsSchema.safeParse({
     sharePublic: formData.get("sharePublic"),
     shareSpecial: formData.get("shareSpecial"),
+    shareOnline: formData.get("shareOnline"),
     scoreMin: formData.get("scoreMin"),
     scoreMax: formData.get("scoreMax"),
     voteModePublic: formData.get("voteModePublic"),

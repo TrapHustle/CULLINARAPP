@@ -4,6 +4,7 @@ import {
   computeCandidateScore,
   computeCriterionAverage,
   maxTotalForScales,
+  onlineScoreFor,
   rankCandidates,
   round2,
   voteTotal,
@@ -50,10 +51,12 @@ export interface CandidateResult {
   finalScore: number | null;
   /** Moyenne des seuls votes du jury spécial, sur `maxTotal`. `null` si aucun. */
   specialScore: number | null;
-  /** Moyenne des seules tables normales (le public), sur `maxTotal`. `null` si aucune. */
+  /** Moyenne des seules tables normales (le public en salle), sur `maxTotal`. `null` si aucune. */
   publicScore: number | null;
+  /** Note du vote du public en ligne, ramenée sur `maxTotal`. `null` si aucune voix en ligne. */
+  onlineScore: number | null;
   voterCount: number;
-  /** Votes du public : importés + payés en ligne (hors paiements simulés). */
+  /** Votes du public en ligne : importés + payés (hors paiements simulés). */
   publicVoteCount: number;
   /** Somme des parts retenues — 100 si toutes les catégories ont voté. */
   shareTotal: number;
@@ -97,8 +100,9 @@ export async function computeResults(): Promise<ResultsPayload> {
   // Parts et échelle réglées depuis Configuration → Vote — à défaut (avant la
   // toute première écriture de la session), les valeurs de départ (§4.2, §4.1).
   const shares: SharesByType = {
-    LAMBDA: session?.sharePublic ?? 40,
+    LAMBDA: session?.sharePublic ?? 20,
     SPECIAL: session?.shareSpecial ?? 60,
+    ONLINE: session?.shareOnline ?? 20,
   };
   const scoreMax = session?.scoreMax ?? 5;
 
@@ -134,10 +138,16 @@ export async function computeResults(): Promise<ResultsPayload> {
     else votesByCandidate.set(vote.candidateId, [scoredVote]);
   }
 
+  // Note du vote en ligne de chaque candidat : sa part dans l'ensemble des voix
+  // en ligne, ramenée sur l'échelle des notes du jury.
+  const onlineScoreOf = (candidate: { id: string; publicVoteCount: number }) =>
+    onlineScoreFor(publicVotesOf(candidate), publicVoteTotal, maxTotal);
+
   const ranked = rankCandidates(
     candidates.map((candidate) => ({
       candidate,
       votes: votesByCandidate.get(candidate.id) ?? [],
+      onlineScore: onlineScoreOf(candidate),
     })),
     criterionIds,
     shares,
@@ -207,6 +217,10 @@ export async function computeResults(): Promise<ResultsPayload> {
       finalScore: entry.score === null ? null : round2(entry.score.averageRaw),
       specialScore: specialScore === null ? null : round2(specialScore.averageRaw),
       publicScore: publicScore === null ? null : round2(publicScore.averageRaw),
+      onlineScore: (() => {
+        const value = onlineScoreOf(entry.candidate);
+        return value === null ? null : round2(value);
+      })(),
       voterCount: entry.score?.voterCount ?? 0,
       publicVoteCount: publicVotesOf(entry.candidate),
       shareTotal: entry.score?.shareTotal ?? 0,

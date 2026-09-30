@@ -485,12 +485,30 @@ export default async function ConfigurationPage() {
                 />
               </label>
 
+              <label className="text-label-sm text-on-surface-variant">
+                <span className="mb-1 block">Part — Vote en ligne (%)</span>
+                <input
+                  type="number"
+                  name="shareOnline"
+                  min={0}
+                  max={100}
+                  step={5}
+                  defaultValue={session.shareOnline}
+                  className="w-28 rounded-lg border border-outline-variant/60 px-3 py-2 text-body-md"
+                />
+              </label>
+
               <p className="w-full text-label-sm text-on-surface-variant">
-                Ces parts portent sur la <strong className="text-on-surface">moyenne</strong> de
-                chaque catégorie, pas sur chaque vote : « jury 60 % » vaut que le jury compte 3 ou
-                15 personnes. Elles n&apos;ont pas à totaliser 100, le calcul les ramène à
-                l&apos;échelle — et une catégorie qui n&apos;a pas encore voté est ignorée plutôt
-                que comptée zéro.
+                Trois catégories composent la note finale :{" "}
+                <strong className="text-on-surface">jury spécial</strong>,{" "}
+                <strong className="text-on-surface">public en salle</strong> et{" "}
+                <strong className="text-on-surface">vote en ligne</strong> (payant). Ces parts
+                portent sur la <strong className="text-on-surface">moyenne</strong> de chaque
+                catégorie, pas sur chaque vote : « jury 60 % » vaut que le jury compte 3 ou 15
+                personnes. Le vote en ligne est traduit en note d&apos;après la part de voix de
+                chaque candidat. Les parts n&apos;ont pas à totaliser 100, le calcul les ramène à
+                l&apos;échelle — et une catégorie qui n&apos;a pas encore reçu de vote est ignorée
+                plutôt que comptée zéro.
               </p>
 
               <label className="text-label-sm text-on-surface-variant">

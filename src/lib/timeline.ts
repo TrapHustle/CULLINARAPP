@@ -3,7 +3,7 @@ import {
   computeCriterionAverage,
   maxTotalForScales,
   voteTotal,
-  shareForTableType,
+  shareForCategory,
   round2,
   type ScoredVote,
   type TableType,
@@ -124,9 +124,12 @@ export async function computeTimeline(): Promise<TimelinePayload> {
   const expectedVotes =
     tables.reduce((sum, table) => sum + table.expectedJurors, 0) * candidates.length;
 
+  // Le graphe d'évolution ne suit que le jury (le vote en ligne n'a pas
+  // d'historique temporel), donc la part « en ligne » n'y intervient pas.
   const shares: SharesByType = {
-    LAMBDA: session?.sharePublic ?? 40,
+    LAMBDA: session?.sharePublic ?? 20,
     SPECIAL: session?.shareSpecial ?? 60,
+    ONLINE: 0,
   };
   const criterionIds = criteria.map((criterion) => criterion.id);
   const maxPointsById = Object.fromEntries(
@@ -170,7 +173,7 @@ export async function computeTimeline(): Promise<TimelinePayload> {
 
     for (const type of ["LAMBDA", "SPECIAL"] as const) {
       const count = counts[type][position];
-      const share = shareForTableType(type, shares);
+      const share = shareForCategory(type, shares);
       // Une catégorie muette ou neutralisée ne compte pas : les parts sont
       // renormalisées sur celles qui se sont prononcées.
       if (count === 0 || share <= 0) continue;

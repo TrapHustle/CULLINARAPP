@@ -116,8 +116,13 @@ model Session {
   ///
   /// Les deux parts n'ont pas à totaliser 100 : le calcul les renormalise, y
   /// compris lorsqu'une catégorie n'a pas encore voté.
-  sharePublic  Float @default(40)
+  sharePublic  Float @default(20)
   shareSpecial Float @default(60)
+
+  /// Part du **vote du public en ligne** (payant) dans la note finale, en
+  /// pourcentage. Même principe que les deux autres parts : elle porte sur la
+  /// note dérivée des voix en ligne, pas sur chaque voix. 20 % par défaut.
+  shareOnline Float @default(20)
 
   /// Bornes de la note brute qu'un juré peut saisir sur un critère.
   /// 1 à 5 par défaut ; élargir jusqu'à 0–10, par exemple, ne change que ces

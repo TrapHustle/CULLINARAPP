@@ -10,7 +10,13 @@ function formatScore(value: number | null) {
 /** Mention honorifique des trois premières places, comme sur un palmarès imprimé. */
 const MEDALS = ["Médaille d'or", "Médaille d'argent", "Médaille de bronze"];
 
-const GRID = "sm:grid-cols-[4.5rem_minmax(14rem,1fr)_8rem_8rem_11rem_7rem]";
+const GRID = "sm:grid-cols-[4rem_minmax(11rem,1fr)_6.5rem_6.5rem_7.5rem_10rem_5.5rem]";
+
+/** Part des voix en ligne d'un candidat, en pourcentage — « 48,24 % », ou « — » sans voix. */
+function onlinePercent(votes: number, total: number) {
+  if (total <= 0 || votes <= 0) return "—";
+  return `${((votes / total) * 100).toFixed(2).replace(".", ",")} %`;
+}
 
 /**
  * Palmarès général : trois colonnes de note — Jury spécial, Public, puis Note
@@ -38,7 +44,8 @@ export function RankingTable({
         <span>Rang</span>
         <span>Candidat</span>
         <span className="text-right">Jury spécial</span>
-        <span className="text-right">Public</span>
+        <span className="text-right">Public salle</span>
+        <span className="text-right">Vote en ligne</span>
         <span className="text-right">Note finale</span>
         <span className="text-right">Détails</span>
       </div>
@@ -78,9 +85,10 @@ export function RankingTable({
                       {entry.name}
                     </span>
                     <span className="text-label-sm text-outline">
-                      {entry.publicVoteCount || entry.voterCount} vote{(entry.publicVoteCount || entry.voterCount) > 1 ? "s" : ""} / {results.publicVoteTotal > 0
-                        ? (((entry.publicVoteCount || entry.voterCount) / results.publicVoteTotal) * 100).toFixed(2).replace(".", ",")
-                        : "0,00"} %
+                      {entry.voterCount} juré{entry.voterCount > 1 ? "s" : ""}
+                      {entry.publicVoteCount > 0
+                        ? ` · ${entry.publicVoteCount} vote${entry.publicVoteCount > 1 ? "s" : ""} en ligne`
+                        : null}
                       {entry.shareTotal < 100
                         ? ` · ${entry.shareTotal} % des parts (une catégorie n'a pas voté)`
                         : null}
@@ -98,9 +106,18 @@ export function RankingTable({
 
                   <span className="text-right">
                     <span className="font-serif text-headline-sm text-on-surface-variant sm:hidden">
-                      Public{" "}
+                      Public salle{" "}
                     </span>
                     <span className="text-headline-sm text-on-surface-variant">{formatScore(entry.publicScore)}</span>
+                  </span>
+
+                  <span className="text-right">
+                    <span className="font-serif text-headline-sm text-on-surface-variant sm:hidden">
+                      Vote en ligne{" "}
+                    </span>
+                    <span className="text-headline-sm text-on-surface-variant">
+                      {onlinePercent(entry.publicVoteCount, results.publicVoteTotal)}
+                    </span>
                   </span>
 
                   <span className="text-right">
@@ -134,7 +151,10 @@ export function RankingTable({
 
                   <p className="text-label-sm text-on-surface-variant">
                     Note finale {formatScore(entry.finalScore)} / {results.maxTotal} — dont jury
-                    spécial {formatScore(entry.specialScore)} et public {formatScore(entry.publicScore)}.
+                    spécial {formatScore(entry.specialScore)}, public salle{" "}
+                    {formatScore(entry.publicScore)} et vote en ligne{" "}
+                    {onlinePercent(entry.publicVoteCount, results.publicVoteTotal)}
+                    {entry.onlineScore !== null ? ` (${formatScore(entry.onlineScore)} / ${results.maxTotal})` : ""}.
                   </p>
 
                   {entry.byCriterion.length > 0 ? (

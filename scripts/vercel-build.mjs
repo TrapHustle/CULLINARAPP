@@ -24,6 +24,7 @@ const HISTORY = [
   "20260906120000_add_public_vote_count",
   "20260907140000_add_vote_event_archives",
   "20260929120000_public_vote",
+  "20260930160000_share_online",
 ];
 
 const url = process.env.DIRECT_DATABASE_URL ?? process.env.DATABASE_URL;

@@ -4,9 +4,10 @@ import {
   computeCriterionAverage,
   DEFAULT_SHARES,
   maxTotalForCriteria,
+  onlineScoreFor,
   rankCandidates,
   round2,
-  shareForTableType,
+  shareForCategory,
   voteTotal,
   type ScoredVote,
   type SharesByType,
@@ -27,9 +28,10 @@ function repeat(v: ScoredVote, n: number): ScoredVote[] {
   return Array.from({ length: n }, () => ({ ...v }));
 }
 
-/** Parts explicites, pour ne jamais dépendre en silence des valeurs de départ. */
-const PARTS_40_60: SharesByType = { LAMBDA: 40, SPECIAL: 60 };
-const PARTS_50_50: SharesByType = { LAMBDA: 50, SPECIAL: 50 };
+/** Parts explicites, pour ne jamais dépendre en silence des valeurs de départ.
+ *  Vote en ligne à 0 dans ces jeux : ils testent la composition du jury seul. */
+const PARTS_40_60: SharesByType = { LAMBDA: 40, SPECIAL: 60, ONLINE: 0 };
+const PARTS_50_50: SharesByType = { LAMBDA: 50, SPECIAL: 50, ONLINE: 0 };
 
 /* ========================================================================== */
 /* Total d'un vote                                                            */
@@ -169,14 +171,15 @@ describe("l'influence d'une catégorie ne dépend pas de sa taille", () => {
 });
 
 describe("parts particulières", () => {
-  it("lit la part d'une catégorie, et 0 pour une catégorie inconnue", () => {
-    expect(shareForTableType("LAMBDA", PARTS_40_60)).toBe(40);
-    expect(shareForTableType("SPECIAL", PARTS_40_60)).toBe(60);
-    expect(shareForTableType("LAMBDA", DEFAULT_SHARES)).toBe(40);
+  it("lit la part d'une catégorie", () => {
+    expect(shareForCategory("LAMBDA", PARTS_40_60)).toBe(40);
+    expect(shareForCategory("SPECIAL", PARTS_40_60)).toBe(60);
+    expect(shareForCategory("SPECIAL", DEFAULT_SHARES)).toBe(60);
+    expect(shareForCategory("ONLINE", DEFAULT_SHARES)).toBe(20);
   });
 
   it("neutralise une catégorie à 0 %, sans diviser par zéro", () => {
-    const parts: SharesByType = { LAMBDA: 0, SPECIAL: 100 };
+    const parts: SharesByType = { LAMBDA: 0, SPECIAL: 100, ONLINE: 0 };
 
     // Le public est ignoré : seule la moyenne du jury compte.
     const score = computeCandidateScore(
@@ -194,7 +197,7 @@ describe("parts particulières", () => {
   it("renormalise des parts qui ne totalisent pas 100", () => {
     // 1 et 3, soit un quart / trois quarts : public 8, jury 12
     //   (8 × 1 + 12 × 3) / 4 = 44 / 4 = 11
-    const parts: SharesByType = { LAMBDA: 1, SPECIAL: 3 };
+    const parts: SharesByType = { LAMBDA: 1, SPECIAL: 3, ONLINE: 0 };
     const score = computeCandidateScore(
       [lambda(3, 3, 2), special(4, 4, 4)],
       CRITERIA,
@@ -206,7 +209,7 @@ describe("parts particulières", () => {
   });
 
   it("accepte une part fractionnaire", () => {
-    const parts: SharesByType = { LAMBDA: 33.5, SPECIAL: 66.5 };
+    const parts: SharesByType = { LAMBDA: 33.5, SPECIAL: 66.5, ONLINE: 0 };
     const score = computeCandidateScore([lambda(3, 3, 3), special(5, 5, 5)], CRITERIA, parts);
 
     // (9 × 33,5 + 15 × 66,5) / 100 = (301,5 + 997,5) / 100 = 12,99
@@ -312,6 +315,77 @@ describe("détail par critère", () => {
     );
 
     expect(moyenne).toBe(2);
+  });
+});
+
+/* ========================================================================== */
+/* Vote du public en ligne                                                    */
+/* ========================================================================== */
+
+describe("note du vote en ligne", () => {
+  it("traduit une part de voix en note sur l'échelle du jury", () => {
+    // 820 voix sur 1700 au total, sur une échelle /30 → 14,47
+    expect(onlineScoreFor(820, 1700, 30)).toBeCloseTo(14.47, 2);
+    // Toutes les voix → la note maximale.
+    expect(onlineScoreFor(50, 50, 30)).toBe(30);
+    // La moitié des voix → la moitié de l'échelle.
+    expect(onlineScoreFor(25, 50, 30)).toBe(15);
+  });
+
+  it("vaut null sans voix en ligne (ni pour le candidat, ni au total)", () => {
+    expect(onlineScoreFor(0, 1700, 30)).toBeNull();
+    expect(onlineScoreFor(0, 0, 30)).toBeNull();
+  });
+});
+
+describe("le vote en ligne entre dans la note finale", () => {
+  // Jury 60 / public salle 20 / en ligne 20, 3 critères sur 5 → échelle /15.
+  const parts: SharesByType = { SPECIAL: 60, LAMBDA: 20, ONLINE: 20 };
+
+  it("compte comme une catégorie de plus, selon sa part", () => {
+    // Jury spécial 12/15, public salle 9/15, en ligne 15/15 (toutes les voix).
+    // (12×60 + 9×20 + 15×20) / 100 = (720 + 180 + 300) / 100 = 12
+    const score = computeCandidateScore(
+      [special(4, 4, 4), lambda(3, 3, 3)],
+      CRITERIA,
+      parts,
+      {},
+      15,
+    );
+    expect(score?.averageRaw).toBe(12);
+    expect(score?.shareTotal).toBe(100);
+  });
+
+  it("renormalise si personne n'a voté en ligne (part en ligne ignorée)", () => {
+    // Sans note en ligne : seules les parts jury restent, ramenées à l'échelle.
+    // (12×60 + 9×20) / 80 = (720 + 180) / 80 = 11,25
+    const score = computeCandidateScore(
+      [special(4, 4, 4), lambda(3, 3, 3)],
+      CRITERIA,
+      parts,
+      {},
+      null,
+    );
+    expect(score?.averageRaw).toBeCloseTo(11.25, 10);
+    expect(score?.shareTotal).toBe(80);
+  });
+
+  it("classe en tête un candidat porté par le seul vote en ligne", () => {
+    // Après remise à zéro du jury : aucun vote de jury, seule Doua a des voix
+    // en ligne. Elle doit être classée 1re, les autres non notés.
+    const ranked = rankCandidates(
+      [
+        { candidate: "Doua", votes: [], onlineScore: 15 },
+        { candidate: "Tekpo", votes: [], onlineScore: null },
+        { candidate: "Kadja", votes: [], onlineScore: null },
+      ],
+      CRITERIA,
+      parts,
+    );
+    expect(ranked[0].candidate).toBe("Doua");
+    expect(ranked[0].rank).toBe(1);
+    expect(ranked[0].score?.averageRaw).toBe(15);
+    expect(ranked.filter((r) => r.rank !== null)).toHaveLength(1);
   });
 });
 
