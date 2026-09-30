@@ -129,6 +129,8 @@ export interface PublicVoteCandidate {
 /** Tout ce que la page `/voter` affiche — et rien de plus. */
 export interface PublicVoteView {
   eventName: string;
+  /** Affiche de l'événement (`/api/images/<id>`), en fond de l'en-tête du style clair. */
+  posterUrl: string | null;
   tagline: string | null;
   subtitle: string | null;
   price: number;
@@ -177,6 +179,7 @@ export async function getPublicVoteView(): Promise<PublicVoteView> {
 
   return {
     eventName: session.eventName?.trim() || "Vote du public",
+    posterUrl: session.eventPhotoUrl,
     tagline: session.publicVoteTagline,
     subtitle: session.publicVoteSubtitle,
     price: session.publicVotePrice,

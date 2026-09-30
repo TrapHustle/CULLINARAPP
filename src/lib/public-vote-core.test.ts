@@ -53,10 +53,11 @@ describe("moyens de paiement", () => {
 });
 
 describe("style de la page", () => {
-  it("retombe sur la Carte du menu pour toute valeur inattendue", () => {
+  it("retombe sur le style clair pour toute valeur inattendue", () => {
     expect(toPublicVoteStyle("CARTES")).toBe("CARTES");
-    expect(toPublicVoteStyle("cartes")).toBe("MENU");
-    expect(toPublicVoteStyle(null)).toBe("MENU");
+    expect(toPublicVoteStyle("MENU")).toBe("MENU");
+    expect(toPublicVoteStyle("cartes")).toBe("CLAIR");
+    expect(toPublicVoteStyle(null)).toBe("CLAIR");
   });
 });
 

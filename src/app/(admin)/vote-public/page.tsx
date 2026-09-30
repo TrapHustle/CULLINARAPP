@@ -2,7 +2,10 @@ import { headers } from "next/headers";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { ConfirmButton } from "@/components/confirm-button";
 import { ArrowRightIcon, ScreenIcon, TrashIcon, VoteIcon, WarningIcon } from "@/components/icons";
+import { EventPoster } from "@/components/event-poster";
 import { PublicVoteSettingsForm } from "@/components/public-vote-settings";
+import { removeEventPosterAction, uploadEventPosterAction } from "@/lib/actions";
+import { ACCEPTED_IMAGE_TYPES } from "@/lib/validation";
 import { getPublicVoteDashboard } from "@/lib/public-vote";
 import {
   clearSimulatedPaymentsAction,
@@ -256,6 +259,12 @@ export default async function PublicVoteAdminPage() {
 
         <section className="rounded-xl bg-surface-container p-5 gold-border lg:col-span-5">
           <h2 className="mb-4 font-serif text-headline-md text-primary">Réglages</h2>
+          <EventPoster
+            posterUrl={session.eventPhotoUrl}
+            uploadAction={uploadEventPosterAction}
+            removeAction={removeEventPosterAction}
+            accept={ACCEPTED_IMAGE_TYPES.join(",")}
+          />
           <PublicVoteSettingsForm
             action={updatePublicVoteSettingsAction}
             values={{

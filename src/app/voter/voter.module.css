@@ -840,3 +840,460 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ================================================================== */
+/* Style « Clair » : fond gris clair, cartes blanches, textes noirs,   */
+/* affiche de l'événement en fond de l'en-tête. Toujours clair, quel   */
+/* que soit le thème mémorisé : il ne propose pas de bascule.          */
+/* ================================================================== */
+.page.clair,
+:global(:root[data-theme]) .page.clair {
+  --bg: #eff0f2;
+  --bg2: #f3f4f6;
+  --panel: #ffffff;
+  --paper: #ffffff;
+  --plate: #ffffff;
+  --line: #e1e4e9;
+  --gold: #141619;
+  --gold-soft: #141619;
+  --accent: #e4e6ea;
+  --on-accent: #111418;
+  --txt: #111418;
+  --dim: #5b6573;
+  --faint: #7a8390;
+  --surface: rgba(17, 20, 24, 0.04);
+  --scrim: rgba(12, 20, 32, 0.5);
+  --ok: #1f8a4c;
+  --danger: #b3261e;
+  --shadow: 0 12px 32px rgba(17, 20, 24, 0.14);
+  --display: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --body: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --r: 14px;
+  --poster-gold: #e7c35a;
+
+  color-scheme: light;
+  display: flex;
+  flex-direction: column;
+}
+.clair .btnGold {
+  border: 1px solid #d3d6dc;
+}
+.clair .btnGold:hover:not(:disabled) {
+  background: #d6d9de;
+}
+.clair .check {
+  border: 1px solid #d3d6dc;
+}
+
+.clIn {
+  width: 100%;
+  max-width: 1140px;
+  margin: 0 auto;
+  padding-inline: 16px;
+}
+@media (min-width: 720px) {
+  .clIn {
+    padding-inline: 28px;
+  }
+}
+
+/* En-tête blanc */
+.clTop {
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+.clTop .clIn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-block: 12px;
+}
+.clMark {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--txt);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 16px;
+}
+.clBrand {
+  min-width: 0;
+}
+.clBrand b {
+  display: block;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.clBrand span {
+  display: block;
+  font-size: 13px;
+  color: var(--dim);
+}
+
+/* Bandeau avec l'affiche */
+.clHero {
+  position: relative;
+  overflow: hidden;
+  background: #0b0d10;
+  color: #fff;
+}
+.clHeroBg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  object-position: 78% 12%;
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent);
+  mask-image: linear-gradient(to bottom, #000 55%, transparent);
+}
+.clHeroIn {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  padding-block: 40px 30px;
+}
+.clHeroWithPoster {
+  padding-top: 250px;
+}
+.page .clHero h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-size: clamp(34px, 9vw, 54px);
+  line-height: 1.05;
+  color: var(--poster-gold);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+}
+.clEyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #d9dde4;
+}
+.clChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+.clChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.clDotOn,
+.clDotOff {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #56d68c;
+}
+.clDotOff {
+  background: #e06c6c;
+}
+.clClose {
+  font-size: 13px;
+  color: #d9dde4;
+}
+@media (min-width: 860px) {
+  .clHero {
+    min-height: 340px;
+  }
+  .clHeroBg {
+    left: auto;
+    right: 0;
+    width: 50%;
+    height: 100%;
+    object-position: 70% 22%;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 45%);
+    mask-image: linear-gradient(to right, transparent, #000 45%);
+  }
+  .clHeroIn,
+  .clHeroWithPoster {
+    padding-block: 72px 48px;
+  }
+  .clHeroIn > * {
+    max-width: 48%;
+  }
+}
+
+/* Liste */
+.clMain {
+  flex: 1;
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  padding-block: 18px 32px;
+}
+.clTools {
+  display: grid;
+  gap: 14px;
+}
+@media (min-width: 720px) {
+  .clTools {
+    grid-template-columns: 1fr minmax(0, 360px);
+    align-items: center;
+  }
+}
+.clStage {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #e4e6ea;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-weight: 700;
+  font-size: 15px;
+}
+.clStage::before {
+  content: "";
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ok);
+}
+.clSearch {
+  position: relative;
+  display: block;
+}
+.clSearch svg {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  color: var(--dim);
+}
+.page .clSearch input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px 12px 40px;
+  background: var(--panel);
+  font-size: 15px;
+}
+.clList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+}
+.clCard {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--panel);
+  min-width: 0;
+}
+.clBanner {
+  position: relative;
+  aspect-ratio: 21 / 10;
+  max-width: 100%;
+  margin: 12px 12px 0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #0d0d0f;
+}
+.clBanner img {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 46%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+}
+.clInitials {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 46%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: var(--poster-gold);
+  font-size: 34px;
+  font-weight: 800;
+}
+.clEvent {
+  position: absolute;
+  left: 14px;
+  bottom: 12px;
+  width: 50%;
+  display: grid;
+  gap: 2px;
+}
+.clEvent b {
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: clamp(16px, 4.6vw, 22px);
+  line-height: 1.05;
+  color: var(--poster-gold);
+}
+.clEvent span {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #cfd3da;
+}
+.clNum {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.clNum::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f28c28;
+}
+.clRank {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #fff;
+  color: #111418;
+  border-radius: 8px;
+  padding: 3px 9px;
+  font-weight: 800;
+  font-size: 14px;
+}
+.clBody {
+  flex: 1;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  padding: 14px 16px 16px;
+}
+.page .clName {
+  font-weight: 800;
+  font-size: 18px;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  line-height: 1.25;
+}
+.clRole {
+  font-size: 13px;
+  color: var(--dim);
+}
+.clScore {
+  display: grid;
+  gap: 8px;
+  background: var(--bg2);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.clScore p {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+.clScore b {
+  font-size: 17px;
+  font-weight: 600;
+}
+.clScore span {
+  color: var(--dim);
+  font-size: 14px;
+}
+.clBar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line);
+  overflow: hidden;
+}
+.clBar i {
+  display: block;
+  height: 100%;
+  background: var(--txt);
+}
+.clVote {
+  height: 46px;
+  border: 1px solid #d3d6dc;
+  border-radius: 10px;
+  background: #e4e6ea;
+  color: var(--txt);
+  font-weight: 600;
+  font-size: 15px;
+}
+.clVote:hover:not(:disabled) {
+  background: #d6d9de;
+}
+.clVote:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Pied de page blanc */
+.clFoot {
+  background: var(--panel);
+  border-top: 1px solid var(--line);
+  color: var(--dim);
+}
+.clFootIn {
+  display: grid;
+  gap: 12px;
+  padding-block: 22px calc(22px + env(safe-area-inset-bottom, 0px));
+  font-size: 13px;
+}
+.clFootIn strong {
+  color: var(--txt);
+  font-weight: 600;
+  font-size: 14px;
+}
+.clPay {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.clPay span {
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.clPay span.plateMtn {
+  background: #ffcb05;
+}
+.clPay img {
+  display: block;
+  height: 18px;
+  width: auto;
+}

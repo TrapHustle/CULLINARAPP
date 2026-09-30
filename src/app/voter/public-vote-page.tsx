@@ -259,6 +259,32 @@ export function PublicVotePage({ view, style }: { view: PublicVoteView; style: P
 
   const sheetCandidate = sheetFor ? view.candidates.find((c) => c.id === sheetFor) : undefined;
 
+  // Une fois ouverte, la fenêtre reste affichée même si le vote se ferme
+  // entre-temps : un paiement en cours doit pouvoir montrer son issue. Le
+  // serveur, lui, refuse tout paiement arrivé après la fermeture.
+  const sheet = sheetCandidate ? (
+    <VoteSheet
+      key={sheetCandidate.id}
+      candidate={sheetCandidate}
+      view={view}
+      resumeReference={resume?.candidateId === sheetCandidate.id ? resume.reference : undefined}
+      onClose={() => {
+        setSheetFor(null);
+        setResume(null);
+      }}
+      onPaid={() => router.refresh()}
+    />
+  ) : null;
+
+  if (style === "CLAIR") {
+    return (
+      <div className={`${styles.page} ${styles.clair}`}>
+        <ClearView {...props} />
+        {sheet}
+      </div>
+    );
+  }
+
   return (
     <div className={`${styles.page} ${style === "MENU" ? styles.menu : ""}`}>
       <header className={styles.top}>
@@ -274,23 +300,163 @@ export function PublicVotePage({ view, style }: { view: PublicVoteView; style: P
 
       <SiteFooter view={view} />
 
-      {/* Une fois ouverte, la fenêtre reste affichée même si le vote se ferme
-          entre-temps : un paiement en cours doit pouvoir montrer son issue. Le
-          serveur, lui, refuse tout paiement arrivé après la fermeture. */}
-      {sheetCandidate ? (
-        <VoteSheet
-          key={sheetCandidate.id}
-          candidate={sheetCandidate}
-          view={view}
-          resumeReference={resume?.candidateId === sheetCandidate.id ? resume.reference : undefined}
-          onClose={() => {
-            setSheetFor(null);
-            setResume(null);
-          }}
-          onPaid={() => router.refresh()}
-        />
-      ) : null}
+      {sheet}
     </div>
+  );
+}
+
+/* ---- Style « Clair » : affiche en fond, cartes rectangulaires ---- */
+
+function ClearView({ view, open, closing, closedMessage, onVote }: ViewProps) {
+  const [query, setQuery] = useState("");
+  const total = view.totalVotes ?? 0;
+  const term = query.trim().toLowerCase();
+  const shown = view.candidates.filter(
+    (candidate) => !term || `${candidate.name} ${candidate.city ?? ""}`.toLowerCase().includes(term),
+  );
+
+  return (
+    <>
+      <header className={styles.clTop}>
+        <div className={styles.clIn}>
+          <span className={styles.clMark} aria-hidden="true">
+            GC
+          </span>
+          <div className={styles.clBrand}>
+            <b>Grand Concours Culinaire</b>
+            <span>Vote du public en ligne</span>
+          </div>
+        </div>
+      </header>
+
+      <section className={styles.clHero}>
+        {view.posterUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className={styles.clHeroBg} src={view.posterUrl} alt="" />
+        ) : null}
+        <div className={`${styles.clIn} ${styles.clHeroIn} ${view.posterUrl ? styles.clHeroWithPoster : ""}`}>
+          {view.tagline ? <p className={styles.clEyebrow}>{view.tagline}</p> : null}
+          <h1>{view.eventName}</h1>
+          <div className={styles.clChips}>
+            <span className={styles.clChip}>
+              <span className={open ? styles.clDotOn : styles.clDotOff} />
+              {open ? "Vote ouvert" : "Vote fermé"}
+            </span>
+            <span className={`${styles.clChip} ${styles.num}`}>{formatNumber(view.price)} FCFA le vote</span>
+          </div>
+          {closing ? <p className={`${styles.clClose} ${styles.num}`}>{closing}</p> : null}
+        </div>
+      </section>
+
+      <main className={`${styles.clIn} ${styles.clMain}`}>
+        {closedMessage ? <p className={styles.closed}>{closedMessage}</p> : null}
+
+        <div className={styles.clTools}>
+          {view.subtitle ? <div className={styles.clStage}>{view.subtitle}</div> : <div />}
+          <label className={styles.clSearch}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+            <input
+              type="search"
+              placeholder="Rechercher un candidat…"
+              aria-label="Rechercher un candidat"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </label>
+        </div>
+
+        {view.candidates.length === 0 ? (
+          <EmptyList />
+        ) : shown.length === 0 ? (
+          <p className={styles.empty}>Aucun candidat ne correspond à cette recherche.</p>
+        ) : (
+          <ol
+            className={styles.clList}
+            aria-label={view.showCounts ? "Candidats, du plus voté au moins voté" : "Candidats, dans l'ordre de passage"}
+          >
+            {shown.map((candidate) => {
+              const percent = candidate.votes !== null ? votePercent(candidate.votes, total) : null;
+              return (
+                <li key={candidate.id} className={styles.clCard}>
+                  <div className={styles.clBanner}>
+                    {candidate.photoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={candidate.photoUrl} alt={candidate.name} />
+                    ) : (
+                      <span className={styles.clInitials} aria-hidden="true">
+                        {initials(candidate.name)}
+                      </span>
+                    )}
+                    <div className={styles.clEvent}>
+                      <b>{view.eventName}</b>
+                      {view.tagline ? <span>{view.tagline}</span> : null}
+                    </div>
+                    <span className={`${styles.clNum} ${styles.num}`}>#{String(candidate.order).padStart(4, "0")}</span>
+                    {candidate.rank !== null ? (
+                      <span className={styles.clRank}>
+                        <Ordinal rank={candidate.rank} />
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className={styles.clBody}>
+                    <div>
+                      <h3 className={styles.clName}>
+                        {candidate.name}
+                        {candidate.city ? ` – ${candidate.city}` : ""}
+                      </h3>
+                      <p className={styles.clRole}>Candidat(e) · Nominé(e)</p>
+                    </div>
+                    {candidate.votes !== null ? (
+                      <div className={styles.clScore}>
+                        <p className={styles.num}>
+                          <b>{votesLabel(candidate.votes)}</b>
+                          <span>{percent} %</span>
+                        </p>
+                        <div className={styles.clBar}>
+                          <i style={{ width: `${total ? (candidate.votes / total) * 100 : 0}%` }} />
+                        </div>
+                      </div>
+                    ) : null}
+                    <button
+                      type="button"
+                      className={styles.clVote}
+                      disabled={!open}
+                      onClick={() => onVote(candidate.id)}
+                    >
+                      Voter
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        )}
+      </main>
+
+      <footer className={styles.clFoot}>
+        <div className={`${styles.clIn} ${styles.clFootIn}`}>
+          <strong>
+            © {new Date(view.generatedAt).getUTCFullYear()} {view.eventName}
+            {view.tagline ? ` — ${view.tagline}` : ""}
+          </strong>
+          <div className={styles.clPay} aria-label="Moyens de paiement">
+            {view.methods.map((method) => (
+              <span key={method} className={plateClass(method)}>
+                {LOGOS[method].map((logo) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={logo.src} src={logo.src} alt={PAYMENT_METHOD_LABELS[method]} />
+                ))}
+              </span>
+            ))}
+          </div>
+          <p>1 vote = {formatNumber(view.price)} FCFA. Chaque vote compte dès que le paiement est confirmé.</p>
+          {view.simulated ? <p>Aperçu : paiements simulés, aucune somme n&apos;est prélevée.</p> : null}
+        </div>
+      </footer>
+    </>
   );
 }
 

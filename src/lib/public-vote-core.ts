@@ -40,11 +40,12 @@ export function normalizePhone(raw: string): string | null {
   return digits.length === 10 ? digits : null;
 }
 
-/** La Carte du menu en premier : c'est la présentation retenue, les cartes restent en option. */
-export const PUBLIC_VOTE_STYLES = ["MENU", "CARTES"] as const;
+/** Le style clair (affiche en fond, cartes rectangulaires) en premier : c'est la présentation retenue. */
+export const PUBLIC_VOTE_STYLES = ["CLAIR", "MENU", "CARTES"] as const;
 export type PublicVoteStyle = (typeof PUBLIC_VOTE_STYLES)[number];
 
 export const PUBLIC_VOTE_STYLE_LABELS: Record<PublicVoteStyle, string> = {
+  CLAIR: "Clair (affiche)",
   MENU: "Carte du menu",
   CARTES: "Cartes",
 };
@@ -81,7 +82,7 @@ export function isPaymentMethod(value: string): value is PaymentMethod {
 }
 
 export function toPublicVoteStyle(value: string | null | undefined): PublicVoteStyle {
-  return value === "CARTES" ? "CARTES" : "MENU";
+  return value === "CARTES" || value === "MENU" ? value : "CLAIR";
 }
 
 /**

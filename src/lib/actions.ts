@@ -850,6 +850,62 @@ export async function removeCandidatePhotoAction(formData: FormData) {
 }
 
 /* ------------------------------------------------------------------ */
+/* Affiche de l'événement (fond de l'en-tête de /voter)                 */
+/* ------------------------------------------------------------------ */
+
+export async function uploadEventPosterAction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAuth();
+
+  const file = formData.get("photo");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "Choisissez une image." };
+  }
+  if (!ACCEPTED_IMAGE_TYPES.includes(file.type as (typeof ACCEPTED_IMAGE_TYPES)[number])) {
+    return { error: "Format accepté : JPEG, PNG ou WebP." };
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    const limit = Math.round(MAX_IMAGE_BYTES / (1024 * 1024));
+    return { error: `Image trop lourde (maximum ${limit} Mo).` };
+  }
+
+  const session = await getOrCreateSession();
+  const image = await prisma.image.create({
+    data: { mimeType: file.type, data: Buffer.from(await file.arrayBuffer()) },
+  });
+  await prisma.session.update({
+    where: { id: SESSION_ID },
+    data: { eventPhotoUrl: `/api/images/${image.id}` },
+  });
+
+  const previousId = imageIdFromPath(session.eventPhotoUrl);
+  if (previousId) {
+    await prisma.image.deleteMany({ where: { id: previousId } });
+  }
+
+  revalidatePath("/vote-public");
+  revalidatePath("/voter");
+  return { success: "Affiche mise à jour." };
+}
+
+export async function removeEventPosterAction() {
+  await requireAuth();
+
+  const session = await getOrCreateSession();
+  await prisma.session.update({ where: { id: SESSION_ID }, data: { eventPhotoUrl: null } });
+
+  const imageId = imageIdFromPath(session.eventPhotoUrl);
+  if (imageId) {
+    await prisma.image.deleteMany({ where: { id: imageId } });
+  }
+
+  revalidatePath("/vote-public");
+  revalidatePath("/voter");
+}
+
+/* ------------------------------------------------------------------ */
 /* Réinitialisation complète de l'événement                             */
 /* ------------------------------------------------------------------ */
 
@@ -892,7 +948,8 @@ export async function resetEventAction(
     prisma.image.deleteMany({}),
     prisma.session.update({
       where: { id: SESSION_ID },
-      data: { activeCandidateId: null, votingOpen: false },
+      // L'affiche part avec les autres images : son chemin ne doit pas survivre.
+      data: { activeCandidateId: null, votingOpen: false, eventPhotoUrl: null },
     }),
   ]);
 

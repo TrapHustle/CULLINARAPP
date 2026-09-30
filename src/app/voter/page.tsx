@@ -26,7 +26,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * l'organisateur a choisi de montrer (compteurs masqués : ni votes ni rangs
  * ne quittent le serveur), et chaque paiement est revérifié côté serveur.
  *
- * `?style=cartes` ou `?style=menu` affiche un style sans toucher au réglage :
+ * `?style=clair`, `?style=cartes` ou `?style=menu` affiche un style sans toucher au réglage :
  * de quoi présenter les deux présentations sans changer ce que voit le public.
  */
 export default async function VoterPage({
@@ -36,7 +36,8 @@ export default async function VoterPage({
 }) {
   const { style } = await searchParams;
   const view = await loadView();
-  const preview = style === "menu" ? "MENU" : style === "cartes" ? "CARTES" : null;
+  const preview =
+    style === "menu" ? "MENU" : style === "cartes" ? "CARTES" : style === "clair" ? "CLAIR" : null;
 
   return (
     <>
