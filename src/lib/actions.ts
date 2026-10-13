@@ -95,7 +95,7 @@ export async function loginAction(
   session.username = parsed.data.username;
   await session.save();
 
-  redirect("/");
+  redirect("/admin");
 }
 
 export async function logoutAction() {
@@ -172,7 +172,7 @@ export async function updateCandidateAction(
   });
 
   revalidatePath("/configuration");
-  revalidatePath("/");
+  revalidatePath("/admin");
   revalidatePath("/voter");
   return { success: `Candidat « ${parsed.data.name} » modifié.` };
 }
@@ -239,7 +239,7 @@ export async function updateTableAction(
   await prisma.votingTable.update({ where: { id }, data });
 
   revalidatePath("/configuration");
-  revalidatePath("/");
+  revalidatePath("/admin");
   revalidatePath("/resultats");
   return { success: `Table « ${data.name} » modifiée.` };
 }
@@ -350,7 +350,7 @@ export async function openVotingAction(formData: FormData) {
     }),
   ]);
 
-  revalidatePath("/");
+  revalidatePath("/admin");
 }
 
 /**
@@ -383,7 +383,7 @@ export async function openAllVotingAction() {
     }),
   ]);
 
-  revalidatePath("/");
+  revalidatePath("/admin");
   revalidatePath("/resultats");
 }
 
@@ -457,7 +457,7 @@ export async function closeAndAdvanceAction() {
     ]);
   }
 
-  revalidatePath("/");
+  revalidatePath("/admin");
   revalidatePath("/resultats");
 }
 
@@ -468,7 +468,7 @@ export async function closeVotingAction() {
     where: { id: SESSION_ID },
     data: { votingOpen: false },
   });
-  revalidatePath("/");
+  revalidatePath("/admin");
 }
 
 /**
@@ -522,7 +522,7 @@ export async function archiveVoteEventAction(
     }),
   ]);
 
-  revalidatePath("/");
+  revalidatePath("/admin");
   revalidatePath("/resultats");
   revalidatePath("/archives");
   return { success: "Concours clôturé et archivé." };
@@ -544,7 +544,7 @@ export async function updateTimerAction(formData: FormData) {
     data: { timerEnabled, timerSeconds },
   });
 
-  revalidatePath("/");
+  revalidatePath("/admin");
 }
 
 /**
@@ -584,7 +584,7 @@ export async function updateVoteSettingsAction(formData: FormData) {
 
   revalidatePath("/configuration");
   revalidatePath("/resultats");
-  revalidatePath("/");
+  revalidatePath("/admin");
 }
 
 /* ------------------------------------------------------------------ */
@@ -617,7 +617,7 @@ export async function devalidateTableAction(formData: FormData) {
   // (double clic, deux organisateurs sur le dashboard) ne doit pas lever.
   await prisma.tableValidation.deleteMany({ where: parsed.data });
 
-  revalidatePath("/");
+  revalidatePath("/admin");
 }
 
 /* ------------------------------------------------------------------ */
@@ -760,7 +760,7 @@ export async function resetVotesAction(
     }),
   ]);
 
-  revalidatePath("/");
+  revalidatePath("/admin");
   revalidatePath("/configuration");
   revalidatePath("/resultats");
 
@@ -842,7 +842,7 @@ export async function uploadCandidatePhotoAction(
   }
 
   revalidatePath("/configuration");
-  revalidatePath("/");
+  revalidatePath("/admin");
   return { success: `Photo de « ${candidate.name} » mise à jour.` };
 }
 
@@ -861,7 +861,7 @@ export async function removeCandidatePhotoAction(formData: FormData) {
   }
 
   revalidatePath("/configuration");
-  revalidatePath("/");
+  revalidatePath("/admin");
 }
 
 /* ------------------------------------------------------------------ */
@@ -968,7 +968,7 @@ export async function resetEventAction(
     }),
   ]);
 
-  revalidatePath("/");
+  revalidatePath("/admin");
   revalidatePath("/configuration");
   revalidatePath("/resultats");
 

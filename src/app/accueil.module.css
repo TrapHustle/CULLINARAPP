@@ -1,0 +1,346 @@
+/* Page d'accueil provisoire : blanc et bleu, à grands aplats. */
+
+.page {
+  --bleu: #1652c4;
+  --bleu-profond: #0c3a8f;
+  --bleu-pale: #e8f0fe;
+  --bleu-nuit: #0a2558;
+  --encre: #0f1b33;
+  --gris: #4a5873;
+  --filet: #c9d6ee;
+
+  background: #ffffff;
+  color: var(--encre);
+  min-height: 100vh;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.cadre {
+  max-width: 68rem;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* En-tête ------------------------------------------------------------- */
+
+.entete {
+  background: var(--bleu-profond);
+  color: #ffffff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.entete .cadre {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 64px;
+}
+
+.marque {
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.editeur {
+  font-weight: 400;
+  font-size: 0.85rem;
+  opacity: 0.75;
+  margin-left: 6px;
+}
+
+.liens {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.liens a {
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.liens a:hover {
+  text-decoration: underline;
+}
+
+.lienCompte {
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 4px;
+  padding: 6px 12px;
+}
+
+/* Premier écran -------------------------------------------------------- */
+
+.hero {
+  background: var(--bleu-profond);
+  color: #ffffff;
+  padding: 72px 0 88px;
+}
+
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  line-height: 1.12;
+  font-weight: 600;
+  max-width: 22ch;
+  margin: 0 0 20px;
+  text-wrap: balance;
+}
+
+.hero p {
+  font-size: 1.15rem;
+  max-width: 40rem;
+  margin: 0 0 32px;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.boutonClair,
+.boutonContour {
+  display: inline-block;
+  border-radius: 4px;
+  padding: 12px 20px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.boutonClair {
+  background: #ffffff;
+  color: var(--bleu-profond);
+}
+
+.boutonClair:hover {
+  background: var(--bleu-pale);
+}
+
+.boutonContour {
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  color: #ffffff;
+}
+
+.boutonContour:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Sections ------------------------------------------------------------- */
+
+.pale,
+.blanc {
+  padding: 72px 0;
+}
+
+.pale {
+  background: var(--bleu-pale);
+}
+
+.blanc {
+  background: #ffffff;
+}
+
+.pale h2,
+.blanc h2 {
+  font-size: clamp(1.6rem, 3.5vw, 2.1rem);
+  font-weight: 600;
+  color: var(--bleu-profond);
+  margin: 0 0 12px;
+}
+
+.intro {
+  max-width: 44rem;
+  color: var(--gris);
+  margin: 0 0 32px;
+}
+
+.canaux {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  border-top: 3px solid var(--bleu);
+}
+
+.canal {
+  padding: 24px 24px 8px 0;
+}
+
+.canal h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.canal p {
+  margin: 0;
+  color: var(--gris);
+}
+
+/* Exemple chiffré ------------------------------------------------------ */
+
+.tableau {
+  overflow-x: auto;
+  margin-bottom: 12px;
+}
+
+.tableau table {
+  width: 100%;
+  min-width: 520px;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.tableau th,
+.tableau td {
+  text-align: right;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--filet);
+}
+
+.tableau th:first-child,
+.tableau td:first-child {
+  text-align: left;
+}
+
+.tableau th {
+  background: var(--bleu);
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.finale {
+  font-weight: 600;
+  color: var(--bleu-profond);
+}
+
+.note {
+  color: var(--gris);
+  font-size: 0.95rem;
+  margin: 0 0 40px;
+}
+
+.sousTitre {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0 0 16px;
+}
+
+.modes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0 32px;
+  margin: 0;
+}
+
+.modes div {
+  border-left: 3px solid var(--bleu);
+  padding: 4px 0 4px 14px;
+  margin-bottom: 16px;
+}
+
+.modes dt {
+  font-weight: 600;
+}
+
+.modes dd {
+  margin: 4px 0 0;
+  color: var(--gris);
+}
+
+/* Organisateur --------------------------------------------------------- */
+
+.liste {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0 0;
+  max-width: 48rem;
+}
+
+.liste li {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--filet);
+}
+
+.liste li:first-child {
+  border-top: 1px solid var(--filet);
+}
+
+/* Appel final et pied -------------------------------------------------- */
+
+.appel {
+  background: var(--bleu);
+  color: #ffffff;
+  padding: 64px 0;
+}
+
+.appel h2 {
+  font-size: clamp(1.6rem, 3.5vw, 2.1rem);
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.appel p {
+  margin: 0 0 24px;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.pied {
+  background: var(--bleu-nuit);
+  color: rgba(255, 255, 255, 0.8);
+  padding: 24px 0;
+  font-size: 0.9rem;
+}
+
+.pied .cadre {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pied a {
+  color: #ffffff;
+}
+
+.page a:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.pale a:focus-visible,
+.blanc a:focus-visible {
+  outline-color: var(--bleu);
+}
+
+@media (max-width: 480px) {
+  .editeur {
+    display: none;
+  }
+
+  .liens {
+    gap: 12px;
+  }
+
+  .hero {
+    padding: 48px 0 64px;
+  }
+}
+
+/* Le style global de l'administration met les titres en serif : la page
+   d'accueil garde une seule police. */
+.page h1,
+.page h2,
+.page h3,
+.page dt {
+  font-family: inherit;
+  letter-spacing: -0.01em;
+}
+
+.entete .cadre {
+  flex-wrap: wrap;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
