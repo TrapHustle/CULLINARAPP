@@ -11,6 +11,12 @@ export interface AdminSession {
    * page publique, il ne doit jamais valoir celui de l'administration.
    */
   orga?: boolean;
+  /**
+   * Compte d'une organisation (SaaS, espace `/espace`). Indépendant de
+   * `loggedIn`, qui reste l'accès de la plateforme à l'ancien tableau de bord.
+   */
+  utilisateurId?: string;
+  organisationId?: string;
 }
 
 /**

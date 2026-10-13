@@ -67,7 +67,7 @@ export default function Accueil() {
           </span>
           <nav className={styles.liens}>
             <Link href="/voter">Voter</Link>
-            <Link href="/login" className={styles.lienCompte}>
+            <Link href="/connexion" className={styles.lienCompte}>
               Espace organisateur
             </Link>
           </nav>
@@ -83,8 +83,8 @@ export default function Accueil() {
               dans un seul classement sur 100, calculé et affiché en direct.
             </p>
             <div className={styles.actions}>
-              <Link href="/login" className={styles.boutonClair}>
-                Espace organisateur
+              <Link href="/inscription" className={styles.boutonClair}>
+                Créer un compte
               </Link>
               <Link href="/voter" className={styles.boutonContour}>
                 Voir le vote en cours
@@ -174,9 +174,9 @@ export default function Accueil() {
         <section className={styles.appel}>
           <div className={styles.cadre}>
             <h2>Vous préparez un concours ?</h2>
-            <p>Connectez-vous à votre espace pour le paramétrer.</p>
-            <Link href="/login" className={styles.boutonClair}>
-              Espace organisateur
+            <p>Créez le compte de votre organisation et paramétrez votre premier événement.</p>
+            <Link href="/inscription" className={styles.boutonClair}>
+              Créer un compte
             </Link>
           </div>
         </section>
