@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Icone } from "@/components/espace/icone";
+import { dmSans } from "@/lib/police";
 import styles from "./cgu.module.css";
 
 export const metadata: Metadata = {
-  title: "Conditions générales d'utilisation • Digitalyx Vote",
-  description: "Conditions générales d'utilisation du vote en ligne Digitalyx Vote (INOVYX TECH).",
+  title: "Conditions générales d'utilisation — DIGITALYX-VOTE",
+  description: "Conditions générales d'utilisation du vote en ligne DIGITALYX-VOTE (INOVYX TECH).",
 };
 
 /**
@@ -13,12 +15,16 @@ export const metadata: Metadata = {
  */
 export default function CguPage() {
   return (
-    <div className={styles.page}>
+    <div className={`${dmSans.className} ${styles.page}`}>
       <header className={styles.top}>
         <div className={styles.in}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brand/inovyx-logo.png" alt="Inovyx Tech" />
-          <b>Digitalyx Vote</b>
+          <Link href="/" className={styles.marque}>
+            <span className={styles.marqueSigne}>
+              <Icone nom="coche" taille={17} />
+            </span>
+            DIGITALYX-VOTE
+          </Link>
+          <span className={styles.editeur}>par Inovyx Tech</span>
         </div>
       </header>
 
@@ -29,7 +35,7 @@ export default function CguPage() {
         <section>
           <h2>1. Objet</h2>
           <p>
-            Digitalyx Vote est une plateforme de vote en ligne éditée par INOVYX TECH. Elle permet au public de
+            DIGITALYX-VOTE est une plateforme de vote en ligne éditée par INOVYX TECH. Elle permet au public de
             voter pour les candidats d&apos;événements organisés par des organisateurs tiers (par exemple un
             concours culinaire). Les présentes conditions encadrent l&apos;utilisation de la plateforme. Voter
             implique leur acceptation sans réserve.
@@ -125,7 +131,7 @@ export default function CguPage() {
       </main>
 
       <footer className={styles.foot}>
-        <div className={styles.in}>© 2026 INOVYX TECH · Digitalyx Vote</div>
+        <div className={styles.in}>© 2026 INOVYX TECH · DIGITALYX-VOTE</div>
       </footer>
     </div>
   );

@@ -1,0 +1,280 @@
+/* Pages de compte (connexion, inscription) — design de la refonte. */
+
+.page {
+  --bleu: #1768e5;
+  --encre: #101d35;
+  --encre-2: #26354d;
+  --gris: #68758b;
+  --filet: #e2e7ee;
+
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: #fbfcfe;
+  color: var(--encre);
+  line-height: 1.5;
+}
+
+.page h1 {
+  font-family: inherit;
+}
+
+/* Halos du premier écran de l'accueil. */
+.page::before,
+.page::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.page::before {
+  width: 430px;
+  height: 430px;
+  left: -270px;
+  top: 80px;
+  background: #eef5ff;
+}
+
+.page::after {
+  width: 370px;
+  height: 370px;
+  right: -240px;
+  top: 360px;
+  background: #f1efff;
+}
+
+.entete {
+  position: relative;
+  z-index: 2;
+  height: 80px;
+  border-bottom: 1px solid #eef1f5;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.cadre {
+  max-width: 1180px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.marque {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.7px;
+  color: var(--encre);
+  text-decoration: none;
+}
+
+.marqueSigne {
+  display: grid;
+  place-items: center;
+  width: 29px;
+  height: 29px;
+  border-radius: 9px;
+  color: #ffffff;
+  background: var(--bleu);
+}
+
+.retour {
+  color: #58647a;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.retour:hover {
+  color: var(--bleu);
+}
+
+.centre {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 56px 16px 72px;
+}
+
+.carte {
+  width: 100%;
+  max-width: 440px;
+  padding: 36px 32px 32px;
+  border: 1px solid #e7ebf0;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(38, 61, 94, 0.08);
+}
+
+.surtitre {
+  color: var(--bleu);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+}
+
+.carte h1 {
+  margin: 10px 0 6px;
+  color: #111d32;
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -1px;
+  line-height: 1.15;
+}
+
+.sousTitre {
+  margin: 0 0 26px;
+  color: var(--gris);
+  font-size: 15px;
+}
+
+.champ {
+  display: block;
+  margin-bottom: 18px;
+}
+
+.champ span {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--encre-2);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.champ input {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  border: 1px solid #d9e0ea;
+  border-radius: 12px;
+  background: #ffffff;
+  color: var(--encre);
+  font: inherit;
+  font-size: 15px;
+  box-sizing: border-box;
+}
+
+.champ input:focus {
+  outline: none;
+  border-color: var(--bleu);
+  box-shadow: 0 0 0 3px #dfebff;
+}
+
+.aide {
+  display: block;
+  margin-top: 6px;
+  color: #8995a8;
+  font-size: 13px;
+}
+
+.erreur {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fdecea;
+  color: #c0362c;
+  font-size: 14px;
+}
+
+.bouton {
+  width: 100%;
+  height: 50px;
+  margin-top: 6px;
+  border: 0;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  color: #ffffff;
+  background: var(--bleu);
+  box-shadow: 0 8px 20px rgba(23, 104, 229, 0.22);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.bouton:hover {
+  background: #0c5bd1;
+  box-shadow: 0 10px 24px rgba(23, 104, 229, 0.28);
+}
+
+.bouton:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.bas {
+  margin: 22px 0 0;
+  text-align: center;
+  color: var(--gris);
+  font-size: 14px;
+}
+
+.bas a {
+  color: var(--bleu);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.bas a:hover {
+  text-decoration: underline;
+}
+
+.rassurance {
+  margin-top: 22px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 20px;
+  color: #7a879a;
+  font-size: 12px;
+}
+
+.rassurance span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rassurance svg {
+  color: #3cb887;
+}
+
+.page a:focus-visible,
+.page button:focus-visible {
+  outline: 2px solid var(--bleu);
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .entete {
+    height: 68px;
+  }
+
+  .marque {
+    font-size: 18px;
+  }
+
+  .carte {
+    padding: 28px 20px 24px;
+    border-radius: 18px;
+  }
+
+  .carte h1 {
+    font-size: 26px;
+  }
+}

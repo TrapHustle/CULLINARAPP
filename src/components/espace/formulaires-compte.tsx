@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { connecterAction, inscrireAction, type EtatFormulaire } from "@/lib/comptes-actions";
 import { MOT_DE_PASSE_MIN } from "@/lib/comptes-core";
-import styles from "./espace.module.css";
+import styles from "./compte.module.css";
+import { Icone } from "./icone";
 
 const initial: EtatFormulaire = {};
 
@@ -21,8 +22,9 @@ export function FormulaireConnexion() {
 
   return (
     <form action={action} className={styles.carte}>
-      <h1>Connexion</h1>
-      <p className={styles.sousTitre}>Accédez à l&rsquo;espace de votre organisation.</p>
+      <div className={styles.surtitre}>Espace organisateur</div>
+      <h1>Bon retour parmi nous.</h1>
+      <p className={styles.sousTitre}>Connectez-vous pour gérer vos concours.</p>
 
       <Erreur message={etat.erreur} />
 
@@ -37,6 +39,7 @@ export function FormulaireConnexion() {
 
       <button type="submit" className={styles.bouton} disabled={envoi}>
         {envoi ? "Connexion…" : "Se connecter"}
+        {envoi ? null : <Icone nom="fleche" taille={17} />}
       </button>
 
       <p className={styles.bas}>
@@ -51,7 +54,8 @@ export function FormulaireInscription() {
 
   return (
     <form action={action} className={styles.carte}>
-      <h1>Créer un compte</h1>
+      <div className={styles.surtitre}>Nouveau compte</div>
+      <h1>Organisez votre premier concours.</h1>
       <p className={styles.sousTitre}>Un compte par organisation. Vous en serez le propriétaire.</p>
 
       <Erreur message={etat.erreur} />
@@ -82,11 +86,20 @@ export function FormulaireInscription() {
 
       <button type="submit" className={styles.bouton} disabled={envoi}>
         {envoi ? "Création…" : "Créer mon compte"}
+        {envoi ? null : <Icone nom="fleche" taille={17} />}
       </button>
 
       <p className={styles.bas}>
         Déjà un compte ? <Link href="/connexion">Se connecter</Link>
       </p>
+      <div className={styles.rassurance}>
+        <span>
+          <Icone nom="coche" taille={15} /> Sans installation
+        </span>
+        <span>
+          <Icone nom="coche" taille={15} /> Accompagnement Inovyx Tech
+        </span>
+      </div>
     </form>
   );
 }
