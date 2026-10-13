@@ -32,3 +32,23 @@ export async function exigerUtilisateur() {
   if (!utilisateur) redirect("/connexion");
   return utilisateur;
 }
+
+/** Rôles autorisés à modifier la configuration (RG 0.4). */
+const ROLES_ECRITURE = new Set(["PROPRIETAIRE", "ORGANISATEUR"]);
+
+/** Garde des actions qui modifient : un compte en lecture seule ou jury est refusé. */
+export async function exigerEcriture() {
+  const utilisateur = await exigerUtilisateur();
+  if (!ROLES_ECRITURE.has(utilisateur.role)) {
+    throw new Error("Votre rôle ne permet pas de modifier la configuration.");
+  }
+  return utilisateur;
+}
+
+/** Initiales affichées dans l'avatar : deux lettres tirées de l'adresse. */
+export function initiales(email: string): string {
+  const local = email.split("@")[0] ?? "";
+  const morceaux = local.split(/[._-]+/).filter(Boolean);
+  const lettres = morceaux.length >= 2 ? morceaux[0][0] + morceaux[1][0] : local.slice(0, 2);
+  return lettres.toUpperCase() || "?";
+}
