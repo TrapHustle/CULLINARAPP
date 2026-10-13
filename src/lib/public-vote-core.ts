@@ -25,19 +25,182 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
  */
 export const MIN_PAYMENT_AMOUNT = 100;
 
+/* ------------------------------------------------------------------ */
+/* Recettes et part du prestataire                                      */
+/* ------------------------------------------------------------------ */
+
+/** Part des recettes revenant à Inovyx Tech. */
+export const INOVYX_SHARE = 0.1;
+
 /**
- * Numéro de téléphone ivoirien tel que le visiteur l'écrit (espaces, points,
- * tirets, +225, 00225…), ramené à ses 10 chiffres. `null` si le nombre de
- * chiffres est inattendu : on refuse plutôt que de deviner, un chiffre de trop
- * désignerait une autre ligne.
+ * Partage d'une recette entre Inovyx Tech et l'organisateur. La part de
+ * l'organisateur est obtenue par soustraction, jamais par un second arrondi :
+ * les deux montants retombent ainsi toujours exactement sur le total.
+ */
+export function splitRevenue(total: number): { inovyx: number; organiser: number } {
+  const inovyx = Math.round(total * INOVYX_SHARE);
+  return { inovyx, organiser: total - inovyx };
+}
+
+/**
+ * Numéro masqué pour l'espace organisateur : les deux premiers et les deux
+ * derniers chiffres suffisent à reconnaître une ligne qu'on connaît, sans
+ * exposer le numéro entier sur un panneau atteignable depuis la page publique.
+ */
+export function maskPhone(phone: string | null | undefined): string {
+  if (!phone) return "—";
+  const international = phone.trim().startsWith("+");
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length < 6) return international ? `+${digits}` : digits;
+  const hidden = "\u2022".repeat(digits.length - 4);
+  return `${international ? "+" : ""}${digits.slice(0, 2)} ${hidden} ${digits.slice(-2)}`;
+}
+
+/* ------------------------------------------------------------------ */
+/* Numéro de téléphone                                                  */
+/* ------------------------------------------------------------------ */
+
+export interface PhoneCountry {
+  code: string;
+  name: string;
+  flag: string;
+  /** Indicatif, sans le `+`. */
+  dial: string;
+  /** Longueur du numéro national, ou `null` pour une saisie libre. */
+  len: number | null;
+  /** Exemple montré dans le champ. */
+  hint: string;
+  /**
+   * `true` quand le zéro de tête est un préfixe d'acheminement à retirer du
+   * numéro international (France, Belgique), `false` quand il fait partie du
+   * numéro (Côte d'Ivoire, Bénin).
+   */
+  trunk: boolean;
+  /** `true` si la passerelle y joint Wave, Orange Money et MTN MoMo. */
+  mobile: boolean;
+}
+
+/**
+ * Pays acceptés pour le numéro qui paie. La Côte d'Ivoire vient en premier :
+ * c'est le choix par défaut de la page de vote.
+ */
+export const PHONE_COUNTRIES: PhoneCountry[] = [
+  { code: "CI", name: "Côte d'Ivoire", flag: "🇨🇮", dial: "225", len: 10, hint: "07 01 02 03 04", trunk: false, mobile: true },
+  { code: "SN", name: "Sénégal", flag: "🇸🇳", dial: "221", len: 9, hint: "77 123 45 67", trunk: false, mobile: true },
+  { code: "BF", name: "Burkina Faso", flag: "🇧🇫", dial: "226", len: 8, hint: "70 12 34 56", trunk: false, mobile: true },
+  { code: "ML", name: "Mali", flag: "🇲🇱", dial: "223", len: 8, hint: "70 12 34 56", trunk: false, mobile: true },
+  { code: "BJ", name: "Bénin", flag: "🇧🇯", dial: "229", len: 10, hint: "01 97 12 34 56", trunk: false, mobile: true },
+  { code: "TG", name: "Togo", flag: "🇹🇬", dial: "228", len: 8, hint: "90 12 34 56", trunk: false, mobile: true },
+  { code: "GN", name: "Guinée", flag: "🇬🇳", dial: "224", len: 9, hint: "62 12 34 56 7", trunk: false, mobile: true },
+  { code: "CM", name: "Cameroun", flag: "🇨🇲", dial: "237", len: 9, hint: "6 12 34 56 78", trunk: false, mobile: true },
+  { code: "FR", name: "France", flag: "🇫🇷", dial: "33", len: 9, hint: "6 12 34 56 78", trunk: true, mobile: false },
+  { code: "BE", name: "Belgique", flag: "🇧🇪", dial: "32", len: 9, hint: "470 12 34 56", trunk: true, mobile: false },
+  { code: "US", name: "États-Unis / Canada", flag: "🇺🇸", dial: "1", len: 10, hint: "555 123 4567", trunk: false, mobile: false },
+  { code: "XX", name: "Autre pays", flag: "🌍", dial: "", len: null, hint: "indicatif puis numéro", trunk: false, mobile: false },
+];
+
+export const DEFAULT_PHONE_COUNTRY = PHONE_COUNTRIES[0];
+
+export function phoneCountry(code: string | undefined): PhoneCountry {
+  return PHONE_COUNTRIES.find((country) => country.code === code) ?? DEFAULT_PHONE_COUNTRY;
+}
+
+/** Chiffres saisis, débarrassés de l'indicatif du pays choisi. */
+function nationalDigits(raw: string, country: PhoneCountry): string {
+  let digits = raw.replace(/\D/g, "");
+  if (!country.dial) return digits;
+  if (digits.startsWith(`00${country.dial}`)) digits = digits.slice(2 + country.dial.length);
+  else if (digits.startsWith(country.dial) && country.len !== null && digits.length > country.len) {
+    digits = digits.slice(country.dial.length);
+  }
+  if (country.len === null) return digits;
+  // Zéro d'acheminement : présent en national, absent à l'international.
+  if (country.trunk && digits.length === country.len + 1 && digits.startsWith("0")) return digits.slice(1);
+  // Ancienne écriture ivoirienne sans le zéro : +225 7 01 02 03 04.
+  if (!country.trunk && digits.length === country.len - 1) return `0${digits}`;
+  return digits;
+}
+
+export type ParsedPhone =
+  | { ok: true; phone: string; pretty: string }
+  | { ok: false; error: string };
+
+/**
+ * Numéro saisi pour un pays donné, ramené à la forme qui part en base et chez
+ * la passerelle : les 10 chiffres pour la Côte d'Ivoire — ce que le
+ * prestataire attend depuis toujours — et `+indicatif` suivi du numéro pour
+ * les autres pays. L'erreur dit quoi corriger plutôt que « numéro invalide ».
+ */
+export function parsePhone(raw: string, country: PhoneCountry): ParsedPhone {
+  const digits = nationalDigits(raw, country);
+  if (!digits) return { ok: false, error: "Entrez le numéro qui paie." };
+
+  if (country.len === null) {
+    if (digits.length < 8) {
+      return { ok: false, error: "Numéro trop court. Entrez l'indicatif du pays puis le numéro." };
+    }
+    if (digits.length > 15) {
+      return { ok: false, error: "Numéro trop long : 15 chiffres au maximum, indicatif compris." };
+    }
+    return { ok: true, phone: `+${digits}`, pretty: prettyPhone(`+${digits}`, "") };
+  }
+
+  if (digits.length !== country.len) {
+    const missing = country.len - digits.length;
+    const word = Math.abs(missing) > 1 ? "chiffres" : "chiffre";
+    return {
+      ok: false,
+      error:
+        missing > 0
+          ? `Il manque ${missing} ${word} : ${country.name}, ${country.len} chiffres.`
+          : `Il y a ${-missing} ${word} de trop : ${country.name}, ${country.len} chiffres.`,
+    };
+  }
+
+  // La Côte d'Ivoire garde ses 10 chiffres nus : c'est le format déjà stocké
+  // et déjà envoyé à la passerelle, que ce changement ne doit pas déplacer.
+  const phone = country.code === "CI" ? digits : `+${country.dial}${digits}`;
+  return { ok: true, phone, pretty: prettyPhone(`+${country.dial}${digits}`, country.dial) };
+}
+
+/** Numéro international découpé pour la relecture : +225 07 01 02 03 04. */
+export function prettyPhone(e164: string, dial: string): string {
+  const rest = dial && e164.startsWith(`+${dial}`) ? e164.slice(dial.length + 1) : e164.slice(1);
+  const shown = rest.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
+  return dial ? `+${dial} ${shown}` : `+${shown}`;
+}
+
+/**
+ * Numéro écrit à l'internationale (`+33…`, `0033…`) : le pays s'en déduit et
+ * l'indicatif quitte le champ. `null` quand rien ne correspond, pour laisser
+ * le pays déjà choisi en place.
+ */
+export function detectPhoneCountry(raw: string): { country: PhoneCountry; rest: string } | null {
+  const text = raw.trim();
+  let digits = text.replace(/\D/g, "");
+  if (!text.startsWith("+") && !digits.startsWith("00")) return null;
+  if (!text.startsWith("+") && digits.startsWith("00")) digits = digits.slice(2);
+
+  let best: PhoneCountry | null = null;
+  for (const country of PHONE_COUNTRIES) {
+    if (!country.dial || !digits.startsWith(country.dial)) continue;
+    if (!best || country.dial.length > best.dial.length) best = country;
+  }
+  if (!best || digits.length <= best.dial.length) return null;
+  return { country: best, rest: digits.slice(best.dial.length) };
+}
+
+/**
+ * Numéro reçu par le serveur, quelle que soit son écriture, ramené à la forme
+ * stockée. Le pays se déduit de l'indicatif ; sans indicatif, c'est la Côte
+ * d'Ivoire. `null` si le compte de chiffres ne correspond à rien : on refuse
+ * plutôt que de deviner, un chiffre de trop désignerait une autre ligne.
  */
 export function normalizePhone(raw: string): string | null {
-  let digits = raw.replace(/\D/g, "");
-  if (digits.startsWith("00225")) digits = digits.slice(5);
-  else if (digits.startsWith("225") && digits.length > 10) digits = digits.slice(3);
-  // Ancienne écriture internationale, sans le zéro : +225 7 01 02 03 04.
-  if (digits.length === 9 && "1257".includes(digits[0])) digits = `0${digits}`;
-  return digits.length === 10 ? digits : null;
+  const detected = detectPhoneCountry(raw);
+  const country = detected ? detected.country : DEFAULT_PHONE_COUNTRY;
+  const parsed = parsePhone(detected ? detected.rest : raw, country);
+  return parsed.ok ? parsed.phone : null;
 }
 
 /** Le style clair (affiche en fond, cartes rectangulaires) en premier : c'est la présentation retenue. */

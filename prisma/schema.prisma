@@ -227,6 +227,34 @@ model VoteEventArchive {
   @@index([closedAt])
 }
 
+/// Demande de virement de la part de l'organisateur vers son numéro mobile.
+///
+/// Le statut suit : "PENDING" (reçue, à traiter) → "PAID" (virée) ou
+/// "REJECTED" (refusée, avec une note explicative).
+model WithdrawalRequest {
+  id          String    @id @default(cuid())
+  /// Montant demandé, en FCFA.
+  amount      Int
+  /// Numéro mobile de réception (10 chiffres).
+  phone       String
+  /// Moyen de paiement choisi : "WAVE" | "ORANGE_MONEY" | "MTN".
+  method      String
+  /// Note libre de l'organisateur (optionnelle).
+  note        String?
+  /// "PENDING" | "PAID" | "REJECTED"
+  status      String    @default("PENDING")
+  /// Réponse ou note de traitement (remplie côté admin lors du traitement).
+  adminNote   String?
+  /// Date d'envoi du mail d'alerte. `null` quand l'envoi a échoué ou qu'aucun
+  /// compte SMTP n'est configuré : la demande reste valable, mais l'écran
+  /// d'administration peut prévenir que personne n'a été alerté.
+  notifiedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  processedAt DateTime?
+
+  @@index([status, createdAt])
+}
+
 /// Image téléversée depuis le dashboard (affiche de l'événement, portrait d'un
 /// candidat), stockée en base et servie par `/api/images/<id>`.
 ///

@@ -1,0 +1,91 @@
+/* Page des CGU : toujours claire, aux couleurs d'Inovyx, comme l'en-tête de
+   la page de vote. */
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #eff0f2;
+  color: #111418;
+  font-family: "Outfit", "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  color-scheme: light;
+}
+.in {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding-inline: 16px;
+}
+
+.top {
+  background: #fff;
+  border-bottom: 1px solid #e1e4e9;
+}
+.top .in {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-block: 12px;
+}
+.top img {
+  height: 30px;
+  width: auto;
+}
+.top b {
+  padding-left: 12px;
+  border-left: 1px solid #e1e4e9;
+  font-weight: 700;
+  font-size: 16px;
+  color: #30302e;
+}
+
+.main {
+  flex: 1;
+  display: grid;
+  gap: 22px;
+  padding-block: 32px 48px;
+}
+.main h1 {
+  font-size: clamp(26px, 6vw, 34px);
+  line-height: 1.15;
+  font-weight: 700;
+  text-wrap: balance;
+}
+.updated {
+  margin-top: -14px;
+  font-size: 13px;
+  color: #5b6573;
+}
+.main section {
+  display: grid;
+  gap: 6px;
+  background: #fff;
+  border: 1px solid #e1e4e9;
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.main h2 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1f7fc4;
+}
+.main section p {
+  color: #2b313a;
+}
+.back a {
+  color: #1f7fc4;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.foot {
+  background: #fff;
+  border-top: 1px solid #e1e4e9;
+  font-size: 13px;
+  color: #5b6573;
+}
+.foot .in {
+  padding-block: 18px calc(18px + env(safe-area-inset-bottom, 0px));
+}

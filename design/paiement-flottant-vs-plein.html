@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="fr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paiement flottant ou plein écran</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Comparaison des deux présentations de la feuille de paiement, à largeur de
+   téléphone (375 px). Jetons et dimensions repris du style « Clair » de
+   src/app/voter/voter.module.css — y compris le `max-height: 90dvh` de la
+   feuille flottante, qui est le coeur de la comparaison. */
+:root {
+  --bg: #eff0f2;
+  --bg2: #f3f4f6;
+  --panel: #ffffff;
+  --line: #e1e4e9;
+  --edge: #c9ced6;
+  --txt: #111418;
+  --dim: #5b6573;
+  --faint: #7a8390;
+  --surface: rgba(17, 20, 24, 0.04);
+  --scrim: rgba(12, 20, 32, 0.5);
+  --bleu: #1f7fc4;
+  --shadow: 0 12px 32px rgba(17, 20, 24, 0.14);
+  --tool: "IBM Plex Sans", "Segoe UI", Roboto, system-ui, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: #d9dce1; color: var(--txt);
+  font-family: var(--tool); font-size: 15px; line-height: 1.5;
+}
+h1, h2, h3 { margin: 0; font-weight: 600; }
+p { margin: 0; }
+button { font: inherit; color: inherit; cursor: pointer; }
+input { font: inherit; color: inherit; }
+.num { font-variant-numeric: lining-nums tabular-nums; }
+:focus-visible { outline: 2px solid var(--bleu); outline-offset: 2px; }
+
+/* ---------- Barre d'atelier ---------- */
+.atelier {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px;
+  padding: 10px 16px; background: #fff;
+  border-bottom: 1px solid var(--edge); font-size: 12px;
+}
+.atelier .brand { font-size: 15px; font-weight: 600; color: var(--bleu); }
+.ctrl { display: flex; align-items: center; gap: 7px; color: var(--faint); }
+.seg { display: flex; border: 1px solid var(--edge); border-radius: 99px; overflow: hidden; }
+.seg button { border: 0; background: transparent; padding: 5px 12px; font-size: 11.5px; color: var(--dim); }
+.seg button[aria-pressed="true"] { background: var(--bleu); color: #fff; font-weight: 600; }
+
+.stage { padding: 26px 16px 70px; }
+.intro {
+  max-width: 820px; margin: 0 auto 24px; font-size: 13.5px; color: #3c4653;
+  background: #fff; border: 1px solid var(--edge); border-radius: 12px; padding: 14px 16px;
+}
+.intro h1 { font-size: 18px; margin-bottom: 6px; }
+.intro p + p { margin-top: 8px; }
+
+.pair { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; align-items: flex-start; }
+.col { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.col[hidden] { display: none; }
+.colTitle { font-size: 14px; font-weight: 600; }
+.colTitle span { font-weight: 400; color: var(--faint); }
+
+/* ---------- Cadre de téléphone ---------- */
+.phone {
+  position: relative; width: 375px; height: 700px; flex: none;
+  background: var(--bg); border: 10px solid #1b1f26; border-radius: 34px;
+  overflow: hidden; box-shadow: 0 18px 40px rgba(17, 20, 24, 0.28);
+}
+.phoneIn { position: absolute; inset: 0; overflow: hidden; }
+
+/* La page de vote, au fond */
+.vpage { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--bg); }
+.vtop {
+  display: flex; align-items: center; gap: 8px;
+  padding: 11px 14px; background: #fff; border-bottom: 1px solid var(--line); flex: none;
+}
+.vtop .logo { width: 22px; height: 22px; border-radius: 6px; background: var(--bleu); flex: none; }
+.vtop .site { font-size: 13.5px; font-weight: 600; flex: 1; }
+.vtop .ic { width: 26px; height: 26px; border: 1px solid var(--line); border-radius: 99px; display: grid; place-items: center; color: var(--dim); }
+.vbody { flex: 1; overflow: hidden; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.vhead { margin-bottom: 2px; }
+.vhead .eyebrow { font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); }
+.vhead h2 { font-size: 19px; margin-top: 2px; }
+.vhead p { font-size: 12px; color: var(--faint); margin-top: 3px; }
+.vcard {
+  display: flex; align-items: center; gap: 10px; background: #fff;
+  border: 1px solid var(--line); border-radius: 12px; padding: 10px;
+}
+.vcard .pic { width: 40px; height: 48px; border-radius: 7px; background: #cfd5dd; flex: none; }
+.vcard .who { flex: 1; min-width: 0; }
+.vcard .who b { display: block; font-size: 14px; font-weight: 600; }
+.vcard .who span { font-size: 11.5px; color: var(--faint); }
+.vcard .go { background: var(--bleu); color: #fff; border: 0; border-radius: 9px; padding: 7px 13px; font-size: 12.5px; font-weight: 600; }
+
+/* ---------- La feuille de paiement ---------- */
+.scrim { position: absolute; inset: 0; background: var(--scrim); display: flex; align-items: flex-end; justify-content: center; }
+.fullHull { position: absolute; inset: 0; background: var(--bg); display: flex; justify-content: center; }
+
+.sheet {
+  position: relative; width: 100%; max-width: 440px;
+  background: var(--panel); display: flex; flex-direction: column; overflow: hidden;
+}
+/* Flottant : 90 % de la hauteur, coins arrondis, ombre portée. */
+.scrim .sheet { max-height: 90%; border-radius: 22px 22px 0 0; box-shadow: var(--shadow); }
+/* Plein écran : toute la hauteur, ni arrondi ni ombre. */
+.fullHull .sheet { height: 100%; max-height: none; border-radius: 0; box-shadow: none; }
+
+.sheetHead {
+  display: flex; align-items: center; gap: 11px; flex: none;
+  padding: 13px 14px; border-bottom: 1px solid var(--line);
+}
+.sheetHead .avatar {
+  width: 44px; height: 44px; border-radius: 50%; background: #e7eaee;
+  border: 1px solid var(--line); display: grid; place-items: center;
+  font-size: 14px; font-weight: 600; color: var(--dim); flex: none;
+}
+.sheetHead .eyebrow { font-size: 10px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--faint); display: block; }
+.sheetHead h2 { font-size: 17px; }
+.sheetHead .x {
+  margin-left: auto; width: 30px; height: 30px; flex: none;
+  border: 1px solid var(--line); background: transparent; border-radius: 99px;
+  display: grid; place-items: center; color: var(--dim);
+}
+
+.sheetBody { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 14px; display: flex; flex-direction: column; gap: 16px; }
+.group { display: flex; flex-direction: column; gap: 7px; }
+.label { font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); }
+
+.stepper { display: flex; align-items: center; border: 1px solid var(--edge); border-radius: 12px; overflow: hidden; height: 46px; }
+.stepper button { width: 52px; height: 100%; border: 0; background: var(--surface); font-size: 19px; color: var(--txt); }
+.stepper input { flex: 1; min-width: 0; border: 0; border-left: 1px solid var(--line); border-right: 1px solid var(--line); height: 100%; text-align: center; font-size: 18px; font-weight: 600; outline: none; }
+
+.pay { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.pay button {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 7px 5px 9px; border-radius: 11px; border: 1px solid var(--edge);
+  background: transparent; font-size: 11.5px; line-height: 1.2;
+}
+.pay button[aria-pressed="true"] { border-color: var(--bleu); box-shadow: inset 0 0 0 1px var(--bleu); font-weight: 600; }
+.pay .plate { width: 100%; height: 38px; border-radius: 7px; border: 1px solid var(--line); display: grid; place-items: center; font-size: 11px; font-weight: 700; }
+.pWave .plate { background: #1dc8f0; color: #04303b; }
+.pOm .plate { background: #ff7900; color: #fff; }
+.pMtn .plate { background: #ffcc00; color: #2b2300; }
+
+.field { display: flex; align-items: center; height: 46px; padding: 0 12px; gap: 8px; border: 1px solid var(--edge); border-radius: 12px; background: #fff; }
+.field .dial { display: flex; align-items: center; gap: 5px; border: 0; background: transparent; padding: 0; font-size: 13.5px; color: var(--dim); flex: none; }
+.field input { flex: 1; min-width: 0; border: 0; outline: none; font-size: 17px; letter-spacing: 0.03em; }
+.hint { font-size: 11.5px; color: var(--faint); }
+
+.sheetFoot { flex: none; padding: 12px 14px 14px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 9px; background: var(--panel); }
+.recap { display: flex; align-items: baseline; justify-content: space-between; font-size: 13px; color: var(--dim); }
+.recap b { font-size: 17px; color: var(--txt); }
+.cta { width: 100%; border: 0; border-radius: 12px; padding: 13px; background: var(--bleu); color: #fff; font-size: 15px; font-weight: 600; }
+.sim { font-size: 11px; color: var(--faint); text-align: center; }
+
+/* Repères posés sur la maquette */
+.tag {
+  position: absolute; z-index: 5; font-size: 10.5px; font-weight: 600;
+  background: #b3261e; color: #fff; padding: 2px 7px; border-radius: 99px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+.tagOk { background: #1f8a4c; }
+.phone[data-reperes="non"] .tag { display: none; }
+
+/* ---------- Tableau des différences ---------- */
+.diff { max-width: 820px; margin: 30px auto 0; background: #fff; border: 1px solid var(--edge); border-radius: 12px; overflow: hidden; }
+.diff h2 { font-size: 16px; padding: 13px 16px; border-bottom: 1px solid var(--line); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: left; padding: 9px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); font-weight: 600; }
+tr:last-child td { border-bottom: 0; }
+td.k { color: var(--dim); width: 32%; }
+.vrai { color: #b3261e; font-weight: 600; }
+.faux { color: #1f8a4c; font-weight: 600; }
+
+@media (max-width: 860px) { .pair { gap: 34px; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="atelier">
+  <span class="brand">Atelier</span>
+  <div class="ctrl">
+    <span>Vue</span>
+    <div class="seg" id="segVue">
+      <button type="button" data-vue="deux" aria-pressed="true">Côte à côte</button>
+      <button type="button" data-vue="flottant" aria-pressed="false">Flottant seul</button>
+      <button type="button" data-vue="plein" aria-pressed="false">Plein écran seul</button>
+    </div>
+  </div>
+  <div class="ctrl">
+    <span>Repères</span>
+    <div class="seg" id="segRep">
+      <button type="button" data-rep="oui" aria-pressed="true">Affichés</button>
+      <button type="button" data-rep="non" aria-pressed="false">Masqués</button>
+    </div>
+  </div>
+</div>
+
+<div class="stage">
+  <div class="intro">
+    <h1>La même feuille de paiement, dans les deux présentations</h1>
+    <p>Largeur de téléphone réelle : <b>375 px</b>. Les dimensions sont celles du code
+    (<code>max-height: 90dvh</code> pour la feuille flottante), pas une approximation.</p>
+    <p><b>Ce qu'on découvre en les mettant côte à côte :</b> sur un téléphone, la différence de
+    place est minime — la feuille flottante occupe déjà 90 % de la hauteur. Le vrai écart n'est
+    pas la taille, c'est le <b>risque de fermeture accidentelle</b> : en flottant, toucher la
+    bande sombre du haut referme la feuille et fait perdre la saisie.</p>
+  </div>
+
+  <div class="pair">
+    <!-- ============ FLOTTANT ============ -->
+    <div class="col" id="colFlottant">
+      <div class="colTitle">Flottant <span>— ce que tu as aujourd'hui</span></div>
+      <div class="phone" data-reperes="oui">
+        <div class="phoneIn">
+          <div class="vpage">
+            <div class="vtop">
+              <span class="logo"></span><span class="site">Digitalyx Vote</span>
+              <span class="ic">☾</span><span class="ic">▤</span>
+            </div>
+            <div class="vbody">
+              <div class="vhead">
+                <span class="eyebrow">Talent Traiteur 2026 · Abidjan</span>
+                <h2>Soutenez votre candidat</h2>
+                <p>Chaque vote coûte <span class="num">200</span> FCFA.</p>
+              </div>
+              <div class="vcard"><span class="pic"></span><span class="who"><b>Tekpo</b><span>Yamoussoukro · 820 votes</span></span><button class="go">Voter</button></div>
+              <div class="vcard"><span class="pic"></span><span class="who"><b>Sangaré F. Leyla</b><span>Minignan · 639 votes</span></span><button class="go">Voter</button></div>
+            </div>
+          </div>
+
+          <span class="tag" style="top:26px;left:50%;transform:translateX(-50%)">toucher ici referme</span>
+
+          <div class="scrim">
+            <div class="sheet">
+              <div class="sheetHead">
+                <span class="avatar">T</span>
+                <span><span class="eyebrow">Voter pour · Yamoussoukro</span><h2>Tekpo</h2></span>
+                <button type="button" class="x" aria-label="Fermer">✕</button>
+              </div>
+              <div class="sheetBody">
+                <div class="group">
+                  <span class="label">Nombre de votes</span>
+                  <div class="stepper"><button type="button">−</button><input class="num" value="3" readonly><button type="button">+</button></div>
+                </div>
+                <div class="group">
+                  <span class="label">Payer avec</span>
+                  <div class="pay">
+                    <button type="button" class="pWave" aria-pressed="true"><span class="plate">WAVE</span>Wave</button>
+                    <button type="button" class="pOm"><span class="plate">OM</span>Orange Money</button>
+                    <button type="button" class="pMtn"><span class="plate">MTN</span>MTN MoMo</button>
+                  </div>
+                </div>
+                <div class="group">
+                  <span class="label">Numéro qui paie</span>
+                  <div class="field">
+                    <button type="button" class="dial">🇨🇮 <span class="num">+225</span> ▾</button>
+                    <input class="num" value="07 07 12 34 56" readonly>
+                  </div>
+                  <p class="hint">Le numéro qui recevra la demande de paiement.</p>
+                </div>
+              </div>
+              <div class="sheetFoot">
+                <div class="recap"><span class="num">3 × 200 FCFA</span><b class="num">600 FCFA</b></div>
+                <button type="button" class="cta num">Payer 600 FCFA</button>
+                <p class="sim">Vous validerez le paiement chez votre opérateur.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="hint" style="max-width:375px;text-align:center">
+        Il reste <b>70 px</b> de page visible en haut, sous un voile sombre. C'est cette bande
+        qui referme la feuille quand on la touche.
+      </p>
+    </div>
+
+    <!-- ============ PLEIN ÉCRAN ============ -->
+    <div class="col" id="colPlein">
+      <div class="colTitle">Plein écran <span>— ce que serait le changement</span></div>
+      <div class="phone" data-reperes="oui">
+        <div class="phoneIn">
+          <div class="fullHull">
+            <div class="sheet">
+              <div class="sheetHead">
+                <span class="avatar">T</span>
+                <span><span class="eyebrow">Voter pour · Yamoussoukro</span><h2>Tekpo</h2></span>
+                <button type="button" class="x" aria-label="Fermer">✕</button>
+              </div>
+              <div class="sheetBody">
+                <div class="group">
+                  <span class="label">Nombre de votes</span>
+                  <div class="stepper"><button type="button">−</button><input class="num" value="3" readonly><button type="button">+</button></div>
+                </div>
+                <div class="group">
+                  <span class="label">Payer avec</span>
+                  <div class="pay">
+                    <button type="button" class="pWave" aria-pressed="true"><span class="plate">WAVE</span>Wave</button>
+                    <button type="button" class="pOm"><span class="plate">OM</span>Orange Money</button>
+                    <button type="button" class="pMtn"><span class="plate">MTN</span>MTN MoMo</button>
+                  </div>
+                </div>
+                <div class="group">
+                  <span class="label">Numéro qui paie</span>
+                  <div class="field">
+                    <button type="button" class="dial">🇨🇮 <span class="num">+225</span> ▾</button>
+                    <input class="num" value="07 07 12 34 56" readonly>
+                  </div>
+                  <p class="hint">Le numéro qui recevra la demande de paiement.</p>
+                </div>
+              </div>
+              <div class="sheetFoot">
+                <div class="recap"><span class="num">3 × 200 FCFA</span><b class="num">600 FCFA</b></div>
+                <button type="button" class="cta num">Payer 600 FCFA</button>
+                <p class="sim">Vous validerez le paiement chez votre opérateur.</p>
+              </div>
+            </div>
+          </div>
+          <span class="tag tagOk" style="top:14px;right:52px">seule sortie : la croix</span>
+        </div>
+      </div>
+      <p class="hint" style="max-width:375px;text-align:center">
+        Toute la hauteur, aucun arrondi, aucune ombre. On ne peut sortir que par la croix —
+        donc plus de fermeture par mégarde.
+      </p>
+    </div>
+  </div>
+
+  <div class="diff">
+    <h2>Ce que ça change vraiment, sur téléphone</h2>
+    <table>
+      <tr><th>Critère</th><th>Flottant</th><th>Plein écran</th></tr>
+      <tr>
+        <td class="k">Hauteur utile</td>
+        <td>90 % de l'écran</td>
+        <td>100 % — soit <b>70 px</b> de plus</td>
+      </tr>
+      <tr>
+        <td class="k">Fermeture accidentelle</td>
+        <td class="vrai">Possible : la bande du haut referme</td>
+        <td class="faux">Impossible : seule la croix ferme</td>
+      </tr>
+      <tr>
+        <td class="k">Défilement interne</td>
+        <td>Oui, dans la feuille</td>
+        <td>Oui, dans la page — mais 70 px de moins à faire défiler</td>
+      </tr>
+      <tr>
+        <td class="k">On voit où on est</td>
+        <td>Oui : la page de vote reste visible derrière</td>
+        <td>Non : l'écran de paiement remplace tout</td>
+      </tr>
+      <tr>
+        <td class="k">Sur ordinateur</td>
+        <td>Feuille centrée de 440 px, agréable</td>
+        <td class="vrai">Contenu étiré sur tout l'écran</td>
+      </tr>
+      <tr>
+        <td class="k">Travail à faire</td>
+        <td>Rien, c'est l'état actuel</td>
+        <td class="faux">Une ligne du <code>.env</code> à retirer, aucun code</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<script>
+const vues = { deux: ['colFlottant', 'colPlein'], flottant: ['colFlottant'], plein: ['colPlein'] };
+document.getElementById('segVue').addEventListener('click', (event) => {
+  const button = event.target.closest('button[data-vue]');
+  if (!button) return;
+  for (const other of event.currentTarget.querySelectorAll('button')) {
+    other.setAttribute('aria-pressed', String(other === button));
+  }
+  const montre = vues[button.dataset.vue];
+  for (const id of ['colFlottant', 'colPlein']) {
+    document.getElementById(id).hidden = !montre.includes(id);
+  }
+});
+
+document.getElementById('segRep').addEventListener('click', (event) => {
+  const button = event.target.closest('button[data-rep]');
+  if (!button) return;
+  for (const other of event.currentTarget.querySelectorAll('button')) {
+    other.setAttribute('aria-pressed', String(other === button));
+  }
+  for (const phone of document.querySelectorAll('.phone')) {
+    phone.dataset.reperes = button.dataset.rep;
+  }
+});
+</script>

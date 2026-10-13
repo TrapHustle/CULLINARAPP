@@ -12,9 +12,16 @@ const loadView = cache(getPublicVoteView);
 
 export async function generateMetadata(): Promise<Metadata> {
   const view = await loadView();
+  const title = `${view.eventName} - Vote en ligne • INOVYX TECH`;
+  const description = `Votez pour votre candidat préféré : ${view.price} FCFA le vote.`;
+  // Image de l'aperçu partagé (WhatsApp, Facebook…) : le logo Inovyx, en
+  // carré sur fond blanc pour ne pas être rogné.
+  const image = "/brand/inovyx-share.png";
   return {
-    title: `${view.eventName} — Vote du public`,
-    description: `Votez pour votre candidat préféré : ${view.price} FCFA le vote.`,
+    title,
+    description,
+    openGraph: { title, description, images: [image], type: "website" },
+    twitter: { card: "summary_large_image", title, description, images: [image] },
   };
 }
 

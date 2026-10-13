@@ -105,7 +105,7 @@ export async function startPublicVotePaymentAction(input: {
 
   const phone = normalizePhone(parsed.data.phone);
   if (!phone) {
-    return { ok: false, error: "Numéro invalide. Format attendu : 07 00 00 00 00." };
+    return { ok: false, error: "Numéro invalide. Attendu : 07 00 00 00 00, ou le numéro complet avec son indicatif." };
   }
 
   const session = await getOrCreateSession();

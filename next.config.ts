@@ -33,6 +33,12 @@ const nextConfig: NextConfig = {
   // Le client Postgres ouvre des sockets : il doit rester externe au bundle
   // serveur pour ne pas être transformé par le bundler.
   serverExternalPackages: ["pg", "@prisma/adapter-pg"],
+
+  // Adresse à partager au public : elle affiche la page de vote sans
+  // redirection, l'adresse reste celle-ci dans le navigateur.
+  async rewrites() {
+    return [{ source: "/talent-traiteur-vote-en-ligne", destination: "/voter" }];
+  },
 };
 
 export default nextConfig;

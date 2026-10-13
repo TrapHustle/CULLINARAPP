@@ -1,9 +1,12 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 
-// En développement, Next.js recharge les modules à chaud : sans ce singleton,
-// chaque rechargement ouvrirait une nouvelle connexion jusqu'à épuisement des
-// connexions autorisées par l'hébergeur.
+// Un seul client pour tout le processus, gardé sur `globalThis`.
+//
+// En développement, Next.js recharge les modules à chaud ; en production, le
+// serveur tourne en continu derrière pm2. Dans les deux cas, créer un client par
+// appel ouvrirait un nouveau pool jamais refermé, jusqu'à épuiser les connexions
+// autorisées par l'hébergeur — et plus personne ne pourrait se connecter.
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 function createClient(): PrismaClient {
@@ -22,9 +25,7 @@ function createClient(): PrismaClient {
     log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
   });
 
-  if (process.env.NODE_ENV !== "production") {
-    globalForPrisma.prisma = client;
-  }
+  globalForPrisma.prisma = client;
   return client;
 }
 

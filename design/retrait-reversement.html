@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="fr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Retrait et reversement</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tinos:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Deux écrans : la demande de retrait côté organisateur (tiroir du panneau
+   public /voter) et sa validation côté administration. Jetons repris de
+   design/espace-organisateur.html. */
+:root {
+  --bg: #15151a;
+  --bg2: #1d1d23;
+  --panel: #1b1b20;
+  --line: rgba(212, 175, 55, 0.2);
+  --gold: #d4af37;
+  --accent: #d4af37;
+  --on-accent: #15151a;
+  --txt: #f4f1e8;
+  --dim: #b9b3a4;
+  --faint: #8c877c;
+  --surface: rgba(255, 255, 255, 0.05);
+  --ok: #6fcf97;
+  --warn: #e0b76c;
+  --danger: #e06c6c;
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  --display: "Tinos", "Times New Roman", Times, serif;
+  --body: "Tinos", "Times New Roman", Times, serif;
+  --tool: "IBM Plex Sans", "Segoe UI", Roboto, system-ui, sans-serif;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f9f6ef; --bg2: #f1ebdd; --panel: #fffdf7;
+    --line: rgba(154, 113, 21, 0.22); --gold: #9a7115; --accent: #86620f;
+    --on-accent: #fffdf7; --txt: #211c13; --dim: #5e5649; --faint: #837969;
+    --surface: rgba(33, 28, 19, 0.05); --ok: #247a4a; --warn: #8a6410; --danger: #b63e3e;
+    --shadow: 0 12px 34px rgba(73, 54, 10, 0.14);
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f9f6ef; --bg2: #f1ebdd; --panel: #fffdf7;
+  --line: rgba(154, 113, 21, 0.22); --gold: #9a7115; --accent: #86620f;
+  --on-accent: #fffdf7; --txt: #211c13; --dim: #5e5649; --faint: #837969;
+  --surface: rgba(33, 28, 19, 0.05); --ok: #247a4a; --warn: #8a6410; --danger: #b63e3e;
+  --shadow: 0 12px 34px rgba(73, 54, 10, 0.14);
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--txt);
+  font-family: var(--body); font-size: 15px; line-height: 1.5;
+}
+h1, h2, h3 {
+  font-family: var(--display); font-weight: 700; margin: 0;
+  text-wrap: balance; font-variant-numeric: lining-nums;
+}
+p { margin: 0; }
+button { font: inherit; color: inherit; cursor: pointer; }
+input, textarea { font: inherit; color: inherit; }
+code { font-family: var(--tool); font-size: 0.9em; }
+.num { font-variant-numeric: lining-nums tabular-nums; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* ---------- Barre d'atelier ---------- */
+.atelier {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px;
+  padding: 9px 16px; background: var(--panel);
+  border-bottom: 1px solid var(--line); font-family: var(--tool); font-size: 12px;
+}
+.atelier .brand { font-family: var(--display); font-size: 15px; font-weight: 700; color: var(--gold); }
+.ctrl { display: flex; align-items: center; gap: 7px; color: var(--faint); }
+.seg { display: flex; border: 1px solid var(--line); border-radius: 99px; overflow: hidden; }
+.seg button {
+  border: 0; background: transparent; padding: 4px 11px;
+  font-family: var(--tool); font-size: 11.5px; color: var(--dim);
+}
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); font-weight: 600; }
+
+.stage { padding: 22px 16px 64px; }
+.screen[hidden] { display: none; }
+.note {
+  max-width: 760px; margin: 0 auto 18px; font-family: var(--tool); font-size: 12px;
+  color: var(--faint); border-left: 2px solid var(--line); padding-left: 10px; line-height: 1.6;
+}
+
+/* ---------- Écran organisateur : tiroir ---------- */
+.drawer {
+  max-width: 430px; margin: 0 auto;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: var(--shadow); overflow: hidden;
+}
+.drawerHead {
+  display: flex; align-items: center; gap: 10px;
+  padding: 13px 16px; border-bottom: 1px solid var(--line);
+}
+.drawerHead h2 { flex: 1; font-size: 19px; color: var(--gold); }
+.iconBtn {
+  border: 1px solid var(--line); background: transparent; border-radius: 99px;
+  width: 30px; height: 30px; display: grid; place-items: center; color: var(--dim);
+}
+.drawerBody { padding: 16px; display: flex; flex-direction: column; gap: 18px; }
+
+.money {
+  border: 1px solid var(--line); border-radius: 12px; background: var(--bg2);
+  padding: 16px; display: flex; flex-direction: column; gap: 4px;
+}
+.money .cap { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); }
+.money .big { font-family: var(--display); font-size: 34px; font-weight: 700; line-height: 1.05; }
+.money .sub { font-size: 12.5px; color: var(--faint); }
+
+.split { display: flex; flex-direction: column; gap: 10px; }
+.splitRow { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-size: 14px; }
+.splitRow .k { color: var(--dim); display: flex; align-items: center; gap: 7px; }
+.splitRow .k i { width: 9px; height: 9px; border-radius: 2px; display: block; flex: none; }
+.splitRow .v { font-family: var(--display); font-size: 18px; font-weight: 700; }
+.bar { display: flex; height: 8px; border-radius: 99px; overflow: hidden; background: var(--surface); }
+.bar i { display: block; height: 100%; }
+.cInovyx { background: var(--gold); }
+.cOrga { background: var(--ok); }
+
+/* Solde disponible : le bloc nouveau */
+.wallet {
+  border: 1px solid var(--line); border-radius: 12px; background: var(--bg2); padding: 15px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.wallet h3 { font-size: 16px; }
+.ledger { display: flex; flex-direction: column; gap: 5px; font-size: 13.5px; }
+.ledger div { display: flex; justify-content: space-between; gap: 10px; }
+.ledger .k { color: var(--dim); }
+.ledger .v { font-variant-numeric: lining-nums tabular-nums; }
+.ledger .minus .v { color: var(--faint); }
+.ledger .sum {
+  border-top: 1px solid var(--line); margin-top: 3px; padding-top: 8px; align-items: baseline;
+}
+.ledger .sum .k { color: var(--txt); font-weight: 600; }
+.ledger .sum .v { font-family: var(--display); font-size: 24px; font-weight: 700; color: var(--ok); }
+
+.btn {
+  border: 0; border-radius: 10px; padding: 11px 16px;
+  background: var(--accent); color: var(--on-accent);
+  font-family: var(--tool); font-size: 14px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btnGhost { background: transparent; color: var(--dim); border: 1px solid var(--line); }
+.btnDanger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+.btnOk { background: var(--ok); color: var(--on-accent); }
+.btnRow { display: flex; gap: 8px; flex-wrap: wrap; }
+.btnRow .btn { flex: 1 1 auto; }
+
+/* Formulaire de retrait */
+.form { display: flex; flex-direction: column; gap: 15px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.label { font-family: var(--tool); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--faint); }
+.labelRow { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.linkBtn {
+  border: 0; background: transparent; padding: 0; color: var(--gold);
+  font-family: var(--tool); font-size: 12px; text-decoration: underline;
+}
+.inputWrap { position: relative; display: flex; align-items: center; }
+.inputWrap .unit {
+  position: absolute; right: 13px; font-family: var(--tool); font-size: 13px;
+  color: var(--faint); pointer-events: none;
+}
+input[type="text"], input[type="tel"], textarea {
+  width: 100%; background: var(--bg2); border: 1px solid var(--line); border-radius: 10px;
+  padding: 11px 13px; font-family: var(--display); font-size: 17px; font-weight: 700;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+input.moneyIn { padding-right: 62px; }
+textarea { font-family: var(--body); font-size: 14px; font-weight: 400; resize: vertical; min-height: 64px; }
+.hint { font-family: var(--tool); font-size: 11.5px; color: var(--faint); line-height: 1.5; }
+
+.methods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.method { position: relative; }
+.method input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.method span {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  border: 1px solid var(--line); border-radius: 10px; padding: 11px 6px;
+  font-family: var(--tool); font-size: 11.5px; text-align: center; color: var(--dim);
+}
+.method b {
+  width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center;
+  font-family: var(--tool); font-size: 10px; font-weight: 700; color: #fff;
+}
+.mWave b { background: #1dc8f0; color: #04303b; }
+.mOm b { background: #ff7900; }
+.mMtn b { background: #ffcc00; color: #2b2300; }
+.method input:checked + span { border-color: var(--gold); color: var(--txt); background: var(--surface); }
+.method input:focus-visible + span { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+.recap {
+  border: 1px dashed var(--line); border-radius: 10px; padding: 12px 13px;
+  display: flex; flex-direction: column; gap: 5px; font-size: 13.5px;
+}
+.recap div { display: flex; justify-content: space-between; gap: 10px; }
+.recap .k { color: var(--faint); font-family: var(--tool); font-size: 12px; }
+.recap .v { font-weight: 700; font-variant-numeric: lining-nums tabular-nums; }
+
+
+/* Accusé de réception */
+.done { display: flex; flex-direction: column; gap: 10px; align-items: center; text-align: center; padding: 4px 0; }
+.doneIcon {
+  width: 46px; height: 46px; border-radius: 99px; display: grid; place-items: center;
+  border: 1px solid var(--warn); color: var(--warn);
+}
+.done h3 { font-size: 20px; }
+.done .amt { font-family: var(--display); font-size: 28px; font-weight: 700; }
+
+/* Historique */
+.listTitle { font-size: 17px; margin-bottom: 4px; }
+.list { display: flex; flex-direction: column; }
+.row {
+  display: grid; grid-template-columns: 1fr auto; gap: 2px 10px;
+  padding: 11px 0; border-bottom: 1px solid var(--line);
+}
+.row[hidden] { display: none; }
+.row .name { font-family: var(--display); font-size: 16px; font-weight: 700; }
+.row .meta { font-family: var(--tool); font-size: 11.5px; color: var(--faint); overflow-wrap: anywhere; }
+.row .state { font-family: var(--tool); font-size: 11.5px; text-align: right; white-space: nowrap; }
+.sOk { color: var(--ok); }
+.sPend { color: var(--warn); }
+.sFail { color: var(--danger); }
+
+/* ---------- Écran administration ---------- */
+.dash {
+  max-width: 860px; margin: 0 auto 16px;
+  border-bottom: 1px solid var(--line); padding-bottom: 9px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 7px 16px;
+}
+.dash .logo {
+  font-family: var(--display); font-size: 16px; font-weight: 700; color: var(--gold);
+  display: flex; align-items: center; gap: 7px;
+}
+.dash nav { display: flex; flex-wrap: wrap; gap: 4px 15px; font-family: var(--tool); font-size: 12.5px; }
+.dash nav a { color: var(--dim); text-decoration: none; padding-bottom: 3px; border-bottom: 2px solid transparent; }
+.dash nav a[aria-current="page"] { color: var(--gold); border-bottom-color: var(--gold); font-weight: 600; }
+.admin { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.adminHead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+.adminHead h1 { font-size: 27px; color: var(--gold); }
+.adminHead p { font-family: var(--tool); font-size: 12.5px; color: var(--faint); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.tile {
+  border: 1px solid var(--line); border-radius: 12px; background: var(--panel);
+  padding: 13px 14px; display: flex; flex-direction: column; gap: 2px;
+}
+.tile .n { font-family: var(--display); font-size: 25px; font-weight: 700; }
+.tile .l { font-family: var(--tool); font-size: 11.5px; color: var(--faint); }
+.tile.pend .n { color: var(--warn); }
+.tile.ok .n { color: var(--ok); }
+
+.card { border: 1px solid var(--line); border-radius: 14px; background: var(--panel); overflow: hidden; }
+.cardHead {
+  display: flex; align-items: center; gap: 9px;
+  padding: 13px 16px; border-bottom: 1px solid var(--line);
+}
+.cardHead h2 { flex: 1; font-size: 18px; color: var(--gold); }
+.cardHead .count { font-family: var(--tool); font-size: 11.5px; color: var(--faint); }
+
+.req { padding: 15px 16px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 11px; }
+.req:last-child { border-bottom: 0; }
+.reqTop { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.reqTop .amt {
+  font-family: var(--display); font-size: 24px; font-weight: 700;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.chip {
+  font-family: var(--tool); font-size: 10.5px; font-weight: 600; letter-spacing: 0.05em;
+  text-transform: uppercase; border-radius: 99px; padding: 3px 9px; border: 1px solid currentColor;
+}
+.chip.pend { color: var(--warn); }
+.chip.ok { color: var(--ok); }
+.chip.no { color: var(--danger); }
+.reqTop .when { margin-left: auto; font-family: var(--tool); font-size: 11.5px; color: var(--faint); }
+.pairs { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 9px 16px; }
+.pair { display: flex; flex-direction: column; gap: 1px; }
+.pair .k {
+  font-family: var(--tool); font-size: 10.5px; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--faint);
+}
+.pair .v { font-size: 15px; font-weight: 700; font-variant-numeric: lining-nums tabular-nums; }
+.pair .v small { font-family: var(--tool); font-size: 11px; font-weight: 400; color: var(--faint); }
+.copyBtn {
+  border: 0; background: transparent; padding: 0 0 0 6px; color: var(--gold);
+  font-family: var(--tool); font-size: 11px; text-decoration: underline;
+}
+.quote {
+  border-left: 2px solid var(--line); padding-left: 10px;
+  font-size: 13.5px; color: var(--dim); font-style: italic;
+}
+.reqActions { display: flex; flex-wrap: wrap; gap: 8px; }
+.reqActions[hidden] { display: none; }
+.reqActions .btn { padding: 9px 14px; font-size: 13px; }
+.reject {
+  display: flex; flex-direction: column; gap: 9px;
+  border: 1px solid var(--danger); border-radius: 10px; padding: 12px;
+}
+.reject[hidden] { display: none; }
+.settled { font-family: var(--tool); font-size: 11.5px; color: var(--faint); line-height: 1.5; }
+
+/* ---------- Aperçu du mail ---------- */
+.mail { max-width: 620px; margin: 0 auto; }
+.mailCard { border: 1px solid var(--line); border-radius: 14px; background: var(--panel); overflow: hidden; }
+.mailHead { padding: 13px 16px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 3px; }
+.mailHead .subj { font-family: var(--display); font-size: 17px; font-weight: 700; }
+.mailHead .addr { font-family: var(--tool); font-size: 11.5px; color: var(--faint); }
+.mailBody { padding: 16px; display: flex; flex-direction: column; gap: 13px; font-size: 14px; }
+.mailBody .pairs { gap: 11px 16px; }
+
+@media (max-width: 420px) {
+  .methods { grid-template-columns: 1fr; }
+  .method span { flex-direction: row; justify-content: flex-start; gap: 9px; }
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="atelier">
+  <span class="brand">Atelier</span>
+  <div class="ctrl">
+    <span>Thème</span>
+    <div class="seg" id="segTheme">
+      <button type="button" data-theme-set="dark" aria-pressed="true">Nuit</button>
+      <button type="button" data-theme-set="light" aria-pressed="false">Clair</button>
+    </div>
+  </div>
+  <div class="ctrl">
+    <span>Écran</span>
+    <div class="seg" id="segScreen">
+      <button type="button" data-screen="orga" aria-pressed="true">Organisateur</button>
+      <button type="button" data-screen="admin" aria-pressed="false">Administration</button>
+      <button type="button" data-screen="mail" aria-pressed="false">Le mail</button>
+    </div>
+  </div>
+  <div class="ctrl" id="ctrlStep">
+    <span>Étape</span>
+    <div class="seg" id="segStep">
+      <button type="button" data-step="solde" aria-pressed="true">Solde</button>
+      <button type="button" data-step="form" aria-pressed="false">Formulaire</button>
+      <button type="button" data-step="done" aria-pressed="false">En attente</button>
+    </div>
+  </div>
+</div>
+
+<div class="stage">
+
+  <!-- =============== ORGANISATEUR =============== -->
+  <section class="screen" id="scrOrga">
+    <p class="note">
+      Tiroir de l’espace organisateur, sur la page publique <code>/voter</code>. Le bloc
+      « Solde disponible », le formulaire et la liste « Mes retraits » s’ajoutent sous le partage
+      de recettes qui existe déjà. Le reste du panneau ne change pas.
+    </p>
+
+    <div class="drawer">
+      <div class="drawerHead">
+        <h2>Espace organisateur</h2>
+        <button type="button" class="iconBtn" aria-label="Fermer le panneau">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="drawerBody">
+        <!-- existant -->
+        <div class="money">
+          <span class="cap">Montant total collecté</span>
+          <span class="big num">1 240 000 FCFA</span>
+          <span class="sub num">6 200 voix payées en ligne · 418 paiements confirmés</span>
+        </div>
+
+        <div class="split">
+          <div class="splitRow">
+            <span class="k"><i class="cInovyx"></i>Part Inovyx Tech (10 %)</span>
+            <span class="v num">124 000 FCFA</span>
+          </div>
+          <div class="splitRow">
+            <span class="k"><i class="cOrga"></i>Revient à l’organisateur</span>
+            <span class="v num">1 116 000 FCFA</span>
+          </div>
+          <div class="bar" role="img" aria-label="10 % pour Inovyx Tech, le reste pour l’organisateur">
+            <i class="cInovyx" style="width:10%"></i><i class="cOrga" style="width:90%"></i>
+          </div>
+        </div>
+
+        <!-- nouveau : solde et bouton -->
+        <div class="wallet" id="stepSolde">
+          <h3>Solde disponible</h3>
+          <div class="ledger">
+            <div><span class="k">Revient à l’organisateur</span><span class="v">1 116 000</span></div>
+            <div class="minus"><span class="k">Déjà reversé</span><span class="v">− 450 000</span></div>
+            <div class="minus"><span class="k">Retraits en attente</span><span class="v">− 200 000</span></div>
+            <div class="sum"><span class="k">Disponible</span><span class="v">466 000 FCFA</span></div>
+          </div>
+          <button type="button" class="btn" data-goto="form">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 4v12m0 0l-4.5-4.5M12 16l4.5-4.5M4 20h16"/>
+            </svg>
+            Demander un retrait
+          </button>
+          <p class="hint">Un seul retrait à la fois : tant qu’une demande est en attente, le bouton reste inactif.</p>
+        </div>
+
+        <!-- nouveau : formulaire -->
+        <form class="form" id="stepForm" hidden>
+          <h3 style="font-size:17px">Demande de retrait</h3>
+
+          <div class="field">
+            <div class="labelRow">
+              <label class="label" for="amount">Montant à retirer</label>
+              <button type="button" class="linkBtn" id="allBtn">Tout retirer</button>
+            </div>
+            <div class="inputWrap">
+              <input id="amount" class="moneyIn" type="text" inputmode="numeric" value="250 000" autocomplete="off">
+              <span class="unit">FCFA</span>
+            </div>
+            <p class="hint">Entre <span class="num">500</span> et <span class="num">466 000</span> FCFA — votre solde disponible.</p>
+          </div>
+
+          <div class="field">
+            <span class="label" id="lblMethod">Moyen de paiement</span>
+            <div class="methods" role="radiogroup" aria-labelledby="lblMethod">
+              <label class="method mWave"><input type="radio" name="m" checked><span><b>W</b>Wave</span></label>
+              <label class="method mOm"><input type="radio" name="m"><span><b>OM</b>Orange Money</span></label>
+              <label class="method mMtn"><input type="radio" name="m"><span><b>MTN</b>MTN MoMo</span></label>
+            </div>
+            <p class="hint">
+              Les mêmes opérateurs que la passerelle de paiement. La carte bancaire n’est pas
+              proposée : on ne reverse pas sur une carte.
+            </p>
+          </div>
+
+          <div class="field">
+            <label class="label" for="phone">Numéro qui reçoit l’argent</label>
+            <input id="phone" type="tel" inputmode="numeric" value="07 07 12 34 56" autocomplete="tel">
+            <p class="hint">10 chiffres. Vérifiez-le : c’est sur ce numéro que le virement sera fait.</p>
+          </div>
+
+          <div class="field">
+            <label class="label" for="note">Message (facultatif)</label>
+            <textarea id="note" placeholder="Une précision pour l’équipe Inovyx…"></textarea>
+          </div>
+
+          <div class="recap">
+            <div><span class="k">Montant</span><span class="v num">250 000 FCFA</span></div>
+            <div><span class="k">Vers</span><span class="v">Wave · <span class="num">07 07 12 34 56</span></span></div>
+            <div><span class="k">Solde après retrait</span><span class="v num">216 000 FCFA</span></div>
+          </div>
+
+          <div class="btnRow">
+            <button type="button" class="btn btnGhost" data-goto="solde">Annuler</button>
+            <button type="submit" class="btn">Envoyer la demande</button>
+          </div>
+        </form>
+
+        <!-- nouveau : accusé de réception -->
+        <div class="wallet" id="stepDone" hidden>
+          <div class="done">
+            <span class="doneIcon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg>
+            </span>
+            <h3>Demande en attente</h3>
+            <span class="amt num">250 000 FCFA</span>
+            <p class="hint">Wave · <span class="num">07 07 12 34 56</span> · demandée le <span class="num">7 octobre à 14 h 32</span></p>
+            <p class="hint">Votre demande a été transmise. Le passage en « reversé » s’affichera ici.</p>
+          </div>
+          <div class="ledger">
+            <div class="sum"><span class="k">Solde disponible</span><span class="v">216 000 FCFA</span></div>
+          </div>
+          <button type="button" class="btn" disabled>Demander un retrait</button>
+          <p class="hint">Inactif : une demande est déjà en attente.</p>
+        </div>
+
+        <!-- historique -->
+        <div>
+          <h3 class="listTitle">Mes retraits</h3>
+          <div class="list">
+            <div class="row" id="rowPending" hidden>
+              <span class="name num">250 000 FCFA</span>
+              <span class="state sPend">En attente</span>
+              <span class="meta">Wave · 07 •• •• 56 · 7 oct. 14 h 32</span>
+              <span></span>
+            </div>
+            <div class="row">
+              <span class="name num">300 000 FCFA</span>
+              <span class="state sOk">Reversé</span>
+              <span class="meta">Orange Money · 07 •• •• 56 · reversé le 2 oct.</span>
+              <span></span>
+            </div>
+            <div class="row">
+              <span class="name num">150 000 FCFA</span>
+              <span class="state sOk">Reversé</span>
+              <span class="meta">Wave · 07 •• •• 56 · reversé le 24 sept.</span>
+              <span></span>
+            </div>
+            <div class="row">
+              <span class="name num">80 000 FCFA</span>
+              <span class="state sFail">Refusé</span>
+              <span class="meta">MTN MoMo · 05 •• •• 11 · « Numéro erroné, merci de recommencer »</span>
+              <span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =============== ADMINISTRATION =============== -->
+  <section class="screen" id="scrAdmin" hidden>
+    <p class="note">
+      Nouvelle page du dashboard, à côté d’Archives et Résultats. C’est ici qu’on valide le
+      reversement <strong>après</strong> l’avoir fait chez l’opérateur : l’application n’envoie
+      jamais d’argent elle-même. Le numéro est affiché en entier, contrairement au panneau public.
+    </p>
+
+    <div class="dash">
+      <span class="logo">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 14a4 4 0 01-1-7.9A4 4 0 0112 4a4 4 0 017 2.1A4 4 0 0118 14z"/><path d="M6 14h12v5a2 2 0 01-2 2H8a2 2 0 01-2-2z"/>
+        </svg>
+        Concours culinaire
+      </span>
+      <nav aria-label="Navigation du dashboard">
+        <a href="#">Pilotage</a>
+        <a href="#">Configuration</a>
+        <a href="#">Connexion</a>
+        <a href="#">Résultats</a>
+        <a href="#">Vote public</a>
+        <a href="#">Archives</a>
+        <a href="#" aria-current="page">Reversements</a>
+      </nav>
+    </div>
+
+    <div class="admin">
+      <div class="adminHead">
+        <h1>Reversements</h1>
+        <p>Demandes de retrait de l’organisateur</p>
+      </div>
+
+      <div class="tiles">
+        <div class="tile pend"><span class="n num">1</span><span class="l">En attente</span></div>
+        <div class="tile ok"><span class="n num">450 000</span><span class="l">Déjà reversé (FCFA)</span></div>
+        <div class="tile"><span class="n num">466 000</span><span class="l">Solde organisateur (FCFA)</span></div>
+      </div>
+
+      <div class="card">
+        <div class="cardHead">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" style="color:var(--gold)">
+            <circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/>
+          </svg>
+          <h2>À traiter</h2>
+          <span class="count">1 demande</span>
+        </div>
+
+        <div class="req">
+          <div class="reqTop">
+            <span class="amt">250 000 FCFA</span>
+            <span class="chip pend">En attente</span>
+            <span class="when">Demandée le 7 oct. 2026 à 14 h 32</span>
+          </div>
+          <div class="pairs">
+            <div class="pair"><span class="k">Moyen de paiement</span><span class="v">Wave</span></div>
+            <div class="pair">
+              <span class="k">Numéro à créditer</span>
+              <span class="v">07 07 12 34 56<button type="button" class="copyBtn">copier</button></span>
+            </div>
+            <div class="pair"><span class="k">Solde après reversement</span><span class="v">216 000 <small>FCFA</small></span></div>
+          </div>
+          <p class="quote">« Merci de faire le virement avant vendredi si possible. »</p>
+
+          <div class="reqActions" id="actRow">
+            <button type="button" class="btn btnOk" data-demo="Marquerait la demande comme reversée.">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+              J’ai fait le virement
+            </button>
+            <button type="button" class="btn btnDanger" data-reject="open">Refuser</button>
+          </div>
+
+          <div class="reject" id="rejectBox" hidden>
+            <label class="label" for="why">Motif du refus — l’organisateur le verra</label>
+            <textarea id="why" placeholder="Ex. : numéro erroné, montant supérieur au solde…"></textarea>
+            <div class="reqActions">
+              <button type="button" class="btn btnDanger" data-demo="Refuserait la demande avec ce motif.">Confirmer le refus</button>
+              <button type="button" class="btn btnGhost" data-reject="close">Annuler</button>
+            </div>
+          </div>
+          <p class="hint">
+            Confirmez seulement après avoir vraiment envoyé l’argent : l’application ne vérifie
+            rien chez l’opérateur.
+          </p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="cardHead">
+          <h2>Historique</h2>
+          <span class="count">3 demandes traitées</span>
+        </div>
+        <div class="req">
+          <div class="reqTop">
+            <span class="amt">300 000 FCFA</span>
+            <span class="chip ok">Reversé</span>
+            <span class="when">Demandée le 1<sup>er</sup> oct.</span>
+          </div>
+          <div class="pairs">
+            <div class="pair"><span class="k">Moyen de paiement</span><span class="v">Orange Money</span></div>
+            <div class="pair"><span class="k">Numéro crédité</span><span class="v">07 07 12 34 56</span></div>
+          </div>
+          <p class="settled">Reversé le 2 oct. 2026 à 9 h 10 — « Virement OM, réf. OM-884210 ».</p>
+        </div>
+        <div class="req">
+          <div class="reqTop">
+            <span class="amt">150 000 FCFA</span>
+            <span class="chip ok">Reversé</span>
+            <span class="when">Demandée le 23 sept.</span>
+          </div>
+          <div class="pairs">
+            <div class="pair"><span class="k">Moyen de paiement</span><span class="v">Wave</span></div>
+            <div class="pair"><span class="k">Numéro crédité</span><span class="v">07 07 12 34 56</span></div>
+          </div>
+          <p class="settled">Reversé le 24 sept. 2026 à 11 h 02.</p>
+        </div>
+        <div class="req">
+          <div class="reqTop">
+            <span class="amt">80 000 FCFA</span>
+            <span class="chip no">Refusé</span>
+            <span class="when">Demandée le 18 sept.</span>
+          </div>
+          <div class="pairs">
+            <div class="pair"><span class="k">Moyen de paiement</span><span class="v">MTN MoMo</span></div>
+            <div class="pair"><span class="k">Numéro demandé</span><span class="v">05 04 88 21 11</span></div>
+          </div>
+          <p class="settled">Refusé le 18 sept. 2026 — « Numéro erroné, merci de recommencer ».</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =============== LE MAIL =============== -->
+  <section class="screen" id="scrMail" hidden>
+    <p class="note">
+      Le mail envoyé automatiquement à la soumission. Il contient tout ce qu’il faut pour faire
+      le virement sans ouvrir l’application.
+    </p>
+    <div class="mail">
+      <div class="mailCard">
+        <div class="mailHead">
+          <span class="subj">Demande de retrait — 250 000 FCFA — Talent Traiteur 2026</span>
+          <span class="addr">À : jonathan.kouame@inovyx.net</span>
+          <span class="addr">De : Digitalyx Vote &lt;notifications@…&gt;</span>
+        </div>
+        <div class="mailBody">
+          <p>L’organisateur de <b>Talent Traiteur 2026 · Épisode Abidjan</b> demande un retrait.</p>
+          <div class="pairs">
+            <div class="pair"><span class="k">Montant</span><span class="v">250 000 FCFA</span></div>
+            <div class="pair"><span class="k">Moyen de paiement</span><span class="v">Wave</span></div>
+            <div class="pair"><span class="k">Numéro à créditer</span><span class="v">07 07 12 34 56</span></div>
+            <div class="pair"><span class="k">Demandé le</span><span class="v">7 oct. 2026 à 14 h 32</span></div>
+            <div class="pair"><span class="k">Solde avant</span><span class="v">466 000 <small>FCFA</small></span></div>
+            <div class="pair"><span class="k">Solde après</span><span class="v">216 000 <small>FCFA</small></span></div>
+          </div>
+          <p class="quote">« Merci de faire le virement avant vendredi si possible. »</p>
+          <p class="hint">
+            Une fois le virement fait, marquez la demande comme reversée dans
+            Administration → Reversements.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+const root = document.documentElement;
+
+document.getElementById('segTheme').addEventListener('click', (event) => {
+  const button = event.target.closest('button[data-theme-set]');
+  if (!button) return;
+  root.dataset.theme = button.dataset.themeSet;
+  for (const other of event.currentTarget.querySelectorAll('button')) {
+    other.setAttribute('aria-pressed', String(other === button));
+  }
+});
+
+const screens = { orga: 'scrOrga', admin: 'scrAdmin', mail: 'scrMail' };
+document.getElementById('segScreen').addEventListener('click', (event) => {
+  const button = event.target.closest('button[data-screen]');
+  if (!button) return;
+  for (const other of event.currentTarget.querySelectorAll('button')) {
+    other.setAttribute('aria-pressed', String(other === button));
+  }
+  for (const [name, id] of Object.entries(screens)) {
+    document.getElementById(id).hidden = name !== button.dataset.screen;
+  }
+  document.getElementById('ctrlStep').style.visibility =
+    button.dataset.screen === 'orga' ? 'visible' : 'hidden';
+});
+
+const steps = { solde: 'stepSolde', form: 'stepForm', done: 'stepDone' };
+function showStep(step) {
+  for (const [name, id] of Object.entries(steps)) {
+    document.getElementById(id).hidden = name !== step;
+  }
+  document.getElementById('rowPending').hidden = step !== 'done';
+  for (const button of document.querySelectorAll('#segStep button')) {
+    button.setAttribute('aria-pressed', String(button.dataset.step === step));
+  }
+}
+document.getElementById('segStep').addEventListener('click', (event) => {
+  const button = event.target.closest('button[data-step]');
+  if (button) showStep(button.dataset.step);
+});
+document.addEventListener('click', (event) => {
+  const goto = event.target.closest('[data-goto]');
+  if (goto) showStep(goto.dataset.goto);
+
+  const reject = event.target.closest('[data-reject]');
+  if (reject) {
+    const open = reject.dataset.reject === 'open';
+    document.getElementById('rejectBox').hidden = !open;
+    document.getElementById('actRow').hidden = open;
+  }
+
+  const demo = event.target.closest('[data-demo]');
+  if (demo) window.alert('Maquette : ' + demo.dataset.demo);
+});
+
+document.getElementById('stepForm').addEventListener('submit', (event) => {
+  event.preventDefault();
+  showStep('done');
+});
+document.getElementById('allBtn').addEventListener('click', () => {
+  document.getElementById('amount').value = '466 000';
+});
+</script>

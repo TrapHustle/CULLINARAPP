@@ -15,6 +15,9 @@
   --paper: #1b1b20;
   --plate: #ffffff;
   --line: rgba(212, 175, 55, 0.2);
+  /* Bord de ce qui se touche : franc. `--line` reste pour les filets. */
+  --edge: rgba(212, 175, 55, 0.5);
+  --press: rgba(212, 175, 55, 0.18);
   --gold: #d4af37;
   --gold-soft: #e8cd72;
   --accent: #d4af37;
@@ -25,6 +28,7 @@
   --surface: rgba(255, 255, 255, 0.05);
   --scrim: rgba(0, 0, 0, 0.6);
   --ok: #6fcf97;
+  --warn: #e0b76c;
   --danger: #e06c6c;
   --shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
   --display: "Times New Roman", Times, "Liberation Serif", serif;
@@ -50,6 +54,8 @@
   --panel: #ffffff;
   --paper: #fffdf7;
   --line: rgba(154, 113, 21, 0.22);
+  --edge: rgba(154, 113, 21, 0.52);
+  --press: rgba(154, 113, 21, 0.16);
   --gold: #9a7115;
   --gold-soft: #75540d;
   --accent: #86620f;
@@ -60,6 +66,7 @@
   --surface: rgba(33, 28, 19, 0.05);
   --scrim: rgba(33, 28, 19, 0.35);
   --ok: #247a4a;
+  --warn: #8a6410;
   --danger: #b63e3e;
   --shadow: 0 12px 34px rgba(73, 54, 10, 0.14);
 
@@ -519,19 +526,53 @@
   align-items: flex-end;
   justify-content: center;
 }
+/* Tête et pied ne défilent pas : le montant et le bouton Payer restent
+   visibles quelle que soit la hauteur de l'écran. */
 .sheet {
+  position: relative;
   width: 100%;
   max-width: 440px;
   max-height: 90dvh;
-  overflow: auto;
+  overflow: hidden;
   background: var(--panel);
   border-radius: 22px 22px 0 0;
-  padding: 18px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow);
+  animation: up 0.22s ease-out;
+}
+.sheetBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 16px;
   display: flex;
   flex-direction: column;
   gap: 18px;
-  box-shadow: var(--shadow);
-  animation: up 0.22s ease-out;
+}
+.sheetFoot {
+  flex: none;
+  border-top: 1px solid var(--line);
+  background: inherit;
+  padding: 12px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+/* Détail du calcul face au total, au-dessus du bouton. */
+.recap {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--dim);
+}
+.recap b {
+  font-family: var(--display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--txt);
 }
 .menu .sheet {
   background: var(--paper);
@@ -543,7 +584,13 @@
   }
   .sheet {
     border-radius: 22px;
+    max-height: calc(100dvh - 32px);
+  }
+  .sheetBody {
     padding: 22px;
+  }
+  .sheetFoot {
+    padding: 14px 22px calc(16px + env(safe-area-inset-bottom, 0px));
   }
 }
 @keyframes up {
@@ -557,9 +604,12 @@
   }
 }
 .sheetHead {
+  flex: none;
   display: flex;
   align-items: center;
   gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--line);
 }
 .sheetHead .avatar {
   width: 48px;
@@ -573,8 +623,8 @@
 .x {
   margin-left: auto;
   flex: none;
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: 1px solid var(--line);
   background: transparent;
@@ -622,26 +672,100 @@
   -webkit-appearance: none;
   margin: 0;
 }
-.chips {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
-}
-.chip {
-  border: 1px solid var(--line);
+/* Pays du numéro : drapeau et indicatif collés au champ, liste au clic. */
+.pickerBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  height: 100%;
+  padding: 0 10px 0 0;
+  border: 0;
+  border-right: 1px solid var(--line);
   background: transparent;
-  border-radius: 10px;
-  padding: 7px 0;
-  font-size: 13px;
+  font-size: 16px;
+  white-space: nowrap;
 }
-.chip[aria-pressed="true"] {
-  border-color: var(--gold);
+.pickerBtn .dial {
+  color: var(--dim);
+  font-size: 15px;
+}
+.pickerBtn svg {
+  color: var(--faint);
+}
+.picker {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+}
+.menu .picker {
+  background: var(--paper);
+}
+.pickerHead {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.page .pickerHead input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: calc(var(--r) - 6px);
+  border: 1px solid var(--line);
+  background: var(--bg2);
+  color: var(--txt);
+  font-size: 16px;
+}
+.pickerList {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 6px 0;
+}
+.pickerList button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font-size: 15px;
+}
+.pickerList button[aria-selected="true"] {
   color: var(--gold);
   font-weight: 600;
 }
+.pickerFlag {
+  font-size: 20px;
+  flex: none;
+}
+.pickerName {
+  flex: 1;
+  min-width: 0;
+}
+.pickerDial {
+  color: var(--dim);
+  font-size: 14px;
+}
+.pickerEmpty {
+  padding: 20px 16px;
+  color: var(--faint);
+  font-size: 14px;
+}
+/* `auto-fit` : deux, trois ou quatre moyens activés tiennent la ligne
+   sans laisser de colonne vide ni d'orpheline. */
 .pay {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
   gap: 8px;
 }
 .pay button {
@@ -699,27 +823,71 @@
 .plateMtn {
   background: #ffcb05;
 }
-.page .phone {
-  width: 100%;
+.field {
+  display: flex;
+  align-items: center;
   height: 48px;
   padding: 0 14px;
+  gap: 8px;
+  min-width: 0;
   border-radius: 12px;
   border: 1px solid var(--line);
   background: var(--bg2);
+}
+.field:focus-within {
+  border-color: var(--gold);
+}
+.page .field input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  outline: none;
   color: var(--txt);
   font-size: 18px;
   letter-spacing: 0.04em;
+}
+/* Rappel de couverture de la passerelle, sous les moyens de paiement. */
+.warn {
+  font-size: 13px;
+  line-height: 1.45;
+  background: var(--surface);
+  border-left: 2px solid var(--danger);
+  padding: 8px 10px;
+  border-radius: 0 6px 6px 0;
+}
+.hint {
+  font-size: 12.5px;
+  color: var(--faint);
+}
+.hintBad {
+  color: var(--danger);
+}
+.hintGood {
+  color: var(--ok);
 }
 .cta {
   width: 100%;
   padding: 14px;
   font-size: 16px;
 }
+/* Mention des CGU, juste au-dessus du bouton Payer de la fenêtre de vote. */
+.terms {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--dim);
+  text-align: center;
+}
+.terms a {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
 .sim {
   font-size: 12px;
   color: var(--faint);
   text-align: center;
-  margin-top: -8px;
 }
 .error {
   font-size: 14px;
@@ -761,6 +929,21 @@
 }
 .receipt {
   font-size: 13px;
+}
+.refLine {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.copy {
+  border: 1px solid var(--line);
+  background: transparent;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 12px;
+  color: var(--dim);
 }
 .row2 {
   display: grid;
@@ -854,6 +1037,8 @@
   --paper: #ffffff;
   --plate: #ffffff;
   --line: #e1e4e9;
+  --edge: #c9ced6;
+  --press: #e4e7eb;
   --gold: #141619;
   --gold-soft: #141619;
   --accent: #e4e6ea;
@@ -910,15 +1095,8 @@
 }
 .clMark {
   flex: none;
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: var(--txt);
-  color: #fff;
-  display: grid;
-  place-items: center;
-  font-weight: 800;
-  font-size: 16px;
+  width: auto;
+  height: 32px;
 }
 .clBrand {
   min-width: 0;
@@ -1106,9 +1284,11 @@
   background: var(--panel);
   min-width: 0;
 }
+/* L'affiche du candidat porte déjà tout (logo, nom, ville) : on l'affiche en
+   plein cadre, sans rien écrire par-dessus — juste le numéro et le rang. */
 .clBanner {
   position: relative;
-  aspect-ratio: 21 / 10;
+  aspect-ratio: 4 / 5;
   max-width: 100%;
   margin: 12px 12px 0;
   border-radius: 10px;
@@ -1116,47 +1296,19 @@
   background: #0d0d0f;
 }
 .clBanner img {
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 46%;
+  width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 20%;
+  object-position: center 18%;
 }
 .clInitials {
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 46%;
-  height: 100%;
   display: grid;
   place-items: center;
+  width: 100%;
+  height: 100%;
   color: var(--poster-gold);
   font-size: 34px;
   font-weight: 800;
-}
-.clEvent {
-  position: absolute;
-  left: 14px;
-  bottom: 12px;
-  width: 50%;
-  display: grid;
-  gap: 2px;
-}
-.clEvent b {
-  font-family: Georgia, "Times New Roman", serif;
-  font-style: italic;
-  font-weight: 700;
-  font-size: clamp(16px, 4.6vw, 22px);
-  line-height: 1.05;
-  color: var(--poster-gold);
-}
-.clEvent span {
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #cfd3da;
 }
 .clNum {
   position: absolute;
@@ -1240,20 +1392,37 @@
   height: 100%;
   background: var(--txt);
 }
+/* Bouton principal de la carte : bleu Inovyx, pour qu'on le voie du premier
+   coup d'œil. */
 .clVote {
-  height: 46px;
-  border: 1px solid #d3d6dc;
-  border-radius: 10px;
-  background: #e4e6ea;
-  color: var(--txt);
-  font-weight: 600;
-  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 52px;
+  border: 0;
+  border-radius: 12px;
+  background: #1f7fc4;
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow: 0 6px 16px rgba(31, 127, 196, 0.35);
+  transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
 }
 .clVote:hover:not(:disabled) {
-  background: #d6d9de;
+  background: #176aa6;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(31, 127, 196, 0.45);
+}
+.clVote:active:not(:disabled) {
+  transform: none;
 }
 .clVote:disabled {
-  opacity: 0.5;
+  background: #d3d6dc;
+  color: var(--dim);
+  box-shadow: none;
   cursor: not-allowed;
 }
 
@@ -1296,4 +1465,591 @@
   display: block;
   height: 18px;
   width: auto;
+}
+
+/* ---- Espace organisateur ---- */
+/* Panneau en lecture seule, glissant depuis la droite de la page de vote. */
+.orgaBtn {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--dim);
+  display: grid;
+  place-items: center;
+}
+.orgaBtn:hover {
+  color: var(--gold);
+  border-color: var(--gold);
+}
+/* Style « Clair » : pousse le bouton au bout de la barre de marque. */
+.clSpacer {
+  flex: 1;
+  min-width: 0;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  width: min(420px, 100%);
+  background: var(--panel);
+  border-left: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.24s ease-out;
+}
+.menu .drawer {
+  background: var(--paper);
+}
+@keyframes slideIn {
+  from {
+    transform: translateX(28px);
+    opacity: 0.4;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+.drawerHead {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+  border-bottom: 1px solid var(--line);
+}
+.drawerWho {
+  flex: 1;
+  min-width: 0;
+}
+.page .drawerWho h2 {
+  font-size: 21px;
+  line-height: 1.15;
+}
+.drawerBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.drawerFoot {
+  flex: none;
+  border-top: 1px solid var(--line);
+  padding: 12px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.stamp {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--faint);
+}
+
+/* Connexion */
+.lead {
+  font-size: 14px;
+  color: var(--dim);
+}
+.err {
+  font-size: 13.5px;
+  color: var(--danger);
+}
+.page .orgaInput {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--bg2);
+  color: var(--txt);
+  font-size: 16px;
+}
+.page .orgaInput:focus {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+}
+
+/* Recettes */
+.money {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg2);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.moneyCap {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.moneyBig {
+  font-family: var(--display);
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.05;
+}
+.moneySub {
+  font-size: 12.5px;
+  color: var(--faint);
+}
+
+/* Partage : une ligne par part, barre de proportion dessous. */
+.split {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.splitRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 14px;
+}
+.splitKey {
+  color: var(--dim);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.splitKey i {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  display: block;
+  flex: none;
+}
+.splitVal {
+  font-family: var(--display);
+  font-size: 18px;
+  font-weight: 700;
+}
+.bar {
+  display: flex;
+  height: 8px;
+  border-radius: 99px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.bar i {
+  display: block;
+  height: 100%;
+}
+.cInovyx {
+  background: var(--gold);
+}
+.cOrga {
+  background: var(--ok);
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: 8px;
+}
+.tile {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 11px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.tileN {
+  font-family: var(--display);
+  font-size: 21px;
+  font-weight: 700;
+}
+.tileL {
+  font-size: 11.5px;
+  color: var(--faint);
+}
+.tilePend .tileN {
+  color: var(--warn);
+}
+.tileFail .tileN {
+  color: var(--danger);
+}
+
+/* Historique */
+.page .histTitle {
+  font-size: 17px;
+}
+.filters {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin: 9px 0 2px;
+}
+.filters button {
+  border: 1px solid var(--line);
+  background: transparent;
+  border-radius: 99px;
+  padding: 4px 11px;
+  font-size: 11.5px;
+  color: var(--dim);
+}
+.filters button[aria-pressed="true"] {
+  border-color: var(--gold);
+  color: var(--gold);
+  font-weight: 600;
+}
+.hist {
+  display: flex;
+  flex-direction: column;
+}
+.histRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 10px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+}
+.histName {
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 700;
+  min-width: 0;
+}
+.histAmt {
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+}
+.histMeta {
+  font-size: 12px;
+  color: var(--faint);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.histState {
+  font-size: 11.5px;
+  text-align: right;
+  white-space: nowrap;
+}
+.sOk {
+  color: var(--ok);
+}
+.sPend {
+  color: var(--warn);
+}
+.sFail {
+  color: var(--danger);
+}
+.histEmpty {
+  padding: 22px 0;
+  text-align: center;
+  color: var(--faint);
+  font-size: 14px;
+}
+
+/* Voix par candidat : même gabarit que l'historique, sans la colonne d'état. */
+.voteRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+/* ================================================================== */
+/* Présentation en pages pleines                                      */
+/*                                                                    */
+/* La fenêtre de paiement et l'espace organisateur occupent tout       */
+/* l'écran au lieu de flotter. L'ancienne présentation reste intacte : */
+/* `VOTE_PLEIN_ECRAN=0` sur le serveur la rétablit sans redéploiement. */
+/* ================================================================== */
+.full {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--bg);
+  display: flex;
+  justify-content: center;
+}
+.full .sheet,
+.full .drawer {
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  animation: none;
+  background: var(--bg);
+}
+/* Au-delà du téléphone, la lecture reste tenue dans une colonne. */
+@media (min-width: 640px) {
+  .full .sheetHead,
+  .full .sheetBody,
+  .full .sheetFoot,
+  .full .drawerHead,
+  .full .drawerBody,
+  .full .drawerFoot {
+    width: 100%;
+    max-width: 620px;
+    margin-inline: auto;
+  }
+}
+.full .sheetHead,
+.full .drawerHead {
+  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+}
+
+/* ---- Bords francs et appui visible sur tout ce qui se touche ---- */
+/* Sans `:active`, un appui sur téléphone ne renvoie rien : `:hover`  */
+/* n'existe pas au doigt, et l'utilisateur appuie une seconde fois.   */
+.page .btn,
+.page .x,
+.page .stepper button,
+.page .pay button,
+.page .filters button,
+.page .copy,
+.page .pickerBtn,
+.page .pickerList button,
+.page .orgaBtn,
+.page .themeBtn {
+  transition:
+    background 0.12s,
+    transform 0.07s,
+    box-shadow 0.12s;
+}
+.page .btnLine,
+.page .x,
+.page .stepper button,
+.page .pay button,
+.page .filters button,
+.page .copy,
+.page .orgaBtn,
+.page .themeBtn,
+.page .tile,
+.page .money,
+.page .field {
+  border-color: var(--edge);
+}
+.page .btn:active,
+.page .x:active,
+.page .stepper button:active,
+.page .pay button:active,
+.page .filters button:active,
+.page .copy:active,
+.page .orgaBtn:active,
+.page .themeBtn:active {
+  transform: translateY(2px);
+}
+.page .btnGold:active {
+  filter: brightness(0.88);
+}
+.page .btnLine:active,
+.page .x:active,
+.page .stepper button:active,
+.page .pay button:active,
+.page .filters button:active,
+.page .copy:active,
+.page .orgaBtn:active,
+.page .themeBtn:active,
+.page .pickerList button:active {
+  background: var(--press);
+}
+.page .pickerBtn:active {
+  opacity: 0.55;
+}
+
+/* ---- Style « Clair » : l'action principale prend le bleu Inovyx ---- */
+/* `--accent` y vaut un gris très pâle, qui donnait des boutons d'air  */
+/* désactivé là où ils sont bien actifs.                               */
+.clair .btnGold {
+  background: #1f7fc4;
+  color: #fff;
+  border: 0;
+  box-shadow: 0 5px 14px rgba(31, 127, 196, 0.32);
+}
+.clair .btnGold:hover:not(:disabled) {
+  background: #176aa6;
+}
+.clair .btnGold:active:not(:disabled) {
+  background: #176aa6;
+  filter: none;
+  box-shadow: 0 2px 6px rgba(31, 127, 196, 0.3);
+}
+.clair .pay button[aria-pressed="true"],
+.clair .chip[aria-pressed="true"],
+.clair .filters button[aria-pressed="true"] {
+  border-color: #1f7fc4;
+  color: #1f7fc4;
+  box-shadow: inset 0 0 0 1.5px #1f7fc4;
+  background: #eaf3fa;
+}
+.clair .spin {
+  border-color: var(--line);
+  border-top-color: #1f7fc4;
+}
+.clair .cInovyx {
+  background: #1f7fc4;
+}
+.clair .terms a,
+.clair .eyebrow {
+  color: #1f7fc4;
+}
+
+/* ------------------------------------------------------------------ */
+/* Retrait de l'organisateur : solde, formulaire, accusé de réception   */
+/* ------------------------------------------------------------------ */
+
+.wallet {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg2);
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+.walletTitle {
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* Le calcul du solde, ligne à ligne : ce qui est dû, ce qui est parti. */
+.ledger {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13.5px;
+}
+.ledgerRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.ledgerKey {
+  color: var(--dim);
+}
+.ledgerMinus .ledgerKey,
+.ledgerMinus .ledgerVal {
+  color: var(--faint);
+}
+.ledgerSum {
+  align-items: baseline;
+  border-top: 1px solid var(--line);
+  margin-top: 3px;
+  padding-top: 8px;
+}
+.ledgerSum .ledgerKey {
+  color: var(--txt);
+  font-weight: 600;
+}
+.ledgerSum .ledgerVal {
+  font-family: var(--display);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--ok);
+}
+
+/* Le panneau vit hors de `.page` : ses champs ont besoin de leurs règles. */
+.drawer .field input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  outline: none;
+  color: var(--txt);
+  font-size: 18px;
+  letter-spacing: 0.04em;
+}
+.drawer .field textarea {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  outline: none;
+  color: var(--txt);
+  font-family: inherit;
+  font-size: 15px;
+  resize: vertical;
+}
+/* Un message tient sur plusieurs lignes : le champ ne peut pas rester haut fixe. */
+.fieldNote {
+  height: auto;
+  align-items: stretch;
+  padding: 10px 14px;
+}
+.unit {
+  flex: none;
+  font-size: 13px;
+  color: var(--faint);
+}
+
+.labelRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.linkBtn {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--gold);
+  font-size: 12.5px;
+  text-decoration: underline;
+}
+
+/* Accusé de réception, quand une demande attend son virement. */
+.wDone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  text-align: center;
+  padding: 4px 0;
+}
+.wDoneIcon {
+  width: 46px;
+  height: 46px;
+  border-radius: 99px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--warn);
+  color: var(--warn);
+}
+.wDoneTitle {
+  font-family: var(--display);
+  font-size: 20px;
+  font-weight: 700;
+}
+.wDoneAmt {
+  font-family: var(--display);
+  font-size: 28px;
+  font-weight: 700;
+}
+
+/* Montant de retrait au-dessus du solde : le champ passe au rouge, même au focus. */
+.field.fieldBad,
+.field.fieldBad:focus-within {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 1px var(--danger);
+}
+.drawer .fieldBad input {
+  color: var(--danger);
 }

@@ -10,6 +10,7 @@ const NAV_LINKS = [
   { href: "/resultats", label: "Résultats" },
   { href: "/vote-public", label: "Vote public" },
   { href: "/archives", label: "Archives" },
+  { href: "/reversements", label: "Reversements" },
 ];
 
 /**

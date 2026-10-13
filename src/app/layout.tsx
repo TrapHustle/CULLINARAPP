@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { publicUrl } from "@/lib/network";
+
+const siteUrl = publicUrl();
 
 export const metadata: Metadata = {
+  // Rend absolues les URL d'images des aperçus partagés (WhatsApp exige une
+  // adresse complète).
+  ...(siteUrl ? { metadataBase: new URL(siteUrl) } : {}),
   title: "Concours culinaire — Administration",
   description: "Configuration, pilotage des votes et résultats du concours culinaire",
 };

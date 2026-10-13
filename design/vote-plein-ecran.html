@@ -1,0 +1,942 @@
+<title>Vote plein écran</title>
+<style>
+/* Prototype navigable, au style « Clair » du site : fond gris, cartes
+   blanches, bleu Inovyx. Un écran à la fois, chacun occupant toute la
+   hauteur — en-tête fixe, corps défilant, pied fixe.
+   Deux corrections par rapport à l'existant : bordures franches sur tout ce
+   qui se touche, et un état d'appui visible sur chaque bouton.
+   Toujours clair, comme le style « Clair » qui ne propose pas de bascule. */
+:root {
+  --bg: #eff0f2;
+  --bg2: #f3f4f6;
+  --panel: #ffffff;
+  --line: #e1e4e9;
+  /* Bord de ce qui se touche : franc, jamais un gris fantôme. */
+  --edge: #c9ced6;
+  --blue: #1f7fc4;
+  --blue-dark: #176aa6;
+  --blue-soft: #eaf3fa;
+  --txt: #111418;
+  --dim: #5b6573;
+  --faint: #7a8390;
+  --press: #e4e7eb;
+  --ok: #1f8a4c;
+  --warn: #9a6a08;
+  --danger: #b3261e;
+  --sans: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --r: 14px;
+  color-scheme: light;
+}
+
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--txt);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-tap-highlight-color: transparent;
+}
+h1, h2, h3 { margin: 0; font-weight: 700; text-wrap: balance; }
+p { margin: 0; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.num { font-variant-numeric: lining-nums tabular-nums; }
+.muted { color: var(--dim); }
+.faint { color: var(--faint); }
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--blue);
+  font-weight: 700;
+}
+
+/* ---- Écrans ---- */
+.screen { position: fixed; inset: 0; display: flex; flex-direction: column; background: var(--bg); }
+.screen[hidden] { display: none; }
+.head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  padding-top: calc(12px + env(safe-area-inset-top, 0px));
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+.head .title { flex: 1; min-width: 0; }
+.head .title b { display: block; font-size: 17px; line-height: 1.25; }
+.head .title span { display: block; font-size: 12.5px; color: var(--faint); }
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.foot {
+  flex: none;
+  background: var(--panel);
+  border-top: 1px solid var(--line);
+  padding: 12px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+}
+.wrap { width: 100%; max-width: 560px; margin: 0 auto; }
+
+/* ---- Boutons : couleur pleine, bord franc, appui visible ---- */
+.btn {
+  border: 0;
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-size: 16px;
+  font-weight: 700;
+  transition: background 0.12s, transform 0.07s, box-shadow 0.12s;
+}
+.btnBlue {
+  background: var(--blue);
+  color: #fff;
+  box-shadow: 0 5px 14px rgba(31, 127, 196, 0.32);
+}
+.btnBlue:active { background: var(--blue-dark); transform: translateY(2px); box-shadow: 0 2px 6px rgba(31, 127, 196, 0.3); }
+.btnLine { background: var(--panel); border: 1.5px solid var(--edge); color: var(--txt); }
+.btnLine:active { background: var(--press); transform: translateY(2px); }
+.cta { width: 100%; padding: 17px; font-size: 17px; letter-spacing: 0.03em; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.icon {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid var(--edge);
+  background: var(--panel);
+  color: var(--txt);
+  display: grid;
+  place-items: center;
+  transition: background 0.12s, transform 0.07s;
+}
+.icon:active { background: var(--press); transform: translateY(2px); }
+
+/* ---- Liste des candidats ---- */
+.intro { display: flex; flex-direction: column; gap: 5px; }
+.intro h1 { font-size: 26px; }
+.cards { display: flex; flex-direction: column; gap: 10px; }
+.cand {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  text-align: left;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--panel);
+  box-shadow: 0 1px 2px rgba(17, 20, 24, 0.05);
+  transition: background 0.12s, transform 0.07s, box-shadow 0.12s;
+}
+.cand:active { background: var(--bg2); transform: translateY(2px); box-shadow: none; }
+.avatar {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  color: var(--dim);
+  font-size: 17px;
+}
+.cand .who { flex: 1; min-width: 0; }
+.cand .who b { display: block; font-size: 17px; line-height: 1.25; }
+.cand .who span { font-size: 13px; color: var(--faint); }
+.cand .go {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 10px 14px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(31, 127, 196, 0.3);
+}
+.cand:active .go { background: var(--blue-dark); box-shadow: none; }
+
+/* ---- Formulaire ---- */
+.group { display: flex; flex-direction: column; gap: 9px; }
+.label { font-size: 13.5px; color: var(--dim); font-weight: 600; }
+.stepper { display: grid; grid-template-columns: 58px 1fr 58px; gap: 9px; }
+.stepper button {
+  height: 58px;
+  border-radius: 12px;
+  border: 1.5px solid var(--edge);
+  background: var(--panel);
+  font-size: 26px;
+  transition: background 0.12s, transform 0.07s;
+}
+.stepper button:active { background: var(--press); transform: translateY(2px); }
+.stepper input {
+  min-width: 0;
+  height: 58px;
+  text-align: center;
+  border-radius: 12px;
+  border: 1.5px solid var(--edge);
+  background: var(--panel);
+  font-size: 30px;
+  font-weight: 700;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.stepper input::-webkit-inner-spin-button,
+.stepper input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+.pay { display: grid; grid-template-columns: repeat(auto-fit, minmax(98px, 1fr)); gap: 9px; }
+.pay button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 8px 11px;
+  border-radius: 12px;
+  border: 1.5px solid var(--edge);
+  background: var(--panel);
+  font-size: 13px;
+  line-height: 1.2;
+  transition: background 0.12s, transform 0.07s, border-color 0.12s;
+}
+.pay button:active { transform: translateY(2px); background: var(--press); }
+.pay button[aria-pressed="true"] {
+  border-color: var(--blue);
+  background: var(--blue-soft);
+  box-shadow: inset 0 0 0 1.5px var(--blue);
+  font-weight: 700;
+}
+.plate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  height: 48px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid var(--line);
+  font-weight: 600;
+}
+.plate.mtn { background: #ffcb05; border-color: #e5b705; }
+.mWave { background: #1db9e8; color: #fff; font-size: 14px; padding: 4px 10px; border-radius: 5px; }
+.mOm { display: flex; align-items: center; gap: 5px; color: #111; font-size: 13px; }
+.mOm i { width: 17px; height: 17px; background: #ff7900; display: block; }
+.mMtn { background: #111; color: #ffcb05; font-size: 12px; letter-spacing: 0.1em; padding: 3px 9px; border-radius: 99px; }
+
+.field {
+  display: flex;
+  align-items: center;
+  height: 58px;
+  padding: 0 14px;
+  gap: 9px;
+  border-radius: 12px;
+  border: 1.5px solid var(--edge);
+  background: var(--panel);
+}
+.field:focus-within { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-soft); }
+.field input { flex: 1; min-width: 0; border: 0; background: transparent; outline: none; font-size: 19px; letter-spacing: 0.03em; }
+.dialBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  height: 100%;
+  padding-right: 12px;
+  border: 0;
+  border-right: 1.5px solid var(--edge);
+  background: transparent;
+  font-size: 17px;
+}
+.dialBtn:active { opacity: 0.55; }
+.dialBtn .d { color: var(--dim); font-size: 16px; }
+.hint { font-size: 13px; color: var(--faint); line-height: 1.45; }
+.hint.bad { color: var(--danger); font-weight: 600; }
+.hint.good { color: var(--ok); font-weight: 600; }
+.terms { font-size: 13px; color: var(--dim); text-align: center; }
+.terms a { color: var(--blue); font-weight: 700; }
+
+.recap { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.recap span { font-size: 14px; color: var(--dim); }
+.recap b { font-size: 23px; }
+
+/* ---- Pays ---- */
+.search {
+  width: 100%;
+  height: 52px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1.5px solid var(--edge);
+  background: var(--panel);
+  font-size: 17px;
+}
+.countries { display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.countries button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 15px 14px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  text-align: left;
+  font-size: 16px;
+}
+.countries button:last-child { border-bottom: 0; }
+.countries button:active { background: var(--press); }
+.countries .flag { font-size: 22px; }
+.countries .nom { flex: 1; min-width: 0; }
+.countries .ind { color: var(--dim); font-size: 14px; }
+.countries button[aria-selected="true"] { color: var(--blue); font-weight: 700; background: var(--blue-soft); }
+
+/* ---- Attente et issue ---- */
+.center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 14px;
+  padding: 24px 16px;
+}
+.center h2 { font-size: 26px; }
+.center p { max-width: 24em; }
+.spin {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 4px solid var(--line);
+  border-top-color: var(--blue);
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.badge { width: 70px; height: 70px; border-radius: 50%; display: grid; place-items: center; color: #fff; }
+.bOk { background: var(--ok); }
+.bNo { background: var(--danger); }
+.ref { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; justify-content: center; }
+.copy {
+  border: 1.5px solid var(--edge);
+  background: var(--panel);
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.copy:active { background: var(--press); }
+
+/* ---- Espace organisateur ---- */
+.money {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 17px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.money .cap { font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); font-weight: 700; }
+.money .big { font-size: 35px; font-weight: 700; line-height: 1.05; }
+.money .sub { font-size: 13px; color: var(--faint); }
+.block { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; }
+.split { display: flex; flex-direction: column; gap: 11px; }
+.sRow { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.sRow .k { color: var(--dim); display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.sRow .k i { width: 10px; height: 10px; border-radius: 3px; display: block; flex: none; }
+.sRow .v { font-size: 19px; font-weight: 700; }
+.bar { display: flex; height: 10px; border-radius: 99px; overflow: hidden; background: var(--bg2); }
+.bar i { display: block; height: 100%; }
+.cIn { background: var(--blue); }
+.cOr { background: var(--ok); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 9px; }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 13px; display: flex; flex-direction: column; gap: 2px; }
+.tile .n { font-size: 23px; font-weight: 700; }
+.tile .l { font-size: 12px; color: var(--faint); }
+.tile.pe .n { color: var(--warn); }
+.tile.fa .n { color: var(--danger); }
+.secTitle { font-size: 18px; margin-bottom: 9px; }
+.chips { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 4px; }
+.chips button {
+  border: 1.5px solid var(--edge);
+  background: var(--panel);
+  border-radius: 99px;
+  padding: 8px 15px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.chips button:active { background: var(--press); }
+.chips button[aria-pressed="true"] { border-color: var(--blue); color: var(--blue); background: var(--blue-soft); }
+.list { display: flex; flex-direction: column; }
+.item { display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+.item:last-child { border-bottom: 0; padding-bottom: 0; }
+.item .n { font-size: 16px; font-weight: 700; min-width: 0; }
+.item .a { font-size: 16px; font-weight: 700; text-align: right; white-space: nowrap; }
+.item .m { font-size: 12.5px; color: var(--faint); overflow-wrap: anywhere; }
+.item .s { font-size: 12.5px; text-align: right; white-space: nowrap; font-weight: 600; }
+.sOk { color: var(--ok); }
+.sPe { color: var(--warn); }
+.sFa { color: var(--danger); }
+.empty { padding: 26px 0; text-align: center; color: var(--faint); }
+.err { color: var(--danger); font-size: 14px; font-weight: 600; }
+.loginInput {
+  width: 100%;
+  height: 58px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1.5px solid var(--edge);
+  background: var(--panel);
+  font-size: 17px;
+}
+.loginInput:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-soft); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+</style>
+
+<!-- ÉCRAN : liste des candidats -->
+<div class="screen" id="sListe">
+  <div class="head">
+    <div class="title"><b>Digitalyx Vote</b><span>Talent Traiteur 2026 · Abidjan</span></div>
+    <button type="button" class="icon" id="btnOrga" aria-label="Espace organisateur">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2M3 12h18"/>
+      </svg>
+    </button>
+  </div>
+  <div class="body">
+    <div class="wrap intro">
+      <span class="eyebrow">Vote du public</span>
+      <h1>Soutenez votre candidat</h1>
+      <p class="muted">Chaque vote coûte <b class="num">200</b> FCFA. Vous pouvez en acheter autant que vous voulez.</p>
+    </div>
+    <div class="wrap cards" id="cards"></div>
+  </div>
+</div>
+
+<!-- ÉCRAN : payer -->
+<div class="screen" id="sPayer" hidden>
+  <div class="head">
+    <button type="button" class="icon" data-go="sListe" aria-label="Retour">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <div class="title"><b id="payName">Awa Koné</b><span id="payCity">Bouaké</span></div>
+  </div>
+  <div class="body">
+    <div class="wrap group">
+      <span class="label" id="lblVotes">Nombre de votes</span>
+      <div class="stepper">
+        <button type="button" id="moins" aria-label="Un vote de moins">−</button>
+        <input class="num" id="votes" type="number" inputmode="numeric" min="1" max="100" value="1" aria-labelledby="lblVotes">
+        <button type="button" id="plus" aria-label="Un vote de plus">+</button>
+      </div>
+    </div>
+
+    <div class="wrap group">
+      <span class="label" id="lblPay">Payer avec</span>
+      <div class="pay" id="pay" role="group" aria-labelledby="lblPay"></div>
+      <p class="hint bad" id="payErr" hidden></p>
+    </div>
+
+    <div class="wrap group">
+      <label class="label" for="tel">Numéro qui paie</label>
+      <div class="field">
+        <button type="button" class="dialBtn" id="dialBtn" aria-label="Choisir le pays">
+          <span id="flag" aria-hidden="true">🇨🇮</span>
+          <span class="d num" id="dial">+225</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <input id="tel" class="num" type="tel" inputmode="tel" autocomplete="tel">
+      </div>
+      <p class="hint" id="telHint"></p>
+    </div>
+
+    <p class="wrap terms">En payant, vous acceptez les <a href="#cgu">conditions générales</a>.</p>
+  </div>
+  <div class="foot">
+    <div class="wrap">
+      <div class="recap">
+        <span class="num" id="detail">1 × 200 FCFA</span>
+        <b class="num" id="total">200 FCFA</b>
+      </div>
+      <button type="button" class="btn btnBlue cta num" id="btnPayer" style="margin-top:10px">Payer 200 FCFA</button>
+      <p class="hint" style="text-align:center;margin-top:9px">Vous validerez chez votre opérateur, puis reviendrez ici.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ÉCRAN : choix du pays -->
+<div class="screen" id="sPays" hidden>
+  <div class="head">
+    <button type="button" class="icon" data-go="sPayer" aria-label="Retour">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <div class="title"><b>Pays du numéro</b></div>
+  </div>
+  <div class="body">
+    <div class="wrap"><input class="search" id="search" type="search" placeholder="Chercher un pays" aria-label="Chercher un pays"></div>
+    <div class="wrap countries" id="countries"></div>
+  </div>
+</div>
+
+<!-- ÉCRAN : paiement en cours -->
+<div class="screen" id="sAttente" hidden>
+  <div class="head"><div class="title"><b>Paiement</b></div></div>
+  <div class="center" role="status">
+    <div class="spin" aria-hidden="true"></div>
+    <h2>Paiement en cours…</h2>
+    <p class="muted num" id="attDetail">Wave · 200 FCFA</p>
+  </div>
+</div>
+
+<!-- ÉCRAN : vérification -->
+<div class="screen" id="sVerif" hidden>
+  <div class="head">
+    <button type="button" class="icon" data-go="sListe" aria-label="Fermer">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <div class="title"><b>Vérification</b></div>
+  </div>
+  <div class="center" role="status">
+    <div class="spin" aria-hidden="true"></div>
+    <h2>Vérification du paiement…</h2>
+    <p class="muted">Validez la demande reçue sur votre téléphone si ce n'est pas déjà fait.</p>
+  </div>
+  <div class="foot">
+    <div class="wrap">
+      <div class="row2">
+        <button type="button" class="btn btnLine" data-go="sListe">Fermer</button>
+        <button type="button" class="btn btnBlue" data-go="sOk">Vérifier maintenant</button>
+      </div>
+      <p class="hint" style="text-align:center;margin-top:9px">Vos votes seront comptés même si vous fermez.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ÉCRAN : payé -->
+<div class="screen" id="sOk" hidden>
+  <div class="head"><div class="title"><b>Paiement confirmé</b></div></div>
+  <div class="center" role="status">
+    <div class="badge bOk" aria-hidden="true">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+    </div>
+    <h2>Merci !</h2>
+    <p><b class="num" id="okVotes">1 vote</b> pour <span id="okName">Awa Koné</span></p>
+    <p class="muted num" id="okAmount">200 FCFA · Wave</p>
+    <div class="ref">
+      <span class="faint num">réf. <b id="okRef">VP-9NF24H</b></span>
+      <button type="button" class="copy" id="btnCopy">Copier</button>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="wrap row2">
+      <button type="button" class="btn btnLine" data-go="sListe">Fermer</button>
+      <button type="button" class="btn btnBlue" data-go="sPayer">Revoter</button>
+    </div>
+  </div>
+</div>
+
+<!-- ÉCRAN : échec -->
+<div class="screen" id="sEchec" hidden>
+  <div class="head"><div class="title"><b>Paiement</b></div></div>
+  <div class="center" role="alert">
+    <div class="badge bNo" aria-hidden="true">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg>
+    </div>
+    <h2>Paiement non abouti</h2>
+    <p class="muted">Votre opérateur a refusé la demande. Aucun vote n'a été compté et rien n'a été prélevé.</p>
+  </div>
+  <div class="foot">
+    <div class="wrap row2">
+      <button type="button" class="btn btnLine" data-go="sListe">Fermer</button>
+      <button type="button" class="btn btnBlue" data-go="sPayer">Réessayer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ÉCRAN : connexion organisateur -->
+<div class="screen" id="sLogin" hidden>
+  <div class="head">
+    <button type="button" class="icon" data-go="sListe" aria-label="Retour">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <div class="title"><b>Espace organisateur</b><span>Accès réservé</span></div>
+  </div>
+  <div class="body">
+    <p class="wrap muted">Entrez les identifiants de l'organisateur pour consulter les recettes et l'historique des paiements.</p>
+    <div class="wrap group">
+      <label class="label" for="user">Identifiant</label>
+      <input class="loginInput" id="user" type="text" autocomplete="username" placeholder="organisateur.talent@inovyx.ci">
+    </div>
+    <div class="wrap group">
+      <label class="label" for="pass">Mot de passe</label>
+      <input class="loginInput" id="pass" type="password" autocomplete="current-password">
+    </div>
+    <p class="wrap err" id="loginErr" hidden>Identifiant ou mot de passe incorrect.</p>
+  </div>
+  <div class="foot">
+    <div class="wrap">
+      <button type="button" class="btn btnBlue cta" id="btnLogin">Se connecter</button>
+      <p class="hint" style="text-align:center;margin-top:9px">Après 5 essais manqués, l'accès se bloque 10 minutes.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ÉCRAN : espace organisateur -->
+<div class="screen" id="sOrga" hidden>
+  <div class="head">
+    <button type="button" class="icon" data-go="sListe" aria-label="Retour">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <div class="title"><b>Espace organisateur</b><span>Arrêté à 14 h 12</span></div>
+  </div>
+  <div class="body">
+    <div class="wrap money">
+      <span class="cap">Montant total collecté</span>
+      <span class="big num">486 200 FCFA</span>
+      <span class="sub num">2 431 votes payés en ligne · 1 876 paiements confirmés</span>
+    </div>
+
+    <div class="wrap block split">
+      <div class="sRow">
+        <span class="k"><i class="cIn"></i>Part Inovyx Tech (10 %)</span>
+        <span class="v num">48 620 FCFA</span>
+      </div>
+      <div class="sRow">
+        <span class="k"><i class="cOr"></i>Revient à l'organisateur</span>
+        <span class="v num">437 580 FCFA</span>
+      </div>
+      <div class="bar" role="img" aria-label="10 % pour Inovyx Tech, 90 % pour l'organisateur">
+        <i class="cIn" style="width:10%"></i><i class="cOr" style="width:90%"></i>
+      </div>
+    </div>
+
+    <div class="wrap block">
+      <h3 class="secTitle">Voix par candidat <span class="faint num">· 2 581 au total</span></h3>
+      <div class="list">
+        <div class="item"><span class="n">Awa Koné</span><span class="a num">1 240</span></div>
+        <div class="item"><span class="n">Ibrahim Traoré</span><span class="a num">980</span></div>
+        <div class="item"><span class="n">Mariam Diallo</span><span class="a num">361</span><span class="m num">211 en ligne · 150 repris</span></div>
+      </div>
+    </div>
+
+    <div class="wrap tiles">
+      <div class="tile"><span class="n num">2 431</span><span class="l">Votes payés</span></div>
+      <div class="tile"><span class="n num">1 876</span><span class="l">Confirmés</span></div>
+      <div class="tile pe"><span class="n num">7</span><span class="l">En attente</span></div>
+      <div class="tile fa"><span class="n num">12</span><span class="l">Échoués</span></div>
+    </div>
+
+    <div class="wrap block">
+      <h3 class="secTitle">Historique des paiements</h3>
+      <div class="chips" id="chips">
+        <button type="button" data-f="all" aria-pressed="true">Tous</button>
+        <button type="button" data-f="ok" aria-pressed="false">Confirmés</button>
+        <button type="button" data-f="pe" aria-pressed="false">En attente</button>
+        <button type="button" data-f="fa" aria-pressed="false">Échoués</button>
+      </div>
+      <div class="list" id="hist"></div>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="wrap"><button type="button" class="btn btnLine cta" data-go="sListe">Se déconnecter</button></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+
+  var PRIX = 200;
+  var CANDIDATS = [
+    { id: "ak", nom: "Awa Koné", ville: "Bouaké", ini: "AK", voix: 1240 },
+    { id: "it", nom: "Ibrahim Traoré", ville: "Abidjan", ini: "IT", voix: 980 },
+    { id: "md", nom: "Mariam Diallo", ville: "Korhogo", ini: "MD", voix: 361 }
+  ];
+  var MOYENS = [
+    { k: "WAVE", nom: "Wave", plate: '<span class="mWave">wave</span>', jaune: false },
+    { k: "ORANGE_MONEY", nom: "Orange Money", plate: '<span class="mOm"><i></i>Money</span>', jaune: false },
+    { k: "MTN", nom: "MTN MoMo", plate: '<span class="mMtn">MTN</span>', jaune: true }
+  ];
+  var PAYS = [
+    { c: "CI", nom: "Côte d'Ivoire", f: "🇨🇮", d: "225", len: 10, ex: "07 01 02 03 04" },
+    { c: "SN", nom: "Sénégal", f: "🇸🇳", d: "221", len: 9, ex: "77 123 45 67" },
+    { c: "BF", nom: "Burkina Faso", f: "🇧🇫", d: "226", len: 8, ex: "70 12 34 56" },
+    { c: "ML", nom: "Mali", f: "🇲🇱", d: "223", len: 8, ex: "70 12 34 56" },
+    { c: "BJ", nom: "Bénin", f: "🇧🇯", d: "229", len: 10, ex: "01 97 12 34 56" },
+    { c: "TG", nom: "Togo", f: "🇹🇬", d: "228", len: 8, ex: "90 12 34 56" },
+    { c: "GN", nom: "Guinée", f: "🇬🇳", d: "224", len: 9, ex: "62 12 34 56 7" },
+    { c: "CM", nom: "Cameroun", f: "🇨🇲", d: "237", len: 9, ex: "6 12 34 56 78" },
+    { c: "FR", nom: "France", f: "🇫🇷", d: "33", len: 9, ex: "6 12 34 56 78" },
+    { c: "BE", nom: "Belgique", f: "🇧🇪", d: "32", len: 9, ex: "470 12 34 56" },
+    { c: "US", nom: "États-Unis / Canada", f: "🇺🇸", d: "1", len: 10, ex: "555 123 4567" },
+    { c: "XX", nom: "Autre pays", f: "🌍", d: "", len: null, ex: "indicatif puis numéro" }
+  ];
+  var PAIEMENTS = [
+    { nom: "Awa Koné", v: 5, m: 1000, moy: "Wave", tel: "07 •••••• 06", ref: "VP-9NF24H", q: "03/10 14 h 08", e: "ok" },
+    { nom: "Ibrahim Traoré", v: 20, m: 4000, moy: "Orange Money", tel: "07 •••••• 04", ref: "VP-3KD88P", q: "03/10 14 h 02", e: "ok" },
+    { nom: "Awa Koné", v: 1, m: 200, moy: "Wave", tel: "05 •••••• 93", ref: "VP-7QM41Z", q: "03/10 13 h 57", e: "pe" },
+    { nom: "Mariam Diallo", v: 10, m: 2000, moy: "MTN MoMo", tel: "05 •••••• 41", ref: "VP-2XB63R", q: "03/10 13 h 51", e: "ok" },
+    { nom: "Ibrahim Traoré", v: 2, m: 400, moy: "Wave", tel: "+33 ••••••• 78", ref: "VP-5HJ09T", q: "03/10 13 h 44", e: "fa" },
+    { nom: "Awa Koné", v: 50, m: 10000, moy: "Orange Money", tel: "07 •••••• 18", ref: "VP-8LC57W", q: "03/10 13 h 39", e: "ok" },
+    { nom: "Mariam Diallo", v: 3, m: 600, moy: "Wave", tel: "+22 ••••••• 67", ref: "VP-6RT30N", q: "03/10 13 h 31", e: "ok" },
+    { nom: "Ibrahim Traoré", v: 1, m: 200, moy: "MTN MoMo", tel: "05 •••••• 55", ref: "VP-4PW12K", q: "03/10 13 h 26", e: "pe" }
+  ];
+  var ETATS = { ok: ["Confirmé", "sOk"], pe: ["En attente", "sPe"], fa: ["Échoué", "sFa"] };
+
+  var etat = { candidat: CANDIDATS[0], votes: 1, moyen: "WAVE", pays: PAYS[0], tel: "", gronde: false };
+
+  function sep(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " "); }
+  function motVotes(n) { return n + (n > 1 ? " votes" : " vote"); }
+
+  /* ---- Navigation : un écran à la fois ---- */
+  var ECRANS = ["sListe", "sPayer", "sPays", "sAttente", "sVerif", "sOk", "sEchec", "sLogin", "sOrga"];
+  function aller(id) {
+    for (var i = 0; i < ECRANS.length; i++) $(ECRANS[i]).hidden = ECRANS[i] !== id;
+    var corps = $(id).querySelector(".body");
+    if (corps) corps.scrollTop = 0;
+    if (id === "sPayer") { etat.gronde = false; $("payErr").hidden = true; dessinerTel(); }
+    if (id === "sOk") remplirRecu();
+    if (id === "sLogin") { $("loginErr").hidden = true; }
+    if (id === "sPays") { $("search").value = ""; dessinerPays(""); }
+  }
+  document.addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-go]");
+    if (b) aller(b.getAttribute("data-go"));
+  });
+
+  /* ---- Liste des candidats ---- */
+  function dessinerCandidats() {
+    var h = "";
+    for (var i = 0; i < CANDIDATS.length; i++) {
+      var c = CANDIDATS[i];
+      h += '<button type="button" class="cand" data-cand="' + c.id + '">' +
+        '<span class="avatar">' + c.ini + "</span>" +
+        '<span class="who"><b>' + c.nom + "</b><span>" + c.ville + " · " + sep(c.voix) + " votes</span></span>" +
+        '<span class="go">Voter</span></button>';
+    }
+    $("cards").innerHTML = h;
+  }
+  $("cards").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-cand]");
+    if (!b) return;
+    var id = b.getAttribute("data-cand");
+    for (var i = 0; i < CANDIDATS.length; i++) if (CANDIDATS[i].id === id) etat.candidat = CANDIDATS[i];
+    etat.votes = 1;
+    etat.tel = "";
+    $("votes").value = 1;
+    $("tel").value = "";
+    $("payName").textContent = etat.candidat.nom;
+    $("payCity").textContent = etat.candidat.ville;
+    montant();
+    aller("sPayer");
+  });
+
+  /* ---- Moyens de paiement ---- */
+  function dessinerMoyens() {
+    var h = "";
+    for (var i = 0; i < MOYENS.length; i++) {
+      var m = MOYENS[i];
+      h += '<button type="button" data-moy="' + m.k + '" aria-pressed="' + (etat.moyen === m.k) + '">' +
+        '<span class="plate' + (m.jaune ? " mtn" : "") + '" aria-hidden="true">' + m.plate + "</span>" + m.nom + "</button>";
+    }
+    $("pay").innerHTML = h;
+  }
+  $("pay").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-moy]");
+    if (!b) return;
+    etat.moyen = b.getAttribute("data-moy");
+    $("payErr").hidden = true;
+    dessinerMoyens();
+    montant();
+  });
+
+  /* ---- Nombre de votes et montant ---- */
+  function borne(n) { return isNaN(n) ? 1 : Math.max(1, Math.min(100, n)); }
+  function montant() {
+    var t = etat.votes * PRIX;
+    $("detail").textContent = sep(etat.votes) + " × " + sep(PRIX) + " FCFA";
+    $("total").textContent = sep(t) + " FCFA";
+    $("btnPayer").textContent = "Payer " + sep(t) + " FCFA";
+    var m = MOYENS.filter(function (x) { return x.k === etat.moyen; })[0];
+    $("attDetail").textContent = (m ? m.nom : "Paiement") + " · " + sep(t) + " FCFA";
+  }
+  $("moins").addEventListener("click", function () { etat.votes = borne(etat.votes - 1); $("votes").value = etat.votes; montant(); });
+  $("plus").addEventListener("click", function () { etat.votes = borne(etat.votes + 1); $("votes").value = etat.votes; montant(); });
+  $("votes").addEventListener("input", function () { etat.votes = borne(parseInt(this.value, 10)); montant(); });
+  $("votes").addEventListener("blur", function () { this.value = etat.votes; });
+
+  /* ---- Numéro et pays ---- */
+  function chiffresNationaux(brut, p) {
+    var d = String(brut).replace(/\D/g, "");
+    if (!p.d) return d;
+    if (d.indexOf("00" + p.d) === 0) d = d.slice(2 + p.d.length);
+    else if (d.indexOf(p.d) === 0 && p.len !== null && d.length > p.len) d = d.slice(p.d.length);
+    if (p.len === null) return d;
+    if ((p.c === "FR" || p.c === "BE") && d.length === p.len + 1 && d.charAt(0) === "0") return d.slice(1);
+    if (p.c !== "FR" && p.c !== "BE" && d.length === p.len - 1) return "0" + d;
+    return d;
+  }
+  function lireTel(brut, p) {
+    var d = chiffresNationaux(brut, p);
+    if (!d) return { err: "Entrez le numéro qui paie." };
+    if (p.len === null) {
+      if (d.length < 8) return { err: "Numéro trop court. Entrez l'indicatif du pays puis le numéro." };
+      if (d.length > 15) return { err: "Numéro trop long : 15 chiffres au maximum." };
+      return { ok: "+" + d };
+    }
+    if (d.length !== p.len) {
+      var manque = p.len - d.length;
+      var mot = Math.abs(manque) > 1 ? "chiffres" : "chiffre";
+      return { err: manque > 0
+        ? "Il manque " + manque + " " + mot + " : " + p.nom + ", " + p.len + " chiffres."
+        : "Il y a " + (-manque) + " " + mot + " de trop : " + p.nom + ", " + p.len + " chiffres." };
+    }
+    return { ok: "+" + p.d + d };
+  }
+  function joli(e164, dial) {
+    var reste = dial && e164.indexOf("+" + dial) === 0 ? e164.slice(dial.length + 1) : e164.slice(1);
+    return (dial ? "+" + dial + " " : "+") + reste.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
+  }
+  function detecter(brut) {
+    var t = String(brut).trim();
+    var d = t.replace(/\D/g, "");
+    if (t.charAt(0) !== "+" && d.indexOf("00") !== 0) return null;
+    if (t.charAt(0) !== "+") d = d.slice(2);
+    var best = null;
+    for (var i = 0; i < PAYS.length; i++) {
+      var p = PAYS[i];
+      if (!p.d || d.indexOf(p.d) !== 0) continue;
+      if (!best || p.d.length > best.d.length) best = p;
+    }
+    if (!best || d.length <= best.d.length) return null;
+    return { pays: best, reste: d.slice(best.d.length) };
+  }
+  function dessinerTel() {
+    $("flag").textContent = etat.pays.f;
+    $("dial").textContent = etat.pays.d ? "+" + etat.pays.d : "+";
+    $("tel").placeholder = etat.pays.ex;
+    var r = lireTel(etat.tel, etat.pays);
+    var h = $("telHint");
+    h.className = "hint";
+    if (r.ok) { h.classList.add("good"); h.textContent = "Sera débité : " + joli(r.ok, etat.pays.d); }
+    else if (etat.gronde || String(etat.tel).replace(/\D/g, "").length > 3) { h.classList.add("bad"); h.textContent = r.err; }
+    else h.textContent = etat.pays.len
+      ? etat.pays.nom + " · " + etat.pays.len + " chiffres. Numéro étranger ? Écrivez-le avec son +indicatif."
+      : "Écrivez le numéro avec son indicatif, par exemple +41 79 123 45 67.";
+  }
+  $("tel").addEventListener("input", function () {
+    var d = detecter(this.value);
+    if (d && d.pays.c !== etat.pays.c) { etat.pays = d.pays; this.value = d.reste; }
+    etat.tel = this.value;
+    dessinerTel();
+  });
+  $("dialBtn").addEventListener("click", function () { aller("sPays"); });
+
+  function dessinerPays(q) {
+    var n = String(q).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+    var ch = n.replace(/\D/g, "");
+    var h = "";
+    for (var i = 0; i < PAYS.length; i++) {
+      var p = PAYS[i];
+      var nom = p.nom.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+      if (n && nom.indexOf(n) === -1 && !(ch && p.d.indexOf(ch) === 0)) continue;
+      h += '<button type="button" data-pays="' + p.c + '" aria-selected="' + (p.c === etat.pays.c) + '">' +
+        '<span class="flag" aria-hidden="true">' + p.f + "</span>" +
+        '<span class="nom">' + p.nom + "</span>" +
+        '<span class="ind num">' + (p.d ? "+" + p.d : "+…") + "</span></button>";
+    }
+    $("countries").innerHTML = h || '<p class="empty">Aucun pays ne correspond.</p>';
+  }
+  $("search").addEventListener("input", function () { dessinerPays(this.value); });
+  $("countries").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-pays]");
+    if (!b) return;
+    var c = b.getAttribute("data-pays");
+    for (var i = 0; i < PAYS.length; i++) if (PAYS[i].c === c) etat.pays = PAYS[i];
+    aller("sPayer");
+  });
+
+  /* ---- Payer : le bouton n'est jamais grisé, c'est l'appui qui explique ---- */
+  $("btnPayer").addEventListener("click", function () {
+    etat.gronde = true;
+    $("payErr").hidden = true;
+    if (!etat.moyen) {
+      $("payErr").hidden = false;
+      $("payErr").textContent = "Choisissez d'abord un moyen de paiement.";
+      return;
+    }
+    var r = lireTel(etat.tel, etat.pays);
+    if (!r.ok) { dessinerTel(); $("tel").focus(); return; }
+    aller("sAttente");
+    window.setTimeout(function () { if (!$("sAttente").hidden) aller("sVerif"); }, 1400);
+  });
+
+  function remplirRecu() {
+    $("okVotes").textContent = motVotes(etat.votes);
+    $("okName").textContent = etat.candidat.nom;
+    var m = MOYENS.filter(function (x) { return x.k === etat.moyen; })[0];
+    $("okAmount").textContent = sep(etat.votes * PRIX) + " FCFA · " + (m ? m.nom : "Wave");
+  }
+  $("btnCopy").addEventListener("click", function () {
+    var b = this;
+    var fini = function () { b.textContent = "Copié"; window.setTimeout(function () { b.textContent = "Copier"; }, 1600); };
+    try { navigator.clipboard.writeText($("okRef").textContent).then(fini, fini); } catch (e) { fini(); }
+  });
+
+  /* ---- Espace organisateur ---- */
+  $("btnOrga").addEventListener("click", function () { aller("sLogin"); });
+  $("btnLogin").addEventListener("click", function () {
+    if (!$("user").value.trim() || !$("pass").value) { $("loginErr").hidden = false; return; }
+    aller("sOrga");
+  });
+  $("pass").addEventListener("keydown", function (ev) { if (ev.key === "Enter") $("btnLogin").click(); });
+
+  function dessinerHistorique(f) {
+    var lignes = PAIEMENTS.filter(function (p) { return f === "all" || p.e === f; });
+    if (!lignes.length) { $("hist").innerHTML = '<p class="empty">Aucun paiement dans cette catégorie.</p>'; return; }
+    var h = "";
+    for (var i = 0; i < lignes.length; i++) {
+      var p = lignes[i];
+      h += '<div class="item">' +
+        '<span class="n">' + p.nom + "</span>" +
+        '<span class="a num">' + sep(p.m) + " FCFA</span>" +
+        '<span class="m num">' + motVotes(p.v) + " · " + p.moy + " · " + p.tel + " · réf. " + p.ref + "</span>" +
+        '<span class="s ' + ETATS[p.e][1] + ' num">' + ETATS[p.e][0] + " · " + p.q + "</span></div>";
+    }
+    $("hist").innerHTML = h;
+  }
+  $("chips").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-f]");
+    if (!b) return;
+    var tous = this.querySelectorAll("button");
+    for (var i = 0; i < tous.length; i++) tous[i].setAttribute("aria-pressed", String(tous[i] === b));
+    dessinerHistorique(b.getAttribute("data-f"));
+  });
+
+  dessinerCandidats();
+  dessinerMoyens();
+  dessinerTel();
+  montant();
+  dessinerHistorique("all");
+  aller("sListe");
+})();
+</script>

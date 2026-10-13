@@ -1,0 +1,361 @@
+<title>Digitalyx Vote</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Outfit:wght@400;500;600;700&display=swap">
+<style>
+/* Mise en page : en-tête blanc de la plateforme (Inovyx · Digitalyx Vote), bandeau noir et or de l'événement, puis salle claire où les cartes des candidats sont rangées par nombre de votes. Style « Clair » : toujours clair, un seul thème, couleurs toutes explicites. */
+:root{
+  --ink:#0e0d0b;        /* noir de l'en-tête, du bandeau et du pied */
+  --ink-2:#1b1915;      /* surfaces sur le noir */
+  --gold:#d4af37;       /* or du logo, sur fond noir */
+  --gold-deep:#8a6a12;  /* or lisible sur fond clair */
+  --paper:#f3f1ec;      /* fond de la salle */
+  --card:#ffffff;
+  --line:#e3ded2;
+  --txt:#1c1a16;
+  --dim:#6b6558;
+  --on-ink:#f4f1e8;
+  --on-ink-dim:#aaa392;
+  --ok:#2f9e5b;
+  --danger:#c0453b;
+  --scrim:rgba(14,13,11,.62);
+  --inovyx:#338fce;     /* bleu du logo Inovyx */
+  --inovyx-ink:#30302e; /* gris foncé du logo Inovyx */
+  --display:"Cormorant Garamond","Times New Roman",Georgia,serif;
+  --body:"Outfit","Segoe UI",Roboto,Arial,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--txt);font-family:var(--body);font-size:15px;line-height:1.5}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+h1,h2,h3{margin:0;font-family:var(--display);font-weight:700;text-wrap:balance}
+p{margin:0}
+.num{font-variant-numeric:lining-nums tabular-nums}
+.in{width:100%;max-width:1140px;margin:0 auto;padding-inline:16px}
+@media (min-width:720px){.in{padding-inline:28px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* Bandeau de maquette */
+.mock{background:var(--gold);color:var(--ink);font-size:12px;font-weight:600;text-align:center;padding:6px 16px}
+
+/* En-tête blanc de la plateforme, collé en haut au défilement */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--card);border-bottom:1px solid var(--line)}
+.top .in{display:flex;align-items:center;gap:14px;padding-block:10px}
+.top img{flex:none;height:34px;width:auto}
+.brand{min-width:0;margin-right:auto;padding-left:14px;border-left:1px solid var(--line)}
+.brand b{display:block;font-size:19px;font-weight:700;line-height:1.1;letter-spacing:-.01em;color:var(--inovyx-ink)}
+.brand b em{font-style:normal;color:var(--inovyx)}
+.brand span{display:block;font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.live{flex:none;display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(47,158,91,.35);background:#eef8f2;color:#1f7a45;border-radius:999px;padding:5px 11px;font-size:12.5px;font-weight:600}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--ok);animation:pulse 2s ease-in-out infinite}
+.live.off{border-color:rgba(192,69,59,.35);background:#fbeeed;color:var(--danger)}
+.live.off i{background:var(--danger);animation:none}
+@keyframes pulse{50%{opacity:.35}}
+@media (max-width:480px){.top img{height:26px}.brand{padding-left:10px}.brand b{font-size:16px}.brand span{font-size:9.5px;letter-spacing:.1em}.live span{display:none}.live{padding:7px}}
+
+/* Bandeau de l'événement */
+.hero{position:relative;overflow:hidden;background:var(--ink);color:var(--on-ink)}
+.hero .in{position:relative;display:grid;gap:14px;padding-block:34px 30px}
+.eyebrow{font-size:11.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--on-ink-dim)}
+.hero h1{font-style:italic;font-size:clamp(40px,10vw,68px);line-height:.95;color:var(--gold)}
+.stage{font-family:var(--display);font-style:italic;font-size:22px;color:var(--on-ink)}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;margin-top:6px;background:rgba(212,175,55,.22);border:1px solid rgba(212,175,55,.22);border-radius:12px;overflow:hidden;max-width:620px}
+.fact{background:var(--ink-2);padding:11px 14px;display:grid;gap:1px;min-width:0}
+.fact small{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--on-ink-dim)}
+.fact b{font-size:18px;font-weight:600;color:var(--on-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fact b em{font-style:normal;color:var(--gold)}
+.closing{font-size:13px;color:var(--on-ink-dim)}
+@media (max-width:480px){.fact{padding:10px}.fact b{font-size:16px}.fact small{font-size:10px}}
+
+/* Comment voter : une vraie séquence en trois temps */
+.how{border-bottom:1px solid var(--line);background:var(--card)}
+.how ol{list-style:none;margin:0;padding-block:14px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;counter-reset:s}
+.how li{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--dim);min-width:0;counter-increment:s}
+.how li::before{content:counter(s);flex:none;width:26px;height:26px;border-radius:50%;border:1px solid var(--gold-deep);color:var(--gold-deep);display:grid;place-items:center;font-weight:700;font-size:13px}
+.how li b{color:var(--txt);font-weight:600}
+@media (max-width:640px){.how ol{grid-template-columns:1fr;gap:8px}}
+
+/* Outils */
+main.in{display:grid;gap:18px;padding-block:22px 40px}
+.tools{display:grid;gap:10px}
+@media (min-width:720px){.tools{grid-template-columns:1fr minmax(0,360px);align-items:center}}
+.tools h2{font-size:28px}
+.tools p{font-size:13px;color:var(--dim)}
+.search{position:relative;display:block}
+.search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--dim)}
+.search input{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px 14px 12px 40px;background:var(--card);font-size:15px}
+.search input:focus{outline:2px solid var(--gold);outline-offset:1px}
+
+/* Cartes des candidats */
+.list{list-style:none;margin:0;padding:0;display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr))}
+.card{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;min-width:0;transition:transform .15s,box-shadow .15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(14,13,11,.1)}
+.card.lead{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
+.photo{position:relative;aspect-ratio:4/5;max-width:100%;background:var(--ink);overflow:hidden}
+.photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 18%}
+.initials{display:grid;place-items:center;width:100%;height:100%;font-family:var(--display);font-style:italic;font-size:64px;color:var(--gold)}
+.rank{position:absolute;top:10px;left:10px;background:var(--card);color:var(--txt);border-radius:8px;padding:3px 10px;font-weight:700;font-size:14px}
+.rank sup{font-size:.65em}
+.lead .rank{background:var(--gold);color:var(--ink)}
+.no{position:absolute;bottom:10px;left:10px;background:rgba(14,13,11,.65);color:var(--on-ink);border-radius:999px;padding:3px 10px;font-size:12px;font-weight:500;letter-spacing:.04em}
+.body{flex:1;display:grid;gap:10px;align-content:start;padding:14px 14px 16px}
+.name{font-size:25px;line-height:1.05}
+.city{display:inline-flex;align-items:center;gap:5px;font-size:13.5px;color:var(--dim)}
+.city svg{flex:none;color:var(--gold-deep)}
+.score{display:grid;gap:7px}
+.score p{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:14px;color:var(--dim)}
+.score b{font-size:18px;font-weight:600;color:var(--txt)}
+.bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--gold);border-radius:3px}
+.vote{margin-top:4px;height:48px;border:0;border-radius:10px;background:var(--ink);color:var(--gold);font-weight:600;font-size:15px;letter-spacing:.02em;transition:background .15s,color .15s}
+.vote:hover:not(:disabled){background:var(--gold);color:var(--ink)}
+.vote:disabled{background:var(--line);color:var(--dim);cursor:not-allowed}
+.empty{padding:28px;text-align:center;color:var(--dim);background:var(--card);border:1px dashed var(--line);border-radius:14px}
+.closed{padding:14px 16px;border-radius:12px;background:var(--card);border:1px solid var(--line);text-align:center;color:var(--dim)}
+
+/* Pied de page noir */
+.foot{background:var(--ink);color:var(--on-ink-dim);font-size:13px}
+.foot .in{display:grid;gap:18px;grid-template-columns:1.3fr 1fr 1fr;padding-block:30px calc(24px + env(safe-area-inset-bottom,0px))}
+.foot h4{margin:0 0 6px;font-family:var(--display);font-style:italic;font-size:20px;color:var(--gold)}
+.foot p + p{margin-top:3px}
+.logos{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.logos span{height:30px;padding:0 8px;border-radius:6px;background:#fff;display:inline-flex;align-items:center}
+.logos span.mtn{background:#ffcb05}
+.logos img{display:block;height:18px;width:auto}
+.legal{grid-column:1/-1;border-top:1px solid rgba(212,175,55,.2);padding-top:14px;font-size:12px}
+@media (max-width:720px){.foot .in{grid-template-columns:1fr}}
+
+/* Fenêtre de vote */
+.scrim{position:fixed;inset:0;z-index:40;background:var(--scrim);display:flex;align-items:flex-end;justify-content:center}
+.sheet{width:100%;max-width:440px;max-height:92dvh;overflow:auto;background:var(--card);border-radius:20px 20px 0 0;padding:18px 16px calc(20px + env(safe-area-inset-bottom,0px));display:grid;gap:18px;animation:up .22s ease-out}
+@media (min-width:640px){.scrim{align-items:center;padding:16px}.sheet{border-radius:20px;padding:22px}}
+@keyframes up{from{transform:translateY(24px);opacity:.5}to{transform:none;opacity:1}}
+.sh-head{display:flex;align-items:center;gap:12px}
+.sh-head .av{flex:none;width:54px;height:54px;border-radius:50%;overflow:hidden;border:2px solid var(--gold);background:var(--ink)}
+.sh-head .av img{width:100%;height:100%;object-fit:cover;object-position:center 18%}
+.sh-head .av span{display:grid;place-items:center;height:100%;font-family:var(--display);font-style:italic;font-size:22px;color:var(--gold)}
+.sh-head small{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-deep);font-weight:600}
+.sh-head h2{font-size:26px;line-height:1.05}
+.x{margin-left:auto;flex:none;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:transparent;display:grid;place-items:center;color:var(--dim)}
+.grp{display:grid;gap:8px}
+.lbl{font-size:13px;color:var(--dim);font-weight:500}
+.stepper{display:grid;grid-template-columns:52px 1fr 52px;gap:8px}
+.stepper button{height:52px;border-radius:12px;border:1px solid var(--line);background:var(--paper);font-size:22px}
+.stepper input{min-width:0;height:52px;text-align:center;border-radius:12px;border:1px solid var(--line);background:var(--card);font-family:var(--display);font-size:32px;font-weight:700;-moz-appearance:textfield}
+.stepper input::-webkit-inner-spin-button,.stepper input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.packs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.packs button{border:1px solid var(--line);background:transparent;border-radius:10px;padding:8px 0;font-size:13px;font-weight:500}
+.packs button[aria-pressed="true"]{border-color:var(--gold-deep);background:#faf5e4;color:var(--gold-deep);font-weight:700}
+.pay{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pay button{display:grid;justify-items:center;gap:7px;padding:8px 6px 9px;border-radius:12px;border:1px solid var(--line);background:transparent;font-size:12.5px;line-height:1.2}
+.pay .lg{display:flex;align-items:center;justify-content:center;width:100%;height:42px;border-radius:8px;background:#fff;border:1px solid var(--line)}
+.pay .lg.mtn{background:#ffcb05;border-color:#ffcb05}
+.pay .lg img{display:block;height:24px;width:auto}
+.pay .lg img.wave{height:30px;border-radius:6px}
+.pay button[aria-pressed="true"]{border-color:var(--gold-deep);box-shadow:inset 0 0 0 1px var(--gold-deep);font-weight:600}
+.phone{display:flex;align-items:center;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.phone span{padding:0 12px;height:48px;display:grid;place-items:center;background:var(--paper);border-right:1px solid var(--line);color:var(--dim);font-size:14px}
+.phone input{flex:1;min-width:0;height:48px;border:0;padding:0 12px;font-size:16px;letter-spacing:.04em;background:var(--card)}
+.phone input:focus{outline:none}
+.phone:focus-within{outline:2px solid var(--gold);outline-offset:1px}
+.hint{font-size:12px;color:var(--danger)}
+.total{display:flex;justify-content:space-between;align-items:baseline;padding:12px 14px;border-radius:12px;background:var(--paper)}
+.total span{color:var(--dim);font-size:13.5px}
+.total b{font-family:var(--display);font-size:28px}
+.cta{height:54px;border:0;border-radius:12px;background:var(--ink);color:var(--gold);font-size:16px;font-weight:600}
+.cta:hover:not(:disabled){background:var(--gold);color:var(--ink)}
+.cta:disabled{opacity:.45;cursor:not-allowed}
+.center{display:grid;justify-items:center;gap:10px;text-align:center;padding:10px 0}
+.center h2{font-size:30px}
+.center p{color:var(--dim)}
+.spin{width:48px;height:48px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--gold);animation:sp .9s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.ok{width:62px;height:62px;border-radius:50%;background:var(--gold);color:var(--ink);display:grid;place-items:center}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn2{height:48px;border-radius:12px;border:1px solid var(--line);background:transparent;font-weight:600}
+.btn2.dark{background:var(--ink);color:var(--gold);border-color:var(--ink)}
+
+/* Sélecteur de démonstration */
+.demo{position:fixed;left:50%;bottom:calc(12px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:30;display:flex;gap:4px;background:var(--ink);border:1px solid rgba(212,175,55,.35);border-radius:999px;padding:4px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.demo button{border:0;background:transparent;color:var(--on-ink-dim);border-radius:999px;padding:7px 13px;font-size:12.5px;white-space:nowrap}
+.demo button[aria-pressed="true"]{background:var(--gold);color:var(--ink);font-weight:600}
+body{padding-bottom:70px}
+</style>
+
+<div class="mock">Maquette — données d'exemple, paiements simulés</div>
+
+<header class="top"><div class="in">
+  <img src="img/inovyx-logo.png" alt="Inovyx Tech">
+  <div class="brand"><b>Digitalyx <em>Vote</em></b><span>Vote du public en ligne</span></div>
+  <span class="live" id="live"><i></i><span>Vote ouvert</span></span>
+</div></header>
+
+<section class="hero">
+  <div class="in">
+    <p class="eyebrow">Kabowd Production · 7ᵉ édition</p>
+    <h1>Talent Traiteur 2026</h1>
+    <p class="stage">1<sup>re</sup> sélection · Bouaké</p>
+    <div class="facts">
+      <div class="fact"><small>Le vote</small><b class="num"><em>200</em> FCFA</b></div>
+      <div class="fact"><small>Votes reçus</small><b class="num" id="total">0</b></div>
+      <div class="fact"><small>Il reste</small><b class="num" id="left">2 j 04 h</b></div>
+    </div>
+    <p class="closing" id="closing">Clôture le vendredi 2 octobre 2026 à 22 h</p>
+  </div>
+</section>
+
+<section class="how" aria-label="Comment voter"><ol class="in">
+  <li><span><b>Choisissez</b> votre candidat</span></li>
+  <li><span><b>Indiquez</b> le nombre de votes</span></li>
+  <li><span><b>Payez</b> par Wave, Orange Money ou MTN</span></li>
+</ol></section>
+
+<main class="in">
+  <p class="closed" id="closedMsg" hidden>Le vote est clos. Rendez-vous à la proclamation des résultats.</p>
+  <div class="tools">
+    <div><h2>Les candidats</h2><p>Classement en direct, mis à jour toutes les 15 secondes.</p></div>
+    <label class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Rechercher un candidat ou une ville…" aria-label="Rechercher un candidat">
+    </label>
+  </div>
+  <ol class="list" id="list" aria-label="Candidats, du plus voté au moins voté"></ol>
+</main>
+
+<footer class="foot"><div class="in">
+  <div><h4>Talent Traiteur 2026</h4><p>Grand concours gastronomique et spectacle, 7ᵉ édition.</p><p>Organisé par Kabowd Production.</p></div>
+  <div><h4>Le vote</h4><p>1 vote = 200 FCFA, autant de votes que vous voulez.</p><p>Chaque vote compte dès que le paiement est confirmé.</p></div>
+  <div><h4>Paiement</h4><p>Wave · Orange Money · MTN</p>
+    <div class="logos"><span><img src="img/pay/wave.png" alt="Wave"></span><span><img src="img/pay/orange-money.svg" alt="Orange Money"></span><span class="mtn"><img src="img/pay/mtn.svg" alt="MTN Mobile Money"></span></div></div>
+  <p class="legal">© 2026 Kabowd Production · Vote en ligne propulsé par Digitalyx Vote · Inovyx Tech</p>
+</div></footer>
+
+<nav class="demo" aria-label="État de la démonstration">
+  <button type="button" id="d-open" aria-pressed="true">Vote ouvert</button>
+  <button type="button" id="d-closed" aria-pressed="false">Vote clos</button>
+</nav>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => Math.round(n).toLocaleString("fr-FR").replace(/ | /g, " ");
+  const votes = (n) => fmt(n) + (n > 1 ? " votes" : " vote");
+  const PRICE = 200, MAX = 100;
+  const PIN = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>';
+
+  // Candidats de la 1re sélection de Bouaké (campagne précédente) ; le dernier, sans photo, montre le cas « portrait manquant ».
+  const cands = [
+    { id: "c1", no: 1, name: "Doua Agnès Triphène", city: "Bouaké", photo: "img/doua.jpg", v: 58 },
+    { id: "c2", no: 2, name: "Tekpo", city: "Yamoussoukro", photo: "img/tekpo.jpg", v: 820 },
+    { id: "c3", no: 3, name: "Sangaré Férima Leyla", city: "Minignan", photo: "img/sangare.jpg", v: 639 },
+    { id: "c4", no: 4, name: "Kadja Hugues", city: "Bouaké", photo: "img/kadja.jpg", v: 183 },
+    { id: "c5", no: 5, name: "Koné Awa", city: "Korhogo", photo: null, v: 0 },
+  ];
+  const METHODS = {
+    WAVE: { label: "Wave", logo: '<span class="lg"><img class="wave" src="img/pay/wave.png" alt=""></span>' },
+    OM: { label: "Orange Money", logo: '<span class="lg"><img src="img/pay/orange-money.svg" alt=""></span>' },
+    MTN: { label: "MTN MoMo", logo: '<span class="lg mtn"><img src="img/pay/mtn.svg" alt=""></span>' },
+  };
+  let open = true;
+  const initials = (n) => n.split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+  const pic = (c) => c.photo ? `<img src="${c.photo}" alt="${c.name}">` : `<span class="initials" aria-hidden="true">${initials(c.name)}</span>`;
+
+  function render() {
+    const total = cands.reduce((s, c) => s + c.v, 0);
+    $("total").textContent = fmt(total);
+    const ranked = [...cands].sort((a, b) => b.v - a.v || a.no - b.no);
+    const q = $("q").value.trim().toLowerCase();
+    const shown = ranked.filter((c) => !q || (c.name + " " + c.city).toLowerCase().includes(q));
+    $("list").innerHTML = shown.length ? shown.map((c) => {
+      const rank = ranked.indexOf(c) + 1;
+      const pct = total ? Math.round(c.v / total * 100) : 0;
+      return `<li class="card ${rank === 1 && c.v > 0 ? "lead" : ""}">
+        <div class="photo">${pic(c)}
+          <span class="rank num">${rank}<sup>${rank === 1 ? "er" : "e"}</sup></span>
+          <span class="no num">Nº ${c.no}</span></div>
+        <div class="body">
+          <div><h3 class="name">${c.name}</h3><span class="city">${PIN}${c.city}</span></div>
+          <div class="score"><p class="num"><b>${votes(c.v)}</b><span>${pct} %</span></p>
+            <div class="bar"><i style="width:${total ? c.v / total * 100 : 0}%"></i></div></div>
+          <button type="button" class="vote" data-vote="${c.id}" ${open ? "" : "disabled"}>${open ? "Voter" : "Vote clos"}</button>
+        </div></li>`;
+    }).join("") : '<li class="empty">Aucun candidat ne correspond à cette recherche.</li>';
+    $("live").classList.toggle("off", !open);
+    $("live").lastElementChild.textContent = open ? "Vote ouvert" : "Vote clos";
+    $("closedMsg").hidden = open;
+    $("left").textContent = open ? "2 j 04 h" : "Terminé";
+    $("closing").textContent = (open ? "Clôture" : "Clôturé") + " le vendredi 2 octobre 2026 à 22 h";
+  }
+  $("q").addEventListener("input", render);
+  $("list").addEventListener("click", (e) => { const b = e.target.closest("[data-vote]"); if (b) sheet(b.dataset.vote); });
+  const demo = (o) => { open = o; $("d-open").setAttribute("aria-pressed", o); $("d-closed").setAttribute("aria-pressed", !o); render(); };
+  $("d-open").addEventListener("click", () => demo(true));
+  $("d-closed").addEventListener("click", () => demo(false));
+
+  function sheet(id) {
+    const c = cands.find((x) => x.id === id);
+    const st = { n: 5, method: "WAVE", phone: "", step: "form", touched: false };
+    const scrim = document.createElement("div");
+    scrim.className = "scrim";
+    scrim.innerHTML = '<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-t"></div>';
+    document.body.appendChild(scrim);
+    const box = scrim.firstElementChild;
+    const close = () => { scrim.remove(); document.removeEventListener("keydown", onKey); };
+    const onKey = (e) => { if (e.key === "Escape" && st.step !== "pay") close(); };
+    document.addEventListener("keydown", onKey);
+    scrim.addEventListener("click", (e) => { if (e.target === scrim && st.step !== "pay") close(); });
+    const clamp = (n) => Math.max(1, Math.min(MAX, n));
+    const phoneOk = () => /^0[157]\d{8}$/.test(st.phone.replace(/\s/g, ""));
+
+    function draw() {
+      const head = `<div class="sh-head"><div class="av">${c.photo ? `<img src="${c.photo}" alt="">` : `<span>${initials(c.name)}</span>`}</div>
+        <div><small>Voter pour · ${c.city}</small><h2 id="sh-t">${c.name}</h2></div>
+        ${st.step === "pay" ? "" : '<button class="x" data-close aria-label="Fermer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>'}</div>`;
+      if (st.step === "form") {
+        box.innerHTML = head + `
+          <div class="grp"><span class="lbl">Nombre de votes</span>
+            <div class="stepper"><button type="button" data-step="-1" aria-label="Un vote de moins">−</button>
+              <input id="sh-n" class="num" type="number" inputmode="numeric" min="1" max="${MAX}" value="${st.n}" aria-label="Nombre de votes">
+              <button type="button" data-step="1" aria-label="Un vote de plus">+</button></div>
+            <div class="packs">${[1, 5, 10, 20].map((p) => `<button type="button" class="num" data-pack="${p}" aria-pressed="${st.n === p}">${p}</button>`).join("")}</div></div>
+          <div class="grp"><span class="lbl">Payer avec</span>
+            <div class="pay">${Object.keys(METHODS).map((k) => `<button type="button" data-method="${k}" aria-pressed="${st.method === k}">${METHODS[k].logo}${METHODS[k].label}</button>`).join("")}</div></div>
+          <div class="grp"><label class="lbl" for="sh-phone">Numéro ${METHODS[st.method].label}</label>
+            <div class="phone"><span>+225</span><input id="sh-phone" type="tel" inputmode="tel" placeholder="07 00 00 00 00" value="${st.phone}" autocomplete="tel"></div>
+            ${st.touched && !phoneOk() ? '<p class="hint">Entrez les 10 chiffres du numéro, par exemple 07 12 34 56 78.</p>' : ""}</div>
+          <div class="total"><span class="num">${votes(st.n)} × 200 FCFA</span><b class="num">${fmt(st.n * PRICE)} FCFA</b></div>
+          <button type="button" class="cta num" data-pay>Payer avec ${METHODS[st.method].label}</button>`;
+        const n = box.querySelector("#sh-n");
+        n.addEventListener("change", () => { st.n = clamp(parseInt(n.value, 10) || 1); draw(); });
+        box.querySelector("#sh-phone").addEventListener("input", (e) => { st.phone = e.target.value; });
+      } else if (st.step === "pay") {
+        box.innerHTML = head + `<div class="center"><div class="spin" aria-hidden="true"></div><h2>Paiement en cours…</h2>
+          <p>Validez le paiement de <b class="num">${fmt(st.n * PRICE)} FCFA</b> sur votre téléphone (${METHODS[st.method].label}).</p></div>`;
+      } else {
+        box.innerHTML = head + `<div class="center"><div class="ok"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+          <h2>Merci !</h2><p><b class="num">${votes(st.n)}</b> pour ${c.name}.</p></div>
+          <div class="row2"><button type="button" class="btn2" data-close>Fermer</button><button type="button" class="btn2 dark" data-again>Voter encore</button></div>`;
+      }
+    }
+    box.addEventListener("click", (e) => {
+      const t = e.target;
+      if (t.closest("[data-close]")) return close();
+      const s = t.closest("[data-step]"); if (s) { st.n = clamp(st.n + Number(s.dataset.step)); return draw(); }
+      const p = t.closest("[data-pack]"); if (p) { st.n = Number(p.dataset.pack); return draw(); }
+      const m = t.closest("[data-method]"); if (m) { st.method = m.dataset.method; return draw(); }
+      if (t.closest("[data-again]")) { st.step = "form"; return draw(); }
+      if (t.closest("[data-pay]")) {
+        st.touched = true;
+        if (!phoneOk()) return draw();
+        st.step = "pay"; draw();
+        setTimeout(() => { c.v += st.n; st.step = "done"; draw(); render(); }, 1400);
+      }
+    });
+    draw();
+  }
+  render();
+})();
+</script>

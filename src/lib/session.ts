@@ -4,6 +4,13 @@ import { cookies } from "next/headers";
 export interface AdminSession {
   loggedIn?: boolean;
   username?: string;
+  /**
+   * Espace organisateur du panneau public : droit de lecture sur les recettes
+   * et l'historique, et rien d'autre. Volontairement distinct de `loggedIn`,
+   * qui ouvre tout le dashboard : le mot de passe du panneau se tape sur une
+   * page publique, il ne doit jamais valoir celui de l'administration.
+   */
+  orga?: boolean;
 }
 
 /**

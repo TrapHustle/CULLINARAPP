@@ -32,6 +32,19 @@ export function paymentMode(): PaymentMode {
   return process.env.PAIEMENT_MODE === "sirap" ? "sirap" : "simulation";
 }
 
+/**
+ * Présentation du paiement et de l'espace organisateur : pages plein écran
+ * (défaut) ou fenêtres flottantes, l'ancienne présentation.
+ *
+ * Le réglage est une variable d'environnement et non une colonne en base :
+ * revenir en arrière ne demande alors ni migration ni redéploiement — une
+ * ligne dans le `.env` du serveur et un `pm2 restart` suffisent.
+ * `VOTE_PLEIN_ECRAN=0` restaure les fenêtres flottantes.
+ */
+export function fullscreenVote(): boolean {
+  return process.env.VOTE_PLEIN_ECRAN !== "0";
+}
+
 /** Au-delà, un paiement resté en attente est considéré comme abandonné. */
 const PENDING_MAX_DAYS = 3;
 /** Nombre de statuts redemandés à la passerelle par passage. */
@@ -147,6 +160,8 @@ export interface PublicVoteView {
   simulated: boolean;
   /** Heure du calcul (ISO) : la page s'en sert pour l'année du pied de page, sans décalage d'hydratation. */
   generatedAt: string;
+  /** Paiement et espace organisateur en pages pleines, plutôt qu'en fenêtres. */
+  fullscreen: boolean;
   /** `null` quand les compteurs sont masqués. */
   totalVotes: number | null;
   /** Du plus voté au moins voté ; dans l'ordre de passage si les compteurs sont masqués. */
@@ -191,6 +206,7 @@ export async function getPublicVoteView(): Promise<PublicVoteView> {
     style: toPublicVoteStyle(session.publicVoteStyle),
     methods: enabledMethods(session.publicVoteMethods),
     simulated: paymentMode() === "simulation",
+    fullscreen: fullscreenVote(),
     generatedAt: now.toISOString(),
     totalVotes: showCounts ? withVotes.reduce((sum, candidate) => sum + candidate.votes, 0) : null,
     candidates: list,

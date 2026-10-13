@@ -2,6 +2,7 @@
 
 import { timingSafeEqual } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getOrCreateSession, prisma, SESSION_ID } from "./prisma";
 import { getSession } from "./session";
@@ -25,6 +26,7 @@ import {
   voteSettingsSchema,
 } from "./validation";
 import { computeResults } from "./results";
+import { checkLogin, clearLoginFailures, noteLoginFailure, realClientIp, waitMessage } from "./rate-limit";
 
 export interface ActionState {
   error?: string;
@@ -68,14 +70,26 @@ export async function loginAction(
     return { error: "Le compte organisateur n'est pas configuré sur le serveur (.env)." };
   }
 
+  // Le dashboard ouvre tout : classements, configuration, reversements. Depuis
+  // qu'il répond sur internet et non plus seulement sur le réseau de la salle,
+  // il lui faut la même limite d'essais que le panneau public.
+  const list = await headers();
+  const key = realClientIp((name) => list.get(name));
+  const attente = checkLogin("admin", key, parsed.data.username);
+  if (attente.blocked) {
+    return { error: waitMessage(attente.minutes) };
+  }
+
   const ok =
     safeEqual(parsed.data.username, expectedUser) &&
     safeEqual(parsed.data.password, expectedPassword);
 
   if (!ok) {
+    noteLoginFailure("admin", key, parsed.data.username);
     return { error: "Identifiant ou mot de passe incorrect." };
   }
 
+  clearLoginFailures("admin", key, parsed.data.username);
   const session = await getSession();
   session.loggedIn = true;
   session.username = parsed.data.username;
