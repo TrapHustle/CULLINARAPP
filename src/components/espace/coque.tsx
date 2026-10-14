@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { deconnecterAction } from "@/lib/comptes-actions";
 import { initiales } from "@/lib/espace";
-import { dmSans } from "@/lib/police";
+import { outfit } from "@/lib/police";
 import { BoutonTheme } from "./bouton-theme";
 import { Icone } from "./icone";
 import { NavLaterale } from "./nav-laterale";
@@ -22,13 +22,16 @@ interface Props {
 export async function Coque({ utilisateur, evenements, evenementCourant, enDirect, children }: Props) {
   const sombre = (await cookies()).get(COOKIE_THEME)?.value === "sombre";
   return (
-    <div className={`${dmSans.className} ${styles.page} ${sombre ? styles.sombre : ""}`}>
+    <div className={`${outfit.className} ${styles.page} ${sombre ? styles.sombre : ""}`}>
       <header className={styles.barre}>
         <Link href="/espace" className={styles.marque}>
           <span className={styles.marqueSigne}>
-            <Icone nom="coche" taille={18} />
+            <Icone nom="coche" taille={22} />
           </span>
-          <span>DIGITALYX-VOTE</span>
+          <span className={styles.marqueTexte}>
+            <strong>DIGITALYX-VOTE</strong>
+            <small>Plateforme de vote des concours</small>
+          </span>
         </Link>
 
         {evenements.length > 0 ? (

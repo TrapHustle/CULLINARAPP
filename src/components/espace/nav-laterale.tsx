@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { deconnecterAction } from "@/lib/comptes-actions";
 import { Icone, type NomIcone } from "./icone";
 import styles from "./panel.module.css";
 
@@ -57,12 +58,21 @@ export function NavLaterale({ evenementId }: { evenementId: string | null }) {
         ]}
       />
 
-      <div className={styles.aide}>
-        <span className={styles.aideIcone}>?</span>
-        <div>
-          <strong>Besoin d’aide ?</strong>
-          <small>L’équipe Inovyx Tech vous répond.</small>
-        </div>
+      <div className={styles.piedLateral}>
+        <span className={styles.version}>
+          <small>VER</small>1.0
+        </span>
+        <span className={styles.produit}>
+          <strong>DIGITALYX-VOTE</strong>
+          <small>
+            Powered by <b>Inovyx Tech</b>
+          </small>
+        </span>
+        <form action={deconnecterAction}>
+          <button type="submit" className={styles.boutonSortie} aria-label="Se déconnecter" title="Se déconnecter">
+            <Icone nom="sortie" taille={20} />
+          </button>
+        </form>
       </div>
     </aside>
   );

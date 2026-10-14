@@ -32,6 +32,8 @@
   --neutre: #dfe5ed;
   --point: #94a0b3;
   --barre-marine: #1f3354;
+  --titre-bloc: #0b2a66;
+  --titre-accent: #5ea4ff;
 
   color-scheme: light;
   min-height: 100vh;
@@ -72,6 +74,8 @@
   --neutre: #263349;
   --point: #5d6b83;
   --barre-marine: #8ea3c4;
+  --titre-bloc: #1768e5;
+  --titre-accent: #ffffff;
 
   color-scheme: dark;
 }
@@ -89,8 +93,8 @@
   position: sticky;
   top: 0;
   z-index: 40;
-  height: 68px;
-  padding: 0 24px;
+  height: 80px;
+  padding: 0 32px 0 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -100,12 +104,11 @@
 }
 
 .marque {
+  width: 248px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: -0.4px;
+  gap: 14px;
   color: var(--encre);
   text-decoration: none;
   white-space: nowrap;
@@ -114,11 +117,31 @@
 .marqueSigne {
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  border-radius: 14px;
   color: #ffffff;
-  background: var(--bleu);
+  background: linear-gradient(135deg, #2b7bff, #0a3d91);
+  box-shadow: 0 8px 18px rgba(23, 104, 229, 0.3);
+}
+
+.marqueTexte {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.marqueTexte strong {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 3px;
+}
+
+.marqueTexte small {
+  color: var(--gris);
+  font-size: 13px;
+  font-weight: 500;
 }
 
 /* Menus déroulants sans JavaScript (<details>). */
@@ -253,23 +276,40 @@
   min-height: 0;
 }
 
+/* Menu latéral : bloc bleu nuit, comme le reste du produit Inovyx. ------ */
+
 .lateral {
-  width: 240px;
+  --lat-texte: #dbe6ff;
+  --lat-titre: #8fa9d9;
+  --lat-survol: rgba(255, 255, 255, 0.06);
+  --lat-actif: rgba(255, 255, 255, 0.1);
+  --lat-accent: #5ea4ff;
+
+  width: 280px;
   flex-shrink: 0;
-  padding: 28px 16px 20px;
-  border-right: 1px solid var(--filet);
-  background: var(--surface);
+  padding: 32px 18px 18px;
+  position: sticky;
+  top: 80px;
+  height: calc(100vh - 80px);
+  overflow-y: auto;
+  background: linear-gradient(180deg, #0b2a66 0%, #081d4a 100%);
+  color: var(--lat-texte);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
+}
+
+.sombre .lateral {
+  background: linear-gradient(180deg, #0c1f45 0%, #08142e 100%);
+  border-right: 1px solid var(--filet);
 }
 
 .rubrique {
-  padding: 16px 12px 10px;
-  color: var(--gris-clair);
-  font-size: 11px;
+  padding: 22px 14px 12px;
+  color: var(--lat-titre);
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 1.3px;
+  letter-spacing: 4px;
   text-transform: uppercase;
 }
 
@@ -278,63 +318,107 @@
 }
 
 .lien {
-  height: 44px;
-  padding: 0 12px;
+  height: 52px;
+  padding: 0 16px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  border-radius: 9px;
-  color: var(--gris);
-  font-size: 14px;
+  gap: 14px;
+  border-left: 3px solid transparent;
+  border-radius: 12px;
+  color: var(--lat-texte);
+  font-size: 16px;
   font-weight: 500;
   text-decoration: none;
+  transition: background 0.15s, color 0.15s;
 }
 
 .lien:hover {
-  color: var(--encre);
-  background: var(--surface-2);
+  color: #ffffff;
+  background: var(--lat-survol);
 }
 
 .lienActif,
 .lienActif:hover {
-  color: var(--bleu-texte);
-  background: var(--bleu-pale);
+  color: var(--lat-accent);
+  background: var(--lat-actif);
+  border-left-color: var(--lat-accent);
   font-weight: 600;
 }
 
-.aide {
-  margin-top: auto;
-  padding: 14px 12px;
+.piedLateral {
+  margin: auto -18px -18px;
+  padding: 18px;
   display: flex;
-  gap: 10px;
-  border: 1px solid var(--filet);
-  border-radius: 12px;
-  background: var(--surface-2);
-  color: var(--encre-2);
-  font-size: 13px;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.12);
 }
 
-.aide div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.aide small {
-  color: var(--gris-clair);
-  font-size: 12px;
-}
-
-.aideIcone {
-  width: 24px;
-  height: 24px;
+.version {
+  width: 46px;
+  height: 46px;
   flex-shrink: 0;
   display: grid;
-  place-items: center;
-  border-radius: 7px;
-  background: var(--bleu-pale);
-  color: var(--bleu-texte);
+  place-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+  font-size: 14px;
   font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.version small {
+  color: var(--lat-accent);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.produit {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.produit strong {
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.produit small {
+  color: var(--lat-titre);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.produit small b {
+  color: #ffffff;
+}
+
+.boutonSortie {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--lat-accent);
+  cursor: pointer;
+}
+
+.boutonSortie:hover {
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .contenu {
@@ -353,30 +437,60 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 28px;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+/* Dans l'en-tête, le surtitre passe sous le grand titre, comme dans les
+   consoles Inovyx : titre, puis ligne en capitales espacées, puis texte. */
+.entete > div:first-child {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.entete .surtitre {
+  order: 2;
+  margin-top: 14px;
+}
+
+.entete .sousTitre {
+  order: 3;
 }
 
 .surtitre {
-  color: var(--gris-clair);
+  color: var(--gris);
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 1.6px;
+  letter-spacing: 4px;
   text-transform: uppercase;
 }
 
 .titre {
-  margin-top: 8px;
   color: var(--encre);
-  font-size: 28px;
-  font-weight: 600;
-  letter-spacing: -0.6px;
-  line-height: 1.2;
+  font-size: clamp(30px, 3.6vw, 50px);
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: -1.5px;
+  line-height: 1.05;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+/* Le mot mis en valeur : bloc bleu nuit, texte bleu vif. */
+.titre em {
+  display: inline-block;
+  margin-left: 0.1em;
+  padding: 0.02em 0.16em 0.04em 0.12em;
+  border-radius: 6px;
+  background: var(--titre-bloc);
+  color: var(--titre-accent);
+  font-style: italic;
 }
 
 .sousTitre {
-  margin-top: 6px;
+  margin-top: 10px;
   color: var(--gris);
   font-size: 15px;
 }
@@ -384,17 +498,19 @@
 /* Boutons --------------------------------------------------------------- */
 
 .bouton {
-  height: 44px;
-  padding: 0 18px;
+  height: 48px;
+  padding: 0 22px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 14px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   font: inherit;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
   cursor: pointer;
   white-space: nowrap;
   text-decoration: none;
@@ -403,7 +519,7 @@
 
 .boutonPrincipal {
   color: #ffffff;
-  background: var(--bleu);
+  background: linear-gradient(135deg, #2b7bff, var(--bleu));
   box-shadow: 0 6px 16px rgba(23, 104, 229, 0.25);
 }
 
@@ -642,7 +758,9 @@
 .ligneTexte a,
 .ligneTitre {
   color: var(--encre);
-  font-weight: 600;
+  font-size: 17px;
+  font-weight: 800;
+  font-style: italic;
   text-decoration: none;
 }
 
@@ -806,16 +924,24 @@
 
   .lateral {
     width: 100%;
+    height: auto;
+    position: static;
     padding: 8px 12px;
     flex-direction: row;
     overflow-x: auto;
-    border-right: 0;
-    border-bottom: 1px solid var(--filet);
   }
 
   .rubrique,
-  .aide {
+  .piedLateral {
     display: none;
+  }
+
+  .lien {
+    border-left: 0;
+  }
+
+  .marque {
+    width: auto;
   }
 
   .lien {
@@ -836,7 +962,7 @@
     flex-wrap: wrap;
   }
 
-  .marque span:last-child {
+  .marqueTexte {
     display: none;
   }
 

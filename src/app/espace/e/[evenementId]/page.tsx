@@ -39,7 +39,7 @@ export default async function PageVueEnsemble({ params }: { params: Promise<{ ev
         <div>
           <div className={styles.surtitre}>Tableau de bord</div>
           <h1 className={styles.titre}>
-            {salutation()}, {utilisateur.organisation.nom}.
+            {salutation()}, <em>{utilisateur.organisation.nom}</em>
           </h1>
           <p className={styles.sousTitre}>
             {ouverte

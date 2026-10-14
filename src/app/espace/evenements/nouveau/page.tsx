@@ -9,8 +9,8 @@ export default function PageNouvelEvenement() {
     <>
       <div className={styles.entete}>
         <div>
-          <div className={styles.surtitre}>Nouvel événement</div>
-          <h1 className={styles.titre}>Créer un événement</h1>
+          <div className={styles.surtitre}>Informations générales du concours</div>
+          <h1 className={styles.titre}>Créer un <em>événement</em></h1>
           <p className={styles.sousTitre}>
             Un événement regroupe vos sélections, jusqu&rsquo;à la finale. Vous ajouterez les sélections juste après.
           </p>

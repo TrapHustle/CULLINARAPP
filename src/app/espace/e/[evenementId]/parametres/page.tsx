@@ -19,7 +19,7 @@ export default async function PageParametres({ params }: { params: Promise<{ eve
       <div className={styles.entete}>
         <div>
           <div className={styles.surtitre}>{evenement.nom}</div>
-          <h1 className={styles.titre}>Paramètres de l&rsquo;événement</h1>
+          <h1 className={styles.titre}>Paramètres de <em>l&rsquo;événement</em></h1>
         </div>
       </div>
 

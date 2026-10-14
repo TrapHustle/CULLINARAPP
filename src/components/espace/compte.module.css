@@ -1,93 +1,163 @@
-/* Pages de compte (connexion, inscription) — design de la refonte. */
+/*
+ * Pages de compte (connexion, inscription, 404) : écran partagé dans l'esprit
+ * des consoles Inovyx, en bleu.
+ */
 
 .page {
   --bleu: #1768e5;
-  --encre: #101d35;
-  --encre-2: #26354d;
-  --gris: #68758b;
-  --filet: #e2e7ee;
+  --bleu-vif: #5ea4ff;
+  --nuit: #071a40;
+  --encre: #0d1830;
+  --encre-2: #1d2b43;
+  --gris: #47546b;
+  --gris-clair: #6b778c;
+  --champ: #f1f4f9;
 
   min-height: 100vh;
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  background: #fbfcfe;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  background: #f7f9fc;
   color: var(--encre);
   line-height: 1.5;
 }
 
-.page h1 {
+.page h1,
+.page h2 {
   font-family: inherit;
+  margin: 0;
 }
 
-/* Halos du premier écran de l'accueil. */
-.page::before,
-.page::after {
+/* Panneau de gauche ------------------------------------------------------ */
+
+.vitrine {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: 56px 64px 40px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: #ffffff;
+  background:
+    radial-gradient(circle at 85% 15%, rgba(94, 164, 255, 0.18), transparent 45%),
+    linear-gradient(160deg, #0b2a66 0%, var(--nuit) 70%);
+}
+
+/* Quadrillage discret, comme sur la capture de référence. */
+.vitrine::before {
   content: "";
   position: absolute;
-  border-radius: 50%;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 48px 48px;
   pointer-events: none;
 }
 
-.page::before {
-  width: 430px;
-  height: 430px;
-  left: -270px;
-  top: 80px;
-  background: #eef5ff;
-}
-
-.page::after {
-  width: 370px;
-  height: 370px;
-  right: -240px;
-  top: 360px;
-  background: #f1efff;
-}
-
-.entete {
+.vitrine > * {
   position: relative;
-  z-index: 2;
-  height: 80px;
-  border-bottom: 1px solid #eef1f5;
-  background: rgba(255, 255, 255, 0.92);
-}
-
-.cadre {
-  max-width: 1180px;
-  height: 100%;
-  margin: 0 auto;
-  padding: 0 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
 }
 
 .marque {
   display: flex;
   align-items: center;
-  gap: 9px;
-  font-size: 21px;
-  font-weight: 700;
-  letter-spacing: -0.7px;
-  color: var(--encre);
+  gap: 12px;
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: 2px;
   text-decoration: none;
 }
 
+.marque em {
+  color: var(--bleu-vif);
+}
+
 .marqueSigne {
+  width: 46px;
+  height: 46px;
   display: grid;
   place-items: center;
-  width: 29px;
-  height: 29px;
-  border-radius: 9px;
+  border-radius: 13px;
   color: #ffffff;
-  background: var(--bleu);
+  background: linear-gradient(135deg, #2b7bff, #1250b8);
+  box-shadow: 0 10px 24px rgba(23, 104, 229, 0.45);
+}
+
+.accroche {
+  margin: auto 0;
+  padding: 48px 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 10px;
+  color: var(--bleu-vif);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.slogan {
+  margin-top: 40px !important;
+  font-size: clamp(36px, 4.2vw, 60px);
+  font-weight: 800;
+  font-style: italic;
+  line-height: 1.05;
+  letter-spacing: -1.5px;
+  text-transform: uppercase;
+}
+
+.slogan em {
+  color: var(--bleu-vif);
+}
+
+.pitch {
+  max-width: 470px;
+  margin: 28px 0 0;
+  color: #b9c9e6;
+  font-size: 17px;
+  font-style: italic;
+  line-height: 1.6;
+}
+
+.piedVitrine {
+  padding-top: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: #8fa9d9;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.piedVitrine b {
+  color: #ffffff;
+}
+
+/* Côté formulaire -------------------------------------------------------- */
+
+.cote {
+  min-width: 0;
+  padding: 28px 32px 48px;
+  display: flex;
+  flex-direction: column;
 }
 
 .retour {
-  color: #58647a;
+  align-self: flex-end;
+  color: var(--gris);
   font-size: 14px;
   font-weight: 500;
   text-decoration: none;
@@ -98,118 +168,166 @@
 }
 
 .centre {
-  position: relative;
-  z-index: 2;
   flex: 1;
   display: grid;
   place-items: center;
-  padding: 56px 16px 72px;
+  padding-top: 24px;
 }
 
 .carte {
   width: 100%;
-  max-width: 440px;
-  padding: 36px 32px 32px;
-  border: 1px solid #e7ebf0;
-  border-radius: 22px;
+  max-width: 500px;
+  padding: 48px 48px 40px;
+  border: 1px solid #e3e8f0;
+  border-radius: 28px;
   background: #ffffff;
-  box-shadow: 0 24px 60px rgba(38, 61, 94, 0.08);
+  box-shadow: 0 30px 70px rgba(13, 24, 48, 0.08);
 }
 
 .surtitre {
-  color: var(--bleu);
+  padding-bottom: 22px;
+  margin-bottom: 30px;
+  border-bottom: 1px solid #e8ecf2;
+  color: var(--gris-clair);
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 1.6px;
+  letter-spacing: 2.5px;
   text-transform: uppercase;
 }
 
 .carte h1 {
-  margin: 10px 0 6px;
-  color: #111d32;
-  font-size: 30px;
-  font-weight: 600;
-  letter-spacing: -1px;
+  color: var(--encre);
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
   line-height: 1.15;
+  text-transform: uppercase;
 }
 
 .sousTitre {
-  margin: 0 0 26px;
-  color: var(--gris);
-  font-size: 15px;
+  margin: 8px 0 30px;
+  color: var(--gris-clair);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
 }
 
 .champ {
   display: block;
-  margin-bottom: 18px;
+  margin-bottom: 22px;
 }
 
-.champ span {
-  display: block;
-  margin-bottom: 7px;
-  color: var(--encre-2);
-  font-size: 14px;
-  font-weight: 500;
+.etiquette {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 9px;
+  color: var(--gris);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
 }
 
-.champ input {
+.saisie {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.saisieIcone {
+  position: absolute;
+  left: 18px;
+  display: grid;
+  color: var(--gris-clair);
+  pointer-events: none;
+}
+
+.saisie input {
   width: 100%;
-  height: 48px;
-  padding: 0 14px;
-  border: 1px solid #d9e0ea;
-  border-radius: 12px;
-  background: #ffffff;
+  height: 58px;
+  padding: 0 52px 0 52px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: var(--champ);
   color: var(--encre);
   font: inherit;
-  font-size: 15px;
+  font-size: 16px;
   box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
 }
 
-.champ input:focus {
+.saisie input::placeholder {
+  color: #8a96aa;
+}
+
+.saisie input:focus {
   outline: none;
   border-color: var(--bleu);
-  box-shadow: 0 0 0 3px #dfebff;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px #e2edff;
+}
+
+.oeil {
+  position: absolute;
+  right: 10px;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--gris-clair);
+  cursor: pointer;
+}
+
+.oeil:hover {
+  color: var(--bleu);
+  background: #e7eef9;
 }
 
 .aide {
   display: block;
-  margin-top: 6px;
-  color: #8995a8;
+  margin-top: 8px;
+  color: var(--gris-clair);
   font-size: 13px;
 }
 
 .erreur {
-  margin: 0 0 18px;
+  margin: 0 0 22px;
   padding: 12px 14px;
   border-radius: 12px;
-  background: #fdecea;
-  color: #c0362c;
+  background: #fde8e6;
+  color: #b42318;
   font-size: 14px;
 }
 
 .bouton {
   width: 100%;
-  height: 50px;
-  margin-top: 6px;
+  height: 60px;
+  margin-top: 10px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 14px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
+  gap: 12px;
   color: #ffffff;
-  background: var(--bleu);
-  box-shadow: 0 8px 20px rgba(23, 104, 229, 0.22);
+  background: linear-gradient(135deg, #0b2a66, var(--nuit));
+  box-shadow: 0 12px 26px rgba(7, 26, 64, 0.25);
   font: inherit;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 
 .bouton:hover {
-  background: #0c5bd1;
-  box-shadow: 0 10px 24px rgba(23, 104, 229, 0.28);
+  background: linear-gradient(135deg, #1768e5, #0b3d9c);
+  box-shadow: 0 14px 30px rgba(23, 104, 229, 0.3);
 }
 
 .bouton:disabled {
@@ -218,7 +336,7 @@
 }
 
 .bas {
-  margin: 22px 0 0;
+  margin: 26px 0 0;
   text-align: center;
   color: var(--gris);
   font-size: 14px;
@@ -226,7 +344,7 @@
 
 .bas a {
   color: var(--bleu);
-  font-weight: 600;
+  font-weight: 700;
   text-decoration: none;
 }
 
@@ -240,7 +358,7 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 8px 20px;
-  color: #7a879a;
+  color: var(--gris-clair);
   font-size: 12px;
 }
 
@@ -251,7 +369,7 @@
 }
 
 .rassurance svg {
-  color: #3cb887;
+  color: #157a56;
 }
 
 .page a:focus-visible,
@@ -260,18 +378,47 @@
   outline-offset: 2px;
 }
 
+/* Écrans étroits : le panneau bleu passe au-dessus, en bandeau. ---------- */
+
+@media (max-width: 960px) {
+  .page {
+    grid-template-columns: 1fr;
+  }
+
+  .vitrine {
+    position: static;
+    height: auto;
+    padding: 28px 24px 32px;
+  }
+
+  .accroche {
+    padding: 28px 0 0;
+  }
+
+  .badge,
+  .pitch,
+  .piedVitrine {
+    display: none;
+  }
+
+  .slogan {
+    margin-top: 0 !important;
+    font-size: 34px;
+  }
+
+  .cote {
+    padding: 16px 16px 40px;
+  }
+
+  .retour {
+    display: none;
+  }
+}
+
 @media (max-width: 480px) {
-  .entete {
-    height: 68px;
-  }
-
-  .marque {
-    font-size: 18px;
-  }
-
   .carte {
-    padding: 28px 20px 24px;
-    border-radius: 18px;
+    padding: 32px 22px 28px;
+    border-radius: 22px;
   }
 
   .carte h1 {

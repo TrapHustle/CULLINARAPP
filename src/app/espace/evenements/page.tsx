@@ -16,8 +16,8 @@ export default async function PageEvenements() {
     <>
       <div className={styles.entete}>
         <div>
-          <div className={styles.surtitre}>Organisation</div>
-          <h1 className={styles.titre}>Mes événements</h1>
+          <div className={styles.surtitre}>Répertoire &amp; suivi de vos concours</div>
+          <h1 className={styles.titre}>Mes <em>événements</em></h1>
           <p className={styles.sousTitre}>{utilisateur.organisation.nom}</p>
         </div>
         <Link href="/espace/evenements/nouveau" className={`${styles.bouton} ${styles.boutonPrincipal}`}>

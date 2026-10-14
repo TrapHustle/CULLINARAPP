@@ -24,7 +24,9 @@ export default async function PageSelections({ params }: { params: Promise<{ eve
       <div className={styles.entete}>
         <div>
           <div className={styles.surtitre}>{evenement.nom}</div>
-          <h1 className={styles.titre}>Sélections</h1>
+          <h1 className={styles.titre}>
+            Gestion des <em>sélections</em>
+          </h1>
           <p className={styles.sousTitre}>
             Les tours du concours, dans l&rsquo;ordre. La dernière sélection est la finale.
           </p>
