@@ -1,10 +1,13 @@
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { deconnecterAction } from "@/lib/comptes-actions";
 import { initiales } from "@/lib/espace";
 import { dmSans } from "@/lib/police";
+import { BoutonTheme } from "./bouton-theme";
 import { Icone } from "./icone";
 import { NavLaterale } from "./nav-laterale";
 import styles from "./panel.module.css";
+import { COOKIE_THEME } from "./theme";
 
 interface Props {
   utilisateur: { email: string; organisation: { nom: string } };
@@ -16,9 +19,10 @@ interface Props {
 }
 
 /** Habillage du panneau organisateur : barre du haut, menu latéral, contenu. */
-export function Coque({ utilisateur, evenements, evenementCourant, enDirect, children }: Props) {
+export async function Coque({ utilisateur, evenements, evenementCourant, enDirect, children }: Props) {
+  const sombre = (await cookies()).get(COOKIE_THEME)?.value === "sombre";
   return (
-    <div className={`${dmSans.className} ${styles.page}`}>
+    <div className={`${dmSans.className} ${styles.page} ${sombre ? styles.sombre : ""}`}>
       <header className={styles.barre}>
         <Link href="/espace" className={styles.marque}>
           <span className={styles.marqueSigne}>
@@ -51,6 +55,7 @@ export function Coque({ utilisateur, evenements, evenementCourant, enDirect, chi
         <div className={styles.profil}>
           <span className={`${styles.point} ${enDirect ? styles.pointActif : ""}`} />
           <span className={styles.profilTexte}>{enDirect ? "En direct" : "Aucun vote ouvert"}</span>
+          <BoutonTheme sombreInitial={sombre} />
           <details className={styles.deroulant}>
             <summary className={styles.avatar} aria-label="Mon compte">
               {initiales(utilisateur.email)}

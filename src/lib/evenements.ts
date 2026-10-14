@@ -71,6 +71,52 @@ export async function supprimerEvenement(organisationId: string, evenementId: st
     return { ok: false, erreur: "Cet événement a déjà reçu des votes ou des paiements : il ne peut plus être supprimé." };
   }
   await prisma.evenement.delete({ where: { id: evenementId } });
+  await supprimerImage(organisationId, evenement.afficheUrl);
+  return { ok: true, valeur: undefined };
+}
+
+// Image de l'événement ----------------------------------------------------
+
+/** Identifiant d'image d'un chemin `/api/images/<id>`, ou `null`. */
+function idImage(chemin: string | null): string | null {
+  return chemin ? (/^\/api\/images\/([A-Za-z0-9_-]+)$/.exec(chemin)?.[1] ?? null) : null;
+}
+
+/** Supprime une image de l'organisation ; ne touche jamais celle d'une autre. */
+async function supprimerImage(organisationId: string, chemin: string | null) {
+  const id = idImage(chemin);
+  if (id) await prisma.image.deleteMany({ where: { id, organisationId } });
+}
+
+/**
+ * Remplace l'image de l'événement (bannière de la page de vote, vignette du
+ * panneau). Le fichier est déjà vérifié (type, poids) par l'appelant.
+ */
+export async function changerAffiche(
+  organisationId: string,
+  evenementId: string,
+  fichier: { type: string; donnees: Uint8Array<ArrayBuffer> },
+): Promise<Resultat> {
+  const evenement = await evenementDeLOrganisation(organisationId, evenementId);
+  if (!evenement) return INTROUVABLE;
+
+  const image = await prisma.image.create({
+    data: { organisationId, mimeType: fichier.type, data: fichier.donnees },
+  });
+  await prisma.evenement.update({
+    where: { id: evenementId },
+    data: { afficheUrl: `/api/images/${image.id}` },
+  });
+  // Après coup : si la suppression échoue, l'événement a déjà sa nouvelle image.
+  await supprimerImage(organisationId, evenement.afficheUrl);
+  return { ok: true, valeur: undefined };
+}
+
+export async function retirerAffiche(organisationId: string, evenementId: string): Promise<Resultat> {
+  const evenement = await evenementDeLOrganisation(organisationId, evenementId);
+  if (!evenement) return INTROUVABLE;
+  await prisma.evenement.update({ where: { id: evenementId }, data: { afficheUrl: null } });
+  await supprimerImage(organisationId, evenement.afficheUrl);
   return { ok: true, valeur: undefined };
 }
 

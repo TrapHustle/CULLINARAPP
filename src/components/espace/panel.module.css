@@ -4,22 +4,36 @@
  */
 
 .page {
+  /* Couleurs : plus de contraste que la maquette, dont les gris étaient trop
+     pâles sur fond blanc. Le mode nuit (.sombre) redéfinit les mêmes jetons. */
   --bleu: #1768e5;
-  --bleu-fonce: #0c5bd1;
-  --bleu-pale: #edf4ff;
-  --encre: #101d35;
-  --encre-2: #26354d;
-  --gris: #6a7689;
-  --gris-clair: #8995a8;
-  --filet: #e5e9ef;
-  --fond: #f7f9fc;
-  --vert: #249c72;
-  --vert-pale: #e6f8f1;
-  --violet: #7459d9;
-  --violet-pale: #f0edff;
-  --rouge: #c0362c;
-  --rouge-pale: #fdecea;
+  --bleu-fonce: #0c55c2;
+  --bleu-pale: #e2edff;
+  --bleu-texte: #1259c9;
+  --encre: #0d1830;
+  --encre-2: #1d2b43;
+  --gris: #47546b;
+  --gris-clair: #5b6880;
+  --filet: #d6dde8;
+  --filet-doux: #e3e8f0;
+  --champ-bord: #bfcad9;
+  --fond: #e9eef5;
+  --surface: #ffffff;
+  --surface-2: #f3f6fa;
+  --ombre: 0 1px 2px rgba(13, 24, 48, 0.06), 0 6px 18px rgba(13, 24, 48, 0.05);
+  --ombre-menu: 0 14px 40px rgba(13, 24, 48, 0.18);
+  --vert: #157a56;
+  --vert-pale: #daf4e9;
+  --violet: #5b3fc4;
+  --violet-pale: #ebe6ff;
+  --rouge: #b42318;
+  --rouge-pale: #fde8e6;
+  --rouge-bord: #eeb4ae;
+  --neutre: #dfe5ed;
+  --point: #94a0b3;
+  --barre-marine: #1f3354;
 
+  color-scheme: light;
   min-height: 100vh;
   background: var(--fond);
   color: var(--encre);
@@ -27,6 +41,39 @@
   flex-direction: column;
   font-size: 15px;
   line-height: 1.5;
+}
+
+/* Mode nuit -------------------------------------------------------------- */
+
+.sombre {
+  --bleu: #3b82f6;
+  --bleu-fonce: #2563eb;
+  --bleu-pale: #172a4d;
+  --bleu-texte: #8ab6ff;
+  --encre: #eef2f8;
+  --encre-2: #d5dde9;
+  --gris: #aeb9cb;
+  --gris-clair: #97a3b8;
+  --filet: #2a3750;
+  --filet-doux: #223047;
+  --champ-bord: #3a4a66;
+  --fond: #0a111d;
+  --surface: #121b2c;
+  --surface-2: #192439;
+  --ombre: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --ombre-menu: 0 14px 40px rgba(0, 0, 0, 0.55);
+  --vert: #5ad6a6;
+  --vert-pale: #113328;
+  --violet: #b3a5ff;
+  --violet-pale: #251f47;
+  --rouge: #ff8a80;
+  --rouge-pale: #3b1714;
+  --rouge-bord: #6b2a24;
+  --neutre: #263349;
+  --point: #5d6b83;
+  --barre-marine: #8ea3c4;
+
+  color-scheme: dark;
 }
 
 .page h1,
@@ -49,7 +96,7 @@
   justify-content: space-between;
   gap: 16px;
   border-bottom: 1px solid var(--filet);
-  background: #ffffff;
+  background: var(--surface);
 }
 
 .marque {
@@ -97,7 +144,7 @@
   gap: 18px;
   border: 1px solid var(--filet);
   border-radius: 10px;
-  color: #435069;
+  color: var(--encre-2);
   font-size: 14px;
   font-weight: 600;
 }
@@ -116,8 +163,8 @@
   padding: 6px;
   border: 1px solid var(--filet);
   border-radius: 12px;
-  background: #ffffff;
-  box-shadow: 0 14px 40px rgba(40, 63, 94, 0.15);
+  background: var(--surface);
+  box-shadow: var(--ombre-menu);
   display: flex;
   flex-direction: column;
 }
@@ -143,11 +190,11 @@
 
 .menu a:hover,
 .menu button:hover {
-  background: var(--fond);
+  background: var(--surface-2);
 }
 
 .menu .courant {
-  color: var(--bleu);
+  color: var(--bleu-texte);
   font-weight: 600;
 }
 
@@ -169,7 +216,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #526078;
+  color: var(--gris);
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
@@ -179,11 +226,11 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #b7c0cd;
+  background: var(--point);
 }
 
 .pointActif {
-  background: #35b985;
+  background: var(--vert);
 }
 
 .avatar {
@@ -192,8 +239,8 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  color: var(--bleu);
-  background: #e7f0ff;
+  color: var(--bleu-texte);
+  background: var(--bleu-pale);
   font-size: 13px;
   font-weight: 700;
 }
@@ -211,7 +258,7 @@
   flex-shrink: 0;
   padding: 28px 16px 20px;
   border-right: 1px solid var(--filet);
-  background: #ffffff;
+  background: var(--surface);
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -219,7 +266,7 @@
 
 .rubrique {
   padding: 16px 12px 10px;
-  color: #a0aabc;
+  color: var(--gris-clair);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 1.3px;
@@ -245,12 +292,12 @@
 
 .lien:hover {
   color: var(--encre);
-  background: var(--fond);
+  background: var(--surface-2);
 }
 
 .lienActif,
 .lienActif:hover {
-  color: var(--bleu);
+  color: var(--bleu-texte);
   background: var(--bleu-pale);
   font-weight: 600;
 }
@@ -260,10 +307,10 @@
   padding: 14px 12px;
   display: flex;
   gap: 10px;
-  border: 1px solid #e8ebf0;
+  border: 1px solid var(--filet);
   border-radius: 12px;
-  background: #fafbfc;
-  color: #36445c;
+  background: var(--surface-2);
+  color: var(--encre-2);
   font-size: 13px;
 }
 
@@ -274,7 +321,7 @@
 }
 
 .aide small {
-  color: #929bad;
+  color: var(--gris-clair);
   font-size: 12px;
 }
 
@@ -285,8 +332,8 @@
   display: grid;
   place-items: center;
   border-radius: 7px;
-  background: #e9f1ff;
-  color: var(--bleu);
+  background: var(--bleu-pale);
+  color: var(--bleu-texte);
   font-weight: 700;
 }
 
@@ -321,7 +368,7 @@
 
 .titre {
   margin-top: 8px;
-  color: #17243a;
+  color: var(--encre);
   font-size: 28px;
   font-weight: 600;
   letter-spacing: -0.6px;
@@ -330,7 +377,7 @@
 
 .sousTitre {
   margin-top: 6px;
-  color: var(--gris-clair);
+  color: var(--gris);
   font-size: 15px;
 }
 
@@ -357,7 +404,7 @@
 .boutonPrincipal {
   color: #ffffff;
   background: var(--bleu);
-  box-shadow: 0 8px 20px rgba(23, 104, 229, 0.22);
+  box-shadow: 0 6px 16px rgba(23, 104, 229, 0.25);
 }
 
 .boutonPrincipal:hover {
@@ -366,18 +413,18 @@
 
 .boutonSecondaire {
   color: var(--encre-2);
-  background: #ffffff;
-  border: 1px solid #e2e7ee;
+  background: var(--surface);
+  border: 1px solid var(--champ-bord);
 }
 
 .boutonSecondaire:hover {
-  background: var(--fond);
+  background: var(--surface-2);
 }
 
 .boutonDanger {
   color: var(--rouge);
-  background: #ffffff;
-  border: 1px solid #f1c6c2;
+  background: var(--surface);
+  border: 1px solid var(--rouge-bord);
 }
 
 .boutonDanger:hover {
@@ -412,7 +459,8 @@
   flex-direction: column;
   border: 1px solid var(--filet);
   border-radius: 14px;
-  background: #ffffff;
+  background: var(--surface);
+  box-shadow: var(--ombre);
 }
 
 .chiffreIcone {
@@ -427,8 +475,8 @@
 }
 
 .bleu {
-  color: var(--bleu);
-  background: #eaf2ff;
+  color: var(--bleu-texte);
+  background: var(--bleu-pale);
 }
 
 .violet {
@@ -442,14 +490,14 @@
 }
 
 .chiffreLibelle {
-  color: #7a8698;
+  color: var(--gris);
   font-size: 14px;
   padding-right: 52px;
 }
 
 .chiffreValeur {
   margin-top: 12px;
-  color: #1b2940;
+  color: var(--encre);
   font-size: 32px;
   font-weight: 600;
   letter-spacing: -0.8px;
@@ -459,7 +507,7 @@
 .chiffreDetail {
   margin-top: auto;
   padding-top: 12px;
-  color: #8b95a5;
+  color: var(--gris-clair);
   font-size: 13px;
 }
 
@@ -471,9 +519,10 @@
 
 .carte {
   margin-top: 20px;
-  border: 1px solid #e3e8ef;
+  border: 1px solid var(--filet);
   border-radius: 14px;
-  background: #ffffff;
+  background: var(--surface);
+  box-shadow: var(--ombre);
   overflow: hidden;
 }
 
@@ -487,14 +536,14 @@
 }
 
 .carteTitre {
-  color: #26344a;
+  color: var(--encre);
   font-size: 17px;
   font-weight: 600;
 }
 
 .carteTexte {
   margin-top: 4px;
-  color: #687489;
+  color: var(--gris);
   font-size: 14px;
 }
 
@@ -508,9 +557,9 @@
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 8px;
-  border-top: 1px solid #edf0f4;
-  background: #fbfcfd;
-  color: #8490a2;
+  border-top: 1px solid var(--filet-doux);
+  background: var(--surface-2);
+  color: var(--gris);
   font-size: 13px;
 }
 
@@ -524,7 +573,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--bleu);
+  color: var(--bleu-texte);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 1px;
@@ -536,7 +585,7 @@
   height: 8px;
   border-radius: 50%;
   background: var(--bleu);
-  box-shadow: 0 0 0 4px #dfebff;
+  box-shadow: 0 0 0 4px var(--bleu-pale);
 }
 
 .vide {
@@ -569,7 +618,7 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  border-top: 1px solid #edf0f4;
+  border-top: 1px solid var(--filet-doux);
 }
 
 .ligneRang {
@@ -579,7 +628,7 @@
   display: grid;
   place-items: center;
   border-radius: 10px;
-  background: var(--fond);
+  background: var(--surface-2);
   color: var(--encre-2);
   font-weight: 700;
   font-size: 14px;
@@ -598,7 +647,7 @@
 }
 
 .ligneTexte a:hover {
-  color: var(--bleu);
+  color: var(--bleu-texte);
 }
 
 .ligneMeta {
@@ -606,7 +655,7 @@
   flex-wrap: wrap;
   gap: 4px 14px;
   margin-top: 2px;
-  color: var(--gris-clair);
+  color: var(--gris);
   font-size: 13px;
 }
 
@@ -631,8 +680,8 @@
 }
 
 .etatPREPAREE {
-  color: #526078;
-  background: #eef1f5;
+  color: var(--encre-2);
+  background: var(--neutre);
 }
 
 .etatOUVERTE {
@@ -676,9 +725,9 @@
   width: 100%;
   height: 44px;
   padding: 0 14px;
-  border: 1px solid #d9e0ea;
+  border: 1px solid var(--champ-bord);
   border-radius: 10px;
-  background: #ffffff;
+  background: var(--surface);
   color: var(--encre);
   font: inherit;
   font-size: 15px;
@@ -688,11 +737,11 @@
 .champ select:focus {
   outline: none;
   border-color: var(--bleu);
-  box-shadow: 0 0 0 3px #dfebff;
+  box-shadow: 0 0 0 3px var(--bleu-pale);
 }
 
 .champ small {
-  color: var(--gris-clair);
+  color: var(--gris);
   font-size: 13px;
 }
 
@@ -730,9 +779,9 @@
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  border: 1px solid #f1c6c2;
+  border: 1px solid var(--rouge-bord);
   border-radius: 14px;
-  background: #ffffff;
+  background: var(--surface);
 }
 
 .zoneDanger p {
@@ -828,12 +877,12 @@
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  color: #647187;
+  color: var(--gris);
   font-size: 14px;
 }
 
 .resultatMeta strong {
-  color: #2c3b52;
+  color: var(--encre);
   white-space: nowrap;
 }
 
@@ -841,7 +890,7 @@
   height: 7px;
   border-radius: 7px;
   overflow: hidden;
-  background: #edf0f4;
+  background: var(--neutre);
 }
 
 .jauge {
@@ -851,11 +900,11 @@
 }
 
 .barreBleue {
-  background: #2373eb;
+  background: var(--bleu);
 }
 
 .barreMarine {
-  background: #273b5b;
+  background: var(--barre-marine);
 }
 
 .lienPublic {
@@ -865,8 +914,108 @@
   gap: 8px;
   padding: 12px 14px;
   border-radius: 10px;
-  background: var(--fond);
+  background: var(--surface-2);
   color: var(--encre-2);
   font-size: 14px;
   word-break: break-all;
+}
+
+.champ input::placeholder {
+  color: var(--gris-clair);
+  opacity: 0.8;
+}
+
+/* Bouton du mode nuit ----------------------------------------------------- */
+
+.boutonTheme {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--filet);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--encre-2);
+  cursor: pointer;
+}
+
+.boutonTheme:hover {
+  background: var(--surface-2);
+}
+
+/* Image de l'événement ---------------------------------------------------- */
+
+.banniere {
+  width: 100%;
+  aspect-ratio: 16 / 5;
+  object-fit: cover;
+  display: block;
+  margin-bottom: 24px;
+  border: 1px solid var(--filet);
+  border-radius: 16px;
+  background: var(--surface-2);
+}
+
+.vignette {
+  width: 64px;
+  height: 44px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.choixImage {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.apercuImage {
+  width: 240px;
+  aspect-ratio: 16 / 9;
+  flex-shrink: 0;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--champ-bord);
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--gris);
+  font-size: 13px;
+}
+
+.apercuImage span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.apercuImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.choixImageTexte {
+  flex: 1;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.champ .choixImageTexte input[type="file"] {
+  height: auto;
+  padding: 10px;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .apercuImage {
+    width: 100%;
+  }
 }

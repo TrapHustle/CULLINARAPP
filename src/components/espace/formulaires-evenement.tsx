@@ -1,12 +1,14 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import {
+  changerAfficheAction,
   creerEvenementAction,
   creerSelectionAction,
   deplacerSelectionAction,
   modifierEvenementAction,
   modifierSelectionAction,
+  retirerAfficheAction,
   supprimerEvenementAction,
   supprimerSelectionAction,
   type EtatFormulaire,
@@ -75,12 +77,95 @@ export function FormulaireEvenement({ evenementId, valeurs }: { evenementId?: st
         />
         <small>Facultatif. Affiché au-dessus du titre sur la page de vote.</small>
       </label>
+      {evenementId ? null : (
+        <div className={`${styles.champ} ${styles.champLarge}`}>
+          <span>Image du concours</span>
+          <ChoixImage actuelle={null} />
+        </div>
+      )}
       <div className={styles.actionsFormulaire}>
         <button type="submit" className={`${styles.bouton} ${styles.boutonPrincipal}`} disabled={envoi}>
           {envoi ? "Enregistrement…" : evenementId ? "Enregistrer" : "Créer l’événement"}
         </button>
       </div>
     </form>
+  );
+}
+
+/** Champ fichier avec aperçu de l'image choisie, ou de l'image actuelle. */
+function ChoixImage({ actuelle }: { actuelle: string | null }) {
+  const [apercu, setApercu] = useState<string | null>(null);
+  useEffect(() => () => (apercu ? URL.revokeObjectURL(apercu) : undefined), [apercu]);
+  const image = apercu ?? actuelle;
+
+  return (
+    <div className={styles.choixImage}>
+      <div className={styles.apercuImage}>
+        {image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={image} alt="" />
+        ) : (
+          <span>
+            <Icone nom="image" taille={26} />
+            Aucune image
+          </span>
+        )}
+      </div>
+      <div className={styles.choixImageTexte}>
+        <input
+          name="affiche"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={(e) => {
+            const fichier = e.currentTarget.files?.[0];
+            setApercu(fichier ? URL.createObjectURL(fichier) : null);
+          }}
+        />
+        <small>
+          JPEG, PNG ou WebP, 4 Mo au plus. Format paysage conseillé (1600 × 900) : c&rsquo;est la bannière de la page de
+          vote et la vignette de l&rsquo;événement dans votre espace.
+        </small>
+      </div>
+    </div>
+  );
+}
+
+export function ImageEvenement({ evenementId, afficheUrl }: { evenementId: string; afficheUrl: string | null }) {
+  const [etat, envoyer, envoi] = useActionState(changerAfficheAction.bind(null, evenementId), initial);
+  const [etatRetrait, retirer, retrait] = useActionState(retirerAfficheAction.bind(null, evenementId), initial);
+  // Seul le message du dernier bouton utilisé s'affiche.
+  const [dernier, setDernier] = useState<"envoi" | "retrait">("envoi");
+
+  return (
+    <div className={styles.formulaire}>
+      <Messages etat={dernier === "retrait" ? etatRetrait : etat} />
+      {/* La clé change avec l'image : le champ fichier et l'aperçu repartent à zéro. */}
+      <form key={afficheUrl ?? "aucune"} action={envoyer} className={`${styles.champ} ${styles.champLarge}`}>
+        <ChoixImage actuelle={afficheUrl} />
+        <div className={styles.actionsFormulaire} style={{ marginTop: 12 }}>
+          <button
+            type="submit"
+            onClick={() => setDernier("envoi")}
+            className={`${styles.bouton} ${styles.boutonPrincipal}`}
+            disabled={envoi}
+          >
+            {envoi ? "Envoi…" : "Enregistrer l’image"}
+          </button>
+          {afficheUrl ? (
+            <button
+              type="submit"
+              formAction={retirer}
+              formNoValidate
+              onClick={() => setDernier("retrait")}
+              className={`${styles.bouton} ${styles.boutonSecondaire}`}
+              disabled={retrait}
+            >
+              Retirer l&rsquo;image
+            </button>
+          ) : null}
+        </div>
+      </form>
+    </div>
   );
 }
 

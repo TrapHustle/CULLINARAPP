@@ -31,6 +31,10 @@ export default async function PageVueEnsemble({ params }: { params: Promise<{ ev
 
   return (
     <>
+      {evenement.afficheUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={evenement.afficheUrl} alt={evenement.nom} className={styles.banniere} />
+      ) : null}
       <div className={styles.entete}>
         <div>
           <div className={styles.surtitre}>Tableau de bord</div>

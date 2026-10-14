@@ -43,9 +43,14 @@ export default async function PageEvenements() {
               const ouvertes = evenement.selections.filter((s) => s.etat === "OUVERTE").length;
               return (
                 <li key={evenement.id} className={styles.ligne}>
-                  <span className={`${styles.chiffreIcone} ${styles.bleu}`} style={{ position: "static" }}>
-                    <Icone nom="trophee" taille={20} />
-                  </span>
+                  {evenement.afficheUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={evenement.afficheUrl} alt="" className={styles.vignette} />
+                  ) : (
+                    <span className={`${styles.vignette} ${styles.bleu}`}>
+                      <Icone nom="trophee" taille={22} />
+                    </span>
+                  )}
                   <div className={styles.ligneTexte}>
                     <Link href={`/espace/e/${evenement.id}`}>{evenement.nom}</Link>
                     <div className={styles.ligneMeta}>

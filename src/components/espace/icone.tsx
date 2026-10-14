@@ -19,7 +19,10 @@ export type NomIcone =
   | "bas"
   | "corbeille"
   | "lieu"
-  | "trophee";
+  | "trophee"
+  | "image"
+  | "lune"
+  | "soleil";
 
 const TRACES: Record<NomIcone, ReactNode> = {
   fleche: <><path d="M5 12h14" /><path d="m14 7 5 5-5 5" /></>,
@@ -40,6 +43,9 @@ const TRACES: Record<NomIcone, ReactNode> = {
   corbeille: <><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" /></>,
   lieu: <><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z" /><circle cx="12" cy="10" r="2.5" /></>,
   trophee: <><path d="M8 4h8v5a4 4 0 0 1-8 0V4Z" /><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 21h8M9 17h6" /></>,
+  image: <><rect x="3" y="4" width="18" height="16" rx="3" /><circle cx="9" cy="10" r="2" /><path d="m21 16-5-5-9 9" /></>,
+  lune: <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" />,
+  soleil: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>,
 };
 
 export function Icone({ nom, taille = 20 }: { nom: NomIcone; taille?: number }) {

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { FormulaireEvenement, SupprimerEvenement } from "@/components/espace/formulaires-evenement";
+import { FormulaireEvenement, ImageEvenement, SupprimerEvenement } from "@/components/espace/formulaires-evenement";
 import styles from "@/components/espace/panel.module.css";
 import { exigerUtilisateur } from "@/lib/espace";
 import { evenementDeLOrganisation } from "@/lib/evenements";
@@ -33,6 +33,16 @@ export default async function PageParametres({ params }: { params: Promise<{ eve
             date: versChampDate(evenement.date),
           }}
         />
+      </section>
+
+      <section className={styles.carte}>
+        <div className={styles.carteHaut} style={{ paddingBottom: 0 }}>
+          <div>
+            <h2 className={styles.carteTitre}>Image du concours</h2>
+            <p className={styles.carteTexte}>Bannière de la page de vote et vignette de l&rsquo;événement.</p>
+          </div>
+        </div>
+        <ImageEvenement evenementId={evenement.id} afficheUrl={evenement.afficheUrl} />
       </section>
 
       <div className={styles.zoneDanger}>
