@@ -1,4 +1,5 @@
 import { refreshPendingPayments } from "@/lib/public-vote";
+import { rafraichirPaiementsSaas } from "@/lib/vote-public-saas";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,8 @@ export async function GET(request: Request) {
     return Response.json({ error: "Accès refusé" }, { status: 401 });
   }
 
+  // L'ancienne page `/voter` et les pages des sélections du SaaS (`/v/…`).
   const updated = await refreshPendingPayments();
-  return Response.json({ updated });
+  const saas = await rafraichirPaiementsSaas();
+  return Response.json({ updated, saas });
 }

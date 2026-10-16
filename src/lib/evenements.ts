@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { slugifier, slugLibre, type SaisieEvenement, type SaisieSelection } from "./evenements-core";
+import { creationsDepuisModeles, creationsGrilleProposee } from "./grille-core";
 
 /**
  * Événements et sélections : accès à la base.
@@ -48,8 +49,15 @@ async function traces(where: { selectionId?: string; evenementId?: string }) {
 
 // Événements --------------------------------------------------------------
 
+/** Crée l'événement avec la grille de vote proposée (RG 4.5), que l'organisateur ajuste ensuite. */
 export async function creerEvenement(organisationId: string, saisie: SaisieEvenement) {
-  return prisma.evenement.create({ data: { organisationId, ...saisie } });
+  return prisma.evenement.create({
+    data: {
+      organisationId,
+      ...saisie,
+      typesModeles: { create: creationsGrilleProposee() },
+    },
+  });
 }
 
 export async function modifierEvenement(
@@ -83,7 +91,7 @@ function idImage(chemin: string | null): string | null {
 }
 
 /** Supprime une image de l'organisation ; ne touche jamais celle d'une autre. */
-async function supprimerImage(organisationId: string, chemin: string | null) {
+export async function supprimerImage(organisationId: string, chemin: string | null) {
   const id = idImage(chemin);
   if (id) await prisma.image.deleteMany({ where: { id, organisationId } });
 }
@@ -151,6 +159,14 @@ export async function creerSelection(
     select: { rang: true },
   });
 
+  // La grille de référence de l'événement est recopiée dans la sélection
+  // (RG 3.2) : on pourra ensuite la modifier pour elle seule (RG 3.3).
+  const modeles = await prisma.typeVoteModele.findMany({
+    where: { evenementId },
+    orderBy: [{ ordre: "asc" }, { id: "asc" }],
+    include: { criteres: { orderBy: [{ ordre: "asc" }, { id: "asc" }] } },
+  });
+
   const selection = await prisma.selection.create({
     data: {
       evenementId,
@@ -159,6 +175,7 @@ export async function creerSelection(
       // qu'aucune autre ne vient après (RG 1.3).
       rang: (derniere?.rang ?? 0) + 1,
       slug: slugLibre(base, new Set(pris.map((s) => s.slug))),
+      typesVote: { create: creationsDepuisModeles(modeles) },
     },
   });
   return { ok: true, valeur: { id: selection.id } };

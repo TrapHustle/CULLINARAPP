@@ -25,6 +25,9 @@ const HISTORY = [
   "20260907140000_add_vote_event_archives",
   "20260929120000_public_vote",
   "20260930160000_share_online",
+  "20261007200000_withdrawal_requests",
+  "20261013120000_saas_modele",
+  "20261016120000_saas_plateforme",
 ];
 
 const url = process.env.DIRECT_DATABASE_URL ?? process.env.DATABASE_URL;

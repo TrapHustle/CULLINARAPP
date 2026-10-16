@@ -16,15 +16,33 @@ interface Props {
   /** Une sélection de l'événement est ouverte au vote. */
   enDirect: boolean;
   children: React.ReactNode;
+  /** Menu latéral à la place de celui de l'organisation (espace plateforme). */
+  nav?: React.ReactNode;
+  /** Où mène la marque en haut à gauche. */
+  accueil?: string;
+  /** Liens du menu du compte. */
+  liensCompte?: { href: string; libelle: string }[];
 }
 
 /** Habillage du panneau organisateur : barre du haut, menu latéral, contenu. */
-export async function Coque({ utilisateur, evenements, evenementCourant, enDirect, children }: Props) {
+export async function Coque({
+  utilisateur,
+  evenements,
+  evenementCourant,
+  enDirect,
+  children,
+  nav,
+  accueil = "/espace",
+  liensCompte = [
+    { href: "/espace/compte", libelle: "Mon compte" },
+    { href: "/espace/equipe", libelle: "Équipe" },
+  ],
+}: Props) {
   const sombre = (await cookies()).get(COOKIE_THEME)?.value === "sombre";
   return (
     <div className={`${outfit.className} ${styles.page} ${sombre ? styles.sombre : ""}`}>
       <header className={styles.barre}>
-        <Link href="/espace" className={styles.marque}>
+        <Link href={accueil} className={styles.marque}>
           <span className={styles.marqueSigne}>
             <Icone nom="coche" taille={22} />
           </span>
@@ -68,6 +86,11 @@ export async function Coque({ utilisateur, evenements, evenementCourant, enDirec
                 <strong>{utilisateur.organisation.nom}</strong>
                 {utilisateur.email}
               </div>
+              {liensCompte.map((l) => (
+                <Link key={l.href} href={l.href}>
+                  {l.libelle}
+                </Link>
+              ))}
               <form action={deconnecterAction}>
                 <button type="submit" style={{ width: "100%" }}>
                   Se déconnecter
@@ -79,7 +102,7 @@ export async function Coque({ utilisateur, evenements, evenementCourant, enDirec
       </header>
 
       <div className={styles.corps}>
-        <NavLaterale evenementId={evenementCourant?.id ?? null} />
+        {nav ?? <NavLaterale evenementId={evenementCourant?.id ?? null} />}
         <main className={styles.contenu}>
           <div className={styles.largeur}>{children}</div>
         </main>

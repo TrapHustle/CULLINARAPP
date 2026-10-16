@@ -27,15 +27,28 @@ export interface ResultatCandidat {
   participationId: string;
   candidatId: string;
   nom: string;
+  ville: string | null;
+  photoUrl: string | null;
+  qualifie: boolean;
   types: NoteParType[];
 }
 
 export interface ResultatsSelection {
   selectionId: string;
   classement: LigneClassement<ResultatCandidat>[];
+  /** Voix des paiements simulés comptées (mode essai), jamais dans un résultat officiel. */
+  inclutSimules: boolean;
 }
 
-export async function calculerResultats(selectionId: string): Promise<ResultatsSelection> {
+export interface OptionsCalcul {
+  /**
+   * Compter les voix des paiements simulés. Réservé à l'aperçu d'essai du
+   * panneau : un résultat officiel (clôture, archive) ne les compte jamais.
+   */
+  inclureSimules?: boolean;
+}
+
+export async function calculerResultats(selectionId: string, options: OptionsCalcul = {}): Promise<ResultatsSelection> {
   const selection = await prisma.selection.findUniqueOrThrow({
     where: { id: selectionId },
     include: {
@@ -58,7 +71,8 @@ export async function calculerResultats(selectionId: string): Promise<ResultatsS
     },
   });
 
-  const officiels = suffrages.filter((s) => !s.paiement?.simule);
+  const inclutSimules = options.inclureSimules === true;
+  const officiels = inclutSimules ? suffrages : suffrages.filter((s) => !s.paiement?.simule);
   const mode = selection.modeEnLigne as ModeEnLigne;
 
   // Notes par type, calculées type par type pour tous les candidats : le vote
@@ -95,10 +109,18 @@ export async function calculerResultats(selectionId: string): Promise<ResultatsS
       return { typeVoteId: type.id, libelle: type.libelle, part: type.part, note: n?.note ?? null, volume: n?.volume ?? 0 };
     });
     return {
-      candidat: { participationId: p.id, candidatId: p.candidatId, nom: p.candidat.nom, types },
+      candidat: {
+        participationId: p.id,
+        candidatId: p.candidatId,
+        nom: p.candidat.nom,
+        ville: p.candidat.ville,
+        photoUrl: p.candidat.photoUrl,
+        qualifie: p.qualifie,
+        types,
+      },
       note: noteFinale(types)?.note ?? null,
     };
   });
 
-  return { selectionId, classement: classer(entrees) };
+  return { selectionId, classement: classer(entrees), inclutSimules };
 }

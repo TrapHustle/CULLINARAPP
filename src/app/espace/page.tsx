@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 /** Entrée de l'espace : le dernier événement, ou sa création s'il n'y en a aucun. */
 export default async function PageEspace() {
   const utilisateur = await exigerUtilisateur();
+  if (utilisateur.role === "SUPERADMIN") redirect("/plateforme");
   const dernier = await prisma.evenement.findFirst({
     where: { organisationId: utilisateur.organisationId },
     orderBy: { creeLe: "desc" },

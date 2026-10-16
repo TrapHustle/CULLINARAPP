@@ -30,6 +30,8 @@ export async function utilisateurConnecte() {
 export async function exigerUtilisateur() {
   const utilisateur = await utilisateurConnecte();
   if (!utilisateur) redirect("/connexion");
+  // Organisation suspendue par la plateforme : plus d'accès à l'espace.
+  if (!utilisateur.organisation.actif && utilisateur.role !== "SUPERADMIN") redirect("/compte-suspendu");
   return utilisateur;
 }
 
@@ -42,6 +44,23 @@ export async function exigerEcriture() {
   if (!ROLES_ECRITURE.has(utilisateur.role)) {
     throw new Error("Votre rôle ne permet pas de modifier la configuration.");
   }
+  return utilisateur;
+}
+
+/** Garde des actions réservées au propriétaire : équipe, retraits. */
+export async function exigerProprietaire() {
+  const utilisateur = await exigerUtilisateur();
+  if (utilisateur.role !== "PROPRIETAIRE") {
+    throw new Error("Réservé au propriétaire du compte.");
+  }
+  return utilisateur;
+}
+
+/** Garde de l'espace plateforme (super-admin Inovyx). */
+export async function exigerSuperAdmin() {
+  const utilisateur = await utilisateurConnecte();
+  if (!utilisateur) redirect("/connexion");
+  if (utilisateur.role !== "SUPERADMIN") redirect("/espace");
   return utilisateur;
 }
 

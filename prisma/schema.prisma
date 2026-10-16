@@ -348,6 +348,8 @@ model Organisation {
   paiementConfig   Json?
   /// Part reversée à l'organisateur sur les votes payés, en pourcentage.
   partOrganisateur Float    @default(90)
+  /// Suspendue par la plateforme : plus d'accès à l'espace, plus de vote public.
+  actif            Boolean  @default(true)
   creeLe           DateTime @default(now())
 
   utilisateurs    Utilisateur[]
