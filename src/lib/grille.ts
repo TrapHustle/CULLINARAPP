@@ -45,6 +45,39 @@ async function controler(organisationId: string, niveau: Niveau): Promise<Result
   return s.etat === "PREPAREE" ? OK : FIGEE;
 }
 
+/**
+ * Comme `controler`, pour une modification qui ne touche qu'un type. Une
+ * sélection ouverte laisse encore compléter un type qui n'a reçu aucun vote
+ * (un jury dont on a oublié les critères) : rien ne s'y rattache, le
+ * classement ne bouge pas. `ouverte` dit alors que le canal et la part,
+ * eux, restent figés.
+ */
+async function controlerType(organisationId: string, niveau: Niveau, typeId: string): Promise<Resultat<{ ouverte: boolean }>> {
+  if (niveau.kind === "evenement") {
+    const c = await controler(organisationId, niveau);
+    return c.ok ? { ok: true, valeur: { ouverte: false } } : c;
+  }
+  const s = await prisma.selection.findFirst({
+    where: { id: niveau.id, evenement: { organisationId } },
+    select: { etat: true },
+  });
+  if (!s) return INTROUVABLE;
+  if (s.etat === "PREPAREE") return { ok: true, valeur: { ouverte: false } };
+  if (s.etat !== "OUVERTE") return FIGEE;
+  const votes = await prisma.suffrage.count({ where: { typeVoteId: typeId, typeVote: { selectionId: niveau.id } } });
+  if (votes > 0) return { ok: false, erreur: "Ce type de vote a déjà reçu des votes : il ne change plus." };
+  return { ok: true, valeur: { ouverte: true } };
+}
+
+/** Les types d'une sélection ouverte qu'on peut encore compléter (aucun vote). */
+export async function typesSansVote(selectionId: string): Promise<string[]> {
+  const types = await prisma.typeVote.findMany({
+    where: { selectionId, suffrages: { none: {} } },
+    select: { id: true },
+  });
+  return types.map((t) => t.id);
+}
+
 // Lecture ---------------------------------------------------------------------
 
 export async function lireGrille(organisationId: string, niveau: Niveau) {
@@ -149,9 +182,16 @@ export async function modifierType(
   typeId: string,
   saisie: SaisieTypeVote,
 ): Promise<Resultat> {
-  const controle = await controler(organisationId, niveau);
+  const controle = await controlerType(organisationId, niveau, typeId);
   if (!controle.ok) return controle;
   if (await enLigneEnDouble(niveau, saisie, typeId)) return DOUBLON_EN_LIGNE;
+  if (controle.valeur.ouverte) {
+    const actuel = await prisma.typeVote.findFirst({ where: { id: typeId, selectionId: niveau.id } });
+    if (!actuel) return INTROUVABLE;
+    if (actuel.canal !== saisie.canal || actuel.part !== saisie.part || actuel.acces !== saisie.acces) {
+      return { ok: false, erreur: "La sélection est ouverte : le canal, la part et l'accès ne changent plus." };
+    }
+  }
 
   const data = { ...saisie, payant: saisie.canal === "EN_LIGNE" };
   if (niveau.kind === "evenement") {
@@ -201,7 +241,7 @@ export async function ajouterCritere(
   typeId: string,
   saisie: SaisieCritere,
 ): Promise<Resultat> {
-  const controle = await controler(organisationId, niveau);
+  const controle = await controlerType(organisationId, niveau, typeId);
   if (!controle.ok) return controle;
   const type = await typeAvecCriteres(niveau, typeId);
   if (!type) return INTROUVABLE;
@@ -223,7 +263,7 @@ export async function modifierCritere(
   critereId: string,
   saisie: SaisieCritere,
 ): Promise<Resultat> {
-  const controle = await controler(organisationId, niveau);
+  const controle = await controlerType(organisationId, niveau, typeId);
   if (!controle.ok) return controle;
   const type = await typeAvecCriteres(niveau, typeId);
   if (!type || !type.criteres.some((c) => c.id === critereId)) return INTROUVABLE;
@@ -242,7 +282,7 @@ export async function supprimerCritere(
   typeId: string,
   critereId: string,
 ): Promise<Resultat> {
-  const controle = await controler(organisationId, niveau);
+  const controle = await controlerType(organisationId, niveau, typeId);
   if (!controle.ok) return controle;
   const type = await typeAvecCriteres(niveau, typeId);
   if (!type || !type.criteres.some((c) => c.id === critereId)) return INTROUVABLE;
@@ -266,7 +306,7 @@ export async function deplacerCritere(
   critereId: string,
   sens: "haut" | "bas",
 ): Promise<Resultat> {
-  const controle = await controler(organisationId, niveau);
+  const controle = await controlerType(organisationId, niveau, typeId);
   if (!controle.ok) return controle;
   const type = await typeAvecCriteres(niveau, typeId);
   if (!type) return INTROUVABLE;

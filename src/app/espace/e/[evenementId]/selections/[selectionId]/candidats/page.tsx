@@ -66,7 +66,7 @@ export default async function PageCandidatsSelection({
                   <div className={styles.ligneMeta}>
                     {p.candidat.ville ? <span>{p.candidat.ville}</span> : null}
                     <span>
-                      {p._count.suffrages} vote{p._count.suffrages > 1 ? "s" : ""}
+                      {p.voix.toLocaleString("fr-FR")} voix
                     </span>
                     {p.qualifie ? <span className={`${styles.pastille} ${styles.pastilleVerte}`}>Qualifié</span> : null}
                   </div>

@@ -112,6 +112,17 @@ describe.skipIf(!RUN)("concours de A à Z", () => {
     const [jury] = await grille.lireGrille(orgA, { kind: "selection", id: s1 });
     expect((await grille.supprimerType(orgA, { kind: "selection", id: s1 }, jury.id)).ok).toBe(false);
     expect((await grille.reglerEnLigne(orgA, s1, { ...reglages, modeEnLigne: "C" }, [])).ok).toBe(false);
+
+    // Tant qu'il n'a reçu aucun vote, un type se complète encore (critère oublié),
+    // mais sans changer de part ni de canal.
+    const niveau = { kind: "selection" as const, id: s1 };
+    expect((await grille.ajouterCritere(orgA, niveau, jury.id, { libelle: "Oublié", bareme: 5 })).ok).toBe(true);
+    const oublie = (await grille.lireGrille(orgA, niveau))[0].criteres.find((c) => c.libelle === "Oublié");
+    expect(oublie && (await grille.supprimerCritere(orgA, niveau, jury.id, oublie.id)).ok).toBe(true);
+    const saisie = { libelle: "Jury", canal: "SALLE" as const, avecCriteres: true, acces: "OUVERT" as const };
+    expect((await grille.modifierType(orgA, niveau, jury.id, { ...saisie, part: jury.part })).ok).toBe(true);
+    expect((await grille.modifierType(orgA, niveau, jury.id, { ...saisie, part: jury.part + 10 })).ok).toBe(false);
+    expect(await grille.typesSansVote(s1)).toHaveLength(3);
   });
 
   it("enregistre les fiches du jury et de la salle, sans doublon de juré", async () => {
@@ -142,6 +153,9 @@ describe.skipIf(!RUN)("concours de A à Z", () => {
     expect((await notes.saisirFiche(orgA, s1, salle.id, 9, fiche(salle, { Awa: [0, 0] }))).ok).toBe(true);
     const erreur = await prisma.suffrage.findFirstOrThrow({ where: { jureIndex: 9, participationId: p.Awa } });
     expect((await notes.annulerSaisie(orgA, erreur.id)).ok).toBe(true);
+
+    // Noté, le type est figé pour de bon.
+    expect((await grille.ajouterCritere(orgA, { kind: "selection", id: s1 }, jury.id, { libelle: "Tard", bareme: 5 })).ok).toBe(false);
   });
 
   it("accepte une voix gratuite par numéro, puis des voix payées", async () => {

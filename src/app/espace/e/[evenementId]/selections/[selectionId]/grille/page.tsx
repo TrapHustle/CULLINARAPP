@@ -7,7 +7,7 @@ import { Icone } from "@/components/espace/icone";
 import styles from "@/components/espace/panel.module.css";
 import { exigerUtilisateur } from "@/lib/espace";
 import { selectionDeLOrganisation } from "@/lib/evenements";
-import { lireGrille } from "@/lib/grille";
+import { lireGrille, typesSansVote } from "@/lib/grille";
 import { reprendreGrilleAction } from "@/lib/grille-actions";
 
 export const metadata: Metadata = { title: "Grille de vote — DIGITALYX-VOTE" };
@@ -24,6 +24,7 @@ export default async function PageGrilleSelection({
 
   const types = await lireGrille(utilisateur.organisationId, { kind: "selection", id: selectionId });
   const modifiable = selection.etat === "PREPAREE";
+  const completables = selection.etat === "OUVERTE" ? await typesSansVote(selectionId) : [];
 
   return (
     <>
@@ -39,7 +40,12 @@ export default async function PageGrilleSelection({
                 sélection. Ce que vous changez ici ne vaut que pour elle.
               </>
             ) : (
-              "La sélection est ouverte ou clôturée : sa grille ne change plus, les votes s’y rattachent."
+              <>
+                La sélection est ouverte ou clôturée : sa grille ne change plus, les votes s&rsquo;y rattachent.
+                {completables.length > 0
+                  ? " Un type qui n’a encore reçu aucun vote peut toutefois recevoir ses critères ; son canal et sa part restent fixés."
+                  : null}
+              </>
             )}
           </span>
         </div>
@@ -54,7 +60,7 @@ export default async function PageGrilleSelection({
         ) : null}
       </div>
 
-      <GrilleVote evenementId={evenementId} selectionId={selectionId} types={types} modifiable={modifiable} />
+      <GrilleVote evenementId={evenementId} selectionId={selectionId} types={types} modifiable={modifiable} completables={completables} />
     </>
   );
 }

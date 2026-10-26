@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import e from "@/components/espace/evenements.module.css";
 import { FormulaireAction } from "@/components/espace/formulaire-action";
 import { Icone } from "@/components/espace/icone";
 import styles from "@/components/espace/panel.module.css";
@@ -15,13 +17,22 @@ export const metadata: Metadata = { title: "Recettes — DIGITALYX-VOTE" };
 const fcfa = (n: number) => `${nombre(n)} FCFA`;
 const STATUTS_PAIEMENT: Record<string, string> = { CONFIRMED: "Confirmé", PENDING: "En attente", FAILED: "Échoué" };
 
-export default async function PageRecettes() {
+/** Filtre de « Derniers paiements » : `?paiements=` dans l'adresse. */
+const FILTRES = [
+  { cle: "tous", libelle: "Tous", statut: undefined },
+  { cle: "confirmes", libelle: "Confirmés", statut: "CONFIRMED" },
+  { cle: "echoues", libelle: "Échoués", statut: "FAILED" },
+] as const;
+
+export default async function PageRecettes({ searchParams }: { searchParams: Promise<{ paiements?: string }> }) {
   const utilisateur = await exigerUtilisateur();
   const org = utilisateur.organisationId;
+  const demande = (await searchParams).paiements;
+  const filtre = FILTRES.find((f) => f.cle === demande) ?? FILTRES[0];
   const [recettes, parSelection, paiements, retraits] = await Promise.all([
     recettesOrganisation(org),
     recettesParSelection(org),
-    derniersPaiements(org),
+    derniersPaiements(org, 50, filtre.statut),
     retraitsOrganisation(org),
   ]);
   const proprietaire = utilisateur.role === "PROPRIETAIRE";
@@ -184,11 +195,27 @@ export default async function PageRecettes() {
 
       <section className={styles.carte}>
         <div className={styles.carteHaut}>
-          <h2 className={styles.carteTitre}>Derniers paiements</h2>
+          <div style={{ width: "100%" }}>
+            <h2 className={styles.carteTitre}>Derniers paiements</h2>
+            <nav className={e.onglets} style={{ marginTop: 10 }} aria-label="Filtrer les paiements">
+              {FILTRES.map((f) => (
+                <Link
+                  key={f.cle}
+                  href={f.cle === "tous" ? "/espace/recettes" : `/espace/recettes?paiements=${f.cle}`}
+                  scroll={false}
+                  aria-current={f === filtre ? "page" : undefined}
+                  className={`${e.onglet} ${f === filtre ? e.ongletActif : ""}`}
+                  style={{ textDecoration: "none" }}
+                >
+                  {f.libelle}
+                </Link>
+              ))}
+            </nav>
+          </div>
         </div>
         {paiements.length === 0 ? (
           <div className={styles.vide} style={{ paddingTop: 0 }}>
-            Aucun paiement pour l&rsquo;instant.
+            {filtre.statut ? "Aucun paiement de ce statut." : <>Aucun paiement pour l&rsquo;instant.</>}
           </div>
         ) : (
           <div className={styles.tableauBoite}>

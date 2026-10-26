@@ -43,6 +43,8 @@ export default async function PagePilotage({
   const suivante = selection.etat === "CLOTUREE" ? await selectionSuivante(evenementId, selection.rang) : null;
   const proposes = resultats ? qualifiesProposes(resultats.lignes, selection.nbQualifies) : new Set<string>();
   const base = `/espace/e/${evenementId}/selections/${selectionId}`;
+  // Un type noté sans critère : ni fiche ni tablette ne peuvent le noter, sa part est perdue.
+  const sansCriteres = selection.typesVote.filter((t) => t.avecCriteres && t.criteres.length === 0);
 
   return (
     <>
@@ -81,6 +83,22 @@ export default async function PagePilotage({
             ))}
           </ul>
         </section>
+      ) : null}
+
+      {selection.etat === "OUVERTE" && sansCriteres.length > 0 ? (
+        <div className={`${styles.bandeau} ${styles.bandeauAlerte}`}>
+          <Icone nom="bouclier" taille={18} />
+          <div>
+            <strong>
+              {sansCriteres.map((t) => `« ${t.libelle} »`).join(" et ")} {sansCriteres.length > 1 ? "n’ont" : "n’a"} aucun critère
+            </strong>
+            <span>
+              Le jury ne peut pas {sansCriteres.length > 1 ? "les" : "le"} noter, et {sansCriteres.length > 1 ? "leurs parts" : "sa part"}{" "}
+              ({sansCriteres.map((t) => `${t.part.toLocaleString("fr-FR")} %`).join(" + ")}) sort du classement. Ajoutez les critères dans
+              l&rsquo;onglet <Link href={`${base}/grille`}>Grille de vote</Link>.
+            </span>
+          </div>
+        </div>
       ) : null}
 
       {selection.etat === "OUVERTE" ? (
@@ -143,8 +161,18 @@ export default async function PagePilotage({
                 Clôturer et désigner les qualifiés
               </h2>
               <p className={styles.carteTexte}>
-                La clôture arrête tous les votes et fige le classement officiel (sans les paiements simulés). Les{" "}
-                {selection.nbQualifies} premiers sont proposés ; en cas d&rsquo;égalité, c&rsquo;est vous qui tranchez.
+                La clôture arrête tous les votes et fige le classement officiel (sans les paiements simulés).{" "}
+                {selection.nbQualifies > 0 ? (
+                  <>
+                    {selection.nbQualifies === 1 ? "Le premier est proposé" : `Les ${selection.nbQualifies} premiers sont proposés`} ; en
+                    cas d&rsquo;égalité, c&rsquo;est vous qui tranchez.
+                  </>
+                ) : (
+                  <>
+                    Aucun nombre de qualifiés n&rsquo;est réglé : cochez vous-même les qualifiés, ou indiquez leur nombre dans
+                    « Informations » plus bas.
+                  </>
+                )}
               </p>
             </div>
           </div>

@@ -91,15 +91,30 @@ async function selectionModifiable(organisationId: string, selectionId: string) 
   return OK;
 }
 
-export function listerParticipations(organisationId: string, selectionId: string) {
-  return prisma.participation.findMany({
-    where: { selectionId, selection: { evenement: { organisationId } } },
-    orderBy: [{ ordre: "asc" }, { id: "asc" }],
-    include: {
-      candidat: true,
-      _count: { select: { suffrages: { where: { annuleLe: null } }, paiements: true } },
-    },
-  });
+export async function listerParticipations(organisationId: string, selectionId: string) {
+  const [participations, sommes] = await Promise.all([
+    prisma.participation.findMany({
+      where: { selectionId, selection: { evenement: { organisationId } } },
+      orderBy: [{ ordre: "asc" }, { id: "asc" }],
+      include: {
+        candidat: true,
+        _count: { select: { suffrages: { where: { annuleLe: null } }, paiements: true } },
+      },
+    }),
+    // Un suffrage payé porte plusieurs voix (`poids`) ; les paiements simulés
+    // restent hors du compte, comme dans le classement officiel.
+    prisma.suffrage.groupBy({
+      by: ["participationId"],
+      where: {
+        participation: { selectionId, selection: { evenement: { organisationId } } },
+        annuleLe: null,
+        OR: [{ paiementId: null }, { paiement: { simule: false } }],
+      },
+      _sum: { poids: true },
+    }),
+  ]);
+  const voix = new Map(sommes.map((s) => [s.participationId, s._sum.poids ?? 0]));
+  return participations.map((p) => ({ ...p, voix: voix.get(p.id) ?? 0 }));
 }
 
 /** Inscrit des candidats de la bibliothèque à la sélection, à la suite des autres. */

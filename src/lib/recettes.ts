@@ -96,9 +96,10 @@ export async function recettesParSelection(organisationId: string) {
     .sort((a, b) => b.montant - a.montant);
 }
 
-export function derniersPaiements(organisationId: string, nb = 50) {
+/** `statut` : n'en garder qu'un (« CONFIRMED », « FAILED »…) ; absent, tous. */
+export function derniersPaiements(organisationId: string, nb = 50, statut?: string) {
   return prisma.paiement.findMany({
-    where: { organisationId },
+    where: { organisationId, ...(statut ? { statut } : {}) },
     orderBy: { creeLe: "desc" },
     take: nb,
     include: { selection: { select: { libelle: true } } },

@@ -20,12 +20,14 @@ interface Props {
   types: GrilleLue;
   /** Faux une fois la sélection ouverte : la grille s'affiche sans formulaires. */
   modifiable: boolean;
+  /** Sélection ouverte : les types sans vote, qu'on peut encore compléter (nom, critères). */
+  completables?: string[];
 }
 
 const nf = (n: number) => n.toLocaleString("fr-FR");
 
 /** Grille de vote : types, parts et critères, modifiables ou en lecture. */
-export function GrilleVote({ evenementId, selectionId, types, modifiable }: Props) {
+export function GrilleVote({ evenementId, selectionId, types, modifiable, completables = [] }: Props) {
   const somme = sommeDesParts(types);
   const problemes = problemesGrille(types);
 
@@ -51,6 +53,7 @@ export function GrilleVote({ evenementId, selectionId, types, modifiable }: Prop
 
       {types.map((type) => {
         const baremeTotal = type.criteres.reduce((s, c) => s + c.bareme, 0);
+        const editable = modifiable || completables.includes(type.id);
         return (
           <section key={type.id} className={styles.carte}>
             <div className={styles.carteHaut}>
@@ -88,7 +91,7 @@ export function GrilleVote({ evenementId, selectionId, types, modifiable }: Prop
               ) : null}
             </div>
 
-            {modifiable ? (
+            {editable ? (
               <FormulaireAction
                 action={modifierTypeAction.bind(null, evenementId, selectionId, type.id)}
                 className={styles.formulaire}
@@ -96,7 +99,14 @@ export function GrilleVote({ evenementId, selectionId, types, modifiable }: Prop
                 variante="secondaire"
                 discret
               >
-                <ChampsType libelle={type.libelle} canal={type.canal} avecCriteres={type.avecCriteres} acces={type.acces} part={type.part} />
+                <ChampsType
+                  libelle={type.libelle}
+                  canal={type.canal}
+                  avecCriteres={type.avecCriteres}
+                  acces={type.acces}
+                  part={type.part}
+                  figes={!modifiable}
+                />
               </FormulaireAction>
             ) : null}
 
@@ -109,7 +119,7 @@ export function GrilleVote({ evenementId, selectionId, types, modifiable }: Prop
                   <ul className={styles.criteres}>
                     {type.criteres.map((c, i) => (
                       <li key={c.id} className={styles.critere}>
-                        {modifiable ? (
+                        {editable ? (
                           <>
                             <FormulaireAction
                               action={modifierCritereAction.bind(null, evenementId, selectionId, type.id, c.id)}
@@ -162,7 +172,7 @@ export function GrilleVote({ evenementId, selectionId, types, modifiable }: Prop
                     ))}
                   </ul>
                 )}
-                {modifiable ? (
+                {editable ? (
                   <FormulaireAction
                     action={ajouterCritereAction.bind(null, evenementId, selectionId, type.id)}
                     className={styles.formLigne}
@@ -226,13 +236,39 @@ function ChampsType({
   avecCriteres,
   acces,
   part,
+  figes = false,
 }: {
   libelle: string;
   canal: string;
   avecCriteres: boolean;
   acces: string;
   part: number;
+  /** Sélection ouverte : canal, accès et part ne changent plus, ils repartent tels quels. */
+  figes?: boolean;
 }) {
+  const valeurPart = part ? String(part).replace(".", ",") : "";
+  if (figes) {
+    return (
+      <>
+        <label className={styles.champ}>
+          <span>Nom</span>
+          <input name="libelle" defaultValue={libelle} maxLength={60} required />
+        </label>
+        <input type="hidden" name="canal" value={canal} />
+        <input type="hidden" name="acces" value={acces} />
+        <input type="hidden" name="part" value={valeurPart} />
+        {canal === "SALLE" ? (
+          <label className={styles.caseACocher}>
+            <input type="checkbox" name="avecCriteres" defaultChecked={avecCriteres} />
+            <span>
+              Noter sur des critères
+              <small>Sinon, on compte des voix. Possible tant que ce type n&rsquo;a reçu aucun vote.</small>
+            </span>
+          </label>
+        ) : null}
+      </>
+    );
+  }
   return (
     <>
       <label className={styles.champ}>
@@ -256,7 +292,7 @@ function ChampsType({
       </label>
       <label className={styles.champ}>
         <span>Part dans la note finale (%)</span>
-        <input name="part" defaultValue={part ? String(part).replace(".", ",") : ""} inputMode="decimal" required placeholder="40" />
+        <input name="part" defaultValue={valeurPart} inputMode="decimal" required placeholder="40" />
       </label>
       <label className={styles.caseACocher}>
         <input type="checkbox" name="avecCriteres" defaultChecked={avecCriteres} />
