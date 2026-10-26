@@ -1,0 +1,182 @@
+/* Onglet « Résultats » : tableau sur ordinateur, une carte par candidat sur téléphone. */
+
+.actions {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cartes {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .bandeau {
+    flex-wrap: wrap;
+  }
+
+  .actions {
+    width: 100%;
+    margin-left: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  }
+
+  .actions > * {
+    justify-content: center;
+    text-align: center;
+    padding-inline: 6px;
+    letter-spacing: 0.4px;
+    white-space: normal;
+  }
+
+  .bureau {
+    display: none;
+  }
+
+  .cartes {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+.parts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.part {
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--ombre);
+  color: var(--gris);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.part strong {
+  color: var(--encre);
+}
+
+.partVide {
+  opacity: 0.7;
+  text-decoration: line-through;
+}
+
+.carte {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--ombre);
+}
+
+.haut {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.nom {
+  min-width: 0;
+  color: var(--encre);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.nom small {
+  display: block;
+  margin-top: 2px;
+  color: var(--gris);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: none;
+}
+
+.pastilles {
+  margin-top: 4px;
+  display: flex;
+  gap: 6px;
+}
+
+.note {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.note strong {
+  display: block;
+  color: var(--encre);
+  font-size: 22px;
+  font-weight: 800;
+  font-style: italic;
+  line-height: 1;
+}
+
+.note span {
+  color: var(--gris);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.detail {
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--filet);
+}
+
+.ligne {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 10px;
+  font-size: 12px;
+}
+
+.libelle {
+  color: var(--gris);
+  font-weight: 500;
+}
+
+.valeur {
+  color: var(--encre);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.valeurVide {
+  color: var(--gris);
+  font-weight: 500;
+  font-style: italic;
+}
+
+.piste {
+  grid-column: 1 / -1;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--filet-doux);
+}
+
+.piste i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--bleu);
+}

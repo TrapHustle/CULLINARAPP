@@ -5,6 +5,7 @@ import { AutoRefresh } from "@/components/auto-refresh";
 import { Portrait } from "@/components/espace/candidat";
 import { Icone } from "@/components/espace/icone";
 import styles from "@/components/espace/panel.module.css";
+import r from "@/components/espace/resultats.module.css";
 import { arrondi2 } from "@/lib/calcul";
 import { exigerUtilisateur } from "@/lib/espace";
 import { dateHeure } from "@/lib/format-espace";
@@ -31,12 +32,16 @@ export default async function PageResultats({
   const enDirect = vue.selection.etat === "OUVERTE";
   const notes = vue.lignes.filter((l) => l.note !== null);
   const egalites = notes.some((l) => l.egalite);
+  // Un type sans aucun vote sort du calcul (RG 8.4) : barré sur téléphone.
+  const sansVote = new Set(
+    vue.types.filter((t) => vue.lignes.every((l) => (l.types.find((x) => x.typeVoteId === t.id)?.volume ?? 0) === 0)).map((t) => t.id),
+  );
 
   return (
     <>
       {enDirect ? <AutoRefresh intervalMs={10_000} /> : null}
 
-      <div className={`${styles.bandeau} ${vue.figeLe ? styles.bandeauOk : styles.bandeauInfo}`}>
+      <div className={`${styles.bandeau} ${r.bandeau} ${vue.figeLe ? styles.bandeauOk : styles.bandeauInfo}`}>
         <Icone nom={vue.figeLe ? "cadenas" : "etincelle"} taille={18} />
         <div>
           <strong>
@@ -51,7 +56,7 @@ export default async function PageResultats({
             {vue.inclutSimules ? " Aperçu d’essai : les paiements simulés sont comptés." : " Paiements simulés exclus."}
           </span>
         </div>
-        <div style={{ marginLeft: "auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <div className={r.actions}>
           {!vue.figeLe ? (
             <Link href={essai ? base : `${base}?essai=1`} className={`${styles.bouton} ${styles.boutonSecondaire} ${styles.boutonPetit}`}>
               {essai ? "Vue officielle" : "Inclure les simulés"}
@@ -84,7 +89,7 @@ export default async function PageResultats({
         </div>
       ) : null}
 
-      <section className={styles.carte}>
+      <section className={`${styles.carte} ${r.bureau}`}>
         <div className={styles.tableauBoite}>
           <table className={styles.tableau}>
             <thead>
@@ -146,6 +151,69 @@ export default async function PageResultats({
           </table>
         </div>
       </section>
+
+      <div className={r.cartes}>
+        <div className={r.parts}>
+          {vue.types.map((t) => (
+            <span key={t.id} className={`${r.part} ${sansVote.has(t.id) ? r.partVide : ""}`}>
+              {t.libelle} <strong>{t.part.toLocaleString("fr-FR")} %</strong>
+            </span>
+          ))}
+        </div>
+        {vue.lignes.length === 0 ? <div className={styles.vide}>Aucun candidat inscrit.</div> : null}
+        <ol className={r.cartes}>
+          {vue.lignes.map((l) => (
+            <li key={l.participationId} className={r.carte}>
+              <div className={r.haut}>
+                {l.rang ? (
+                  <span className={`${styles.medaille} ${l.rang <= 3 ? styles[`medaille${l.rang}`] : ""}`}>{l.rang}</span>
+                ) : (
+                  <span className={styles.medaille}>–</span>
+                )}
+                <Portrait nom={l.nom} photoUrl={l.photoUrl} taille={40} />
+                <div className={r.nom}>
+                  {l.nom}
+                  {l.ville ? <small>{l.ville}</small> : null}
+                  {l.egalite || l.qualifie ? (
+                    <span className={r.pastilles}>
+                      {l.egalite ? <span className={`${styles.pastille} ${styles.pastilleRouge}`}>égalité</span> : null}
+                      {l.qualifie ? <span className={`${styles.pastille} ${styles.pastilleVerte}`}>qualifié</span> : null}
+                    </span>
+                  ) : null}
+                </div>
+                <div className={r.note}>
+                  <strong>{sur100(l.note)}</strong>
+                  <span>/ 100</span>
+                </div>
+              </div>
+              <div className={r.detail}>
+                {vue.types.map((t) => {
+                  const n = l.types.find((x) => x.typeVoteId === t.id);
+                  const volume = n?.volume ?? 0;
+                  return (
+                    <div key={t.id} className={r.ligne}>
+                      <span className={r.libelle}>
+                        {t.libelle}
+                        {volume > 0 ? ` · ${volume.toLocaleString("fr-FR")} ${t.canal === "SALLE" ? "vote(s)" : "voix"}` : ""}
+                      </span>
+                      {n?.note == null ? (
+                        <span className={r.valeurVide}>pas encore noté</span>
+                      ) : (
+                        <>
+                          <span className={r.valeur}>{sur100(n.note)}</span>
+                          <span className={r.piste}>
+                            <i style={{ width: `${Math.min(100, Math.max(0, n.note))}%` }} />
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
     </>
   );
 }
