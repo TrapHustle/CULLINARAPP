@@ -210,7 +210,8 @@ export async function reporterQualifies(organisationId: string, selectionId: str
   const deja = await prisma.participation.findMany({ where: { selectionId: suivante.id }, select: { candidatId: true, ordre: true } });
   const presents = new Set(deja.map((p) => p.candidatId));
   const nouveaux = s.participations.filter((p) => !presents.has(p.candidatId));
-  const depart = Math.max(-1, ...deja.map((p) => p.ordre)) + 1;
+  // Numéros de passage à partir de 1 : la page publique les affiche (#0001).
+  const depart = Math.max(0, ...deja.map((p) => p.ordre)) + 1;
   // Dans une sélection déjà ouverte, les qualifiés sont ouverts au vote dès maintenant.
   const ouverteLe = suivante.etat === "OUVERTE" ? new Date() : null;
   await prisma.participation.createMany({

@@ -474,10 +474,12 @@ model TypeVoteModele {
   id           String  @id @default(cuid())
   evenementId  String
   libelle      String
-  /// "SALLE" | "EN_LIGNE"
+  /// "SALLE" | "EN_LIGNE" | "QR"
   canal        String
   payant       Boolean @default(false)
   avecCriteres Boolean @default(true)
+  /// "OUVERT" | "RESTREINT" — voir `TypeVote.acces`.
+  acces        String  @default("OUVERT")
   part         Float   @default(0)
   /// "BY_CANDIDATE" | "BY_JUROR"
   deroule      String  @default("BY_CANDIDATE")
@@ -507,21 +509,31 @@ model TypeVote {
   id           String  @id @default(cuid())
   selectionId  String
   libelle      String
-  /// "SALLE" | "EN_LIGNE"
+  /// "SALLE" | "EN_LIGNE" | "QR". "QR" : voix unique, sans critère, par le
+  /// lien du type (QR code) ; remplace les tablettes quand on n'en a pas.
   canal        String
   payant       Boolean @default(false)
   /// RG 4.2 : sans critère, on compte des voix ; avec, on note.
   avecCriteres Boolean @default(true)
+  /// Qui peut voter par le lien : "OUVERT" (tout numéro, une fois) ou
+  /// "RESTREINT" (seulement les `NumeroAutorise` du type, une fois).
+  acces        String  @default("OUVERT")
+  /// Code du lien public du type et de son QR code : /q/<lien>.
+  lien         String  @unique @default(cuid())
+  /// Interrupteur d'un vote "QR". Le vote en ligne garde celui de la sélection.
+  ouvert       Boolean @default(false)
   /// Part dans la note finale, en pourcentage (RG 4.5).
   part         Float   @default(0)
   /// "BY_CANDIDATE" | "BY_JUROR" — déroulé sur les tablettes.
   deroule      String  @default("BY_CANDIDATE")
   ordre        Int     @default(0)
 
-  selection Selection   @relation(fields: [selectionId], references: [id], onDelete: Cascade)
-  criteres  Critere[]
-  suffrages Suffrage[]
-  tables    TableJury[]
+  selection        Selection         @relation(fields: [selectionId], references: [id], onDelete: Cascade)
+  criteres         Critere[]
+  suffrages        Suffrage[]
+  tables           TableJury[]
+  numerosAutorises NumeroAutorise[]
+  votants          Votant[]
 
   @@index([selectionId])
 }
@@ -588,7 +600,7 @@ model Suffrage {
   typeVoteId      String
   /// Nombre de voix représentées (RG 5.4).
   poids           Int       @default(1)
-  /// "TABLETTE" | "PAIEMENT" | "GRATUIT" | "IMPORT"
+  /// "TABLETTE" | "PAIEMENT" | "GRATUIT" | "IMPORT" | "SAISIE" | "QR"
   origine         String
   tableId         String?
   jureIndex       Int?
@@ -627,14 +639,38 @@ model Valeur {
 model Votant {
   id          String   @id @default(cuid())
   selectionId String
-  /// Numéro de téléphone, sans code de confirmation (risque accepté).
+  /// Le vote pour lequel ce numéro a donné sa voix : une voix par numéro et
+  /// par type de vote (voix gratuite en ligne RG 7.4, ou vote "QR").
+  typeVoteId  String
+  /// Numéro de téléphone normalisé, sans code de confirmation (risque accepté).
   identifiant String
   creeLe      DateTime @default(now())
 
   selection Selection @relation(fields: [selectionId], references: [id], onDelete: Cascade)
+  typeVote  TypeVote  @relation(fields: [typeVoteId], references: [id], onDelete: Restrict)
   suffrage  Suffrage?
 
-  @@unique([selectionId, identifiant])
+  @@unique([typeVoteId, identifiant])
+  @@index([selectionId])
+}
+
+/// Liste des numéros autorisés d'un vote "RESTREINT". Un numéro absent ne
+/// peut pas voter ; « a voté » se lit dans `Votant` (même type, même numéro),
+/// jamais ici : la liste ne dit pas pour qui on a voté.
+model NumeroAutorise {
+  id          String   @id @default(cuid())
+  typeVoteId  String
+  /// Normalisé comme `Votant.identifiant` (Côte d'Ivoire : 10 chiffres nus,
+  /// sans +225), pour la comparaison.
+  telephone   String
+  nom         String?
+  /// "SAISIE" ou le nom du fichier importé.
+  source      String   @default("SAISIE")
+  creeLe      DateTime @default(now())
+
+  typeVote TypeVote @relation(fields: [typeVoteId], references: [id], onDelete: Cascade)
+
+  @@unique([typeVoteId, telephone])
 }
 
 /// Paiement d'un lot de voix (RG 6). Trace comptable : il survit à la

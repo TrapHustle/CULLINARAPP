@@ -28,6 +28,7 @@ const HISTORY = [
   "20261007200000_withdrawal_requests",
   "20261013120000_saas_modele",
   "20261016120000_saas_plateforme",
+  "20261022120000_vote_qr",
 ];
 
 const url = process.env.DIRECT_DATABASE_URL ?? process.env.DATABASE_URL;

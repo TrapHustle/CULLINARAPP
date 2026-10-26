@@ -2,7 +2,14 @@ import { randomInt, randomUUID } from "node:crypto";
 import { cache } from "react";
 import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
-import { MIN_PAYMENT_AMOUNT, normalizePhone, PAYMENT_METHODS, type PaymentMethod } from "./public-vote-core";
+import {
+  DEFAULT_PHONE_COUNTRY,
+  MIN_PAYMENT_AMOUNT,
+  normalizePhone,
+  parsePhone,
+  PAYMENT_METHODS,
+  type PaymentMethod,
+} from "./public-vote-core";
 import { checkSirapPayment, createSirapPayment } from "./sirap";
 
 /**
@@ -46,7 +53,7 @@ async function lirePagePubliqueSansCache(slug: string) {
     where: { slug },
     include: {
       evenement: { include: { organisation: { select: { nom: true, actif: true, paiementConfig: true } } } },
-      typesVote: { where: { canal: "EN_LIGNE" }, select: { id: true, libelle: true } },
+      typesVote: { where: { canal: "EN_LIGNE" }, orderBy: [{ ordre: "asc" }, { id: "asc" }], select: { id: true, libelle: true } },
       participations: {
         where: { disponible: true },
         orderBy: [{ ordre: "asc" }, { id: "asc" }],
@@ -75,6 +82,7 @@ async function lirePagePubliqueSansCache(slug: string) {
     mode: modePaiement(selection.evenement.organisation.paiementConfig),
     candidats: selection.participations.map((p) => ({
       participationId: p.id,
+      ordre: p.ordre,
       nom: p.candidat.nom,
       ville: p.candidat.ville,
       photoUrl: p.candidat.photoUrl,
@@ -104,7 +112,7 @@ async function cible(slug: string, participationId: string) {
     where: { slug },
     include: {
       evenement: { include: { organisation: { select: { id: true, actif: true, paiementConfig: true } } } },
-      typesVote: { where: { canal: "EN_LIGNE" }, select: { id: true } },
+      typesVote: { where: { canal: "EN_LIGNE" }, orderBy: [{ ordre: "asc" }, { id: "asc" }], select: { id: true } },
       participations: { where: { id: participationId }, include: { candidat: { select: { nom: true } } } },
     },
   });
@@ -122,18 +130,29 @@ async function cible(slug: string, participationId: string) {
 
 export type ResultatVote = { ok: true; message: string } | { ok: false; erreur: string };
 
-/** Une voix gratuite par numéro et par sélection (RG 7.4), sans code SMS (risque accepté). */
+/**
+ * Une voix gratuite par numéro et par vote en ligne (RG 7.4 ; une sélection n'en a qu'un), sans code SMS (risque accepté).
+ *
+ * L'identifiant est toujours lu comme un numéro ivoirien (`parsePhone` avec le
+ * pays par défaut), jamais deviné via `normalizePhone`/`detectPhoneCountry` :
+ * un même numéro local préfixé d'un faux indicatif (`+1`, `+229`, `+33`…)
+ * produirait sinon un identifiant différent à chaque essai et contournerait la
+ * contrainte d'unicité ci-dessous (plusieurs voix gratuites pour un seul
+ * numéro). Le paiement, qui n'a pas cette contrainte, garde `normalizePhone`
+ * et continue d'accepter tous les pays de `PHONE_COUNTRIES`.
+ */
 export async function voterGratuit(slug: string, participationId: string, telephone: string): Promise<ResultatVote> {
   const c = await cible(slug, participationId);
   if (!c.ok) return c;
   if (!c.selection.voixGratuite) return { ok: false, erreur: "Ce vote n'accorde pas de voix gratuite." };
 
-  const identifiant = normalizePhone(telephone);
-  if (!identifiant) return { ok: false, erreur: "Numéro invalide. Exemple : 07 00 00 00 00." };
+  const analyse = parsePhone(telephone, DEFAULT_PHONE_COUNTRY);
+  if (!analyse.ok) return { ok: false, erreur: "Entrez un numéro ivoirien valide. Exemple : 07 00 00 00 00." };
+  const identifiant = analyse.phone;
 
   try {
     await prisma.$transaction(async (tx) => {
-      const votant = await tx.votant.create({ data: { selectionId: c.selection.id, identifiant } });
+      const votant = await tx.votant.create({ data: { selectionId: c.selection.id, typeVoteId: c.typeVoteId, identifiant } });
       await tx.suffrage.create({
         data: {
           id: randomUUID(),

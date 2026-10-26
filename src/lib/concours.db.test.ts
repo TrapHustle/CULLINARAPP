@@ -147,6 +147,11 @@ describe.skipIf(!RUN)("concours de A à Z", () => {
   it("accepte une voix gratuite par numéro, puis des voix payées", async () => {
     expect((await pub.voterGratuit(slug, p.Koffi, "07 01 02 03 04")).ok).toBe(true);
     expect((await pub.voterGratuit(slug, p.Awa, "0701020304")).ok).toBe(false);
+    // Un faux indicatif étranger devant le même numéro ne doit pas rouvrir une
+    // voix gratuite (contournement de la contrainte d'unicité RG 7.4).
+    expect((await pub.voterGratuit(slug, p.Awa, "+10701020304")).ok).toBe(false);
+    expect((await pub.voterGratuit(slug, p.Awa, "+2290701020304")).ok).toBe(false);
+    expect((await pub.voterGratuit(slug, p.Awa, "+330701020304")).ok).toBe(false);
 
     const simule = await pub.demanderPaiement({ slug, participationId: p.Mariam, voix: 50, moyen: "WAVE", telephone: "0705060708" });
     expect(simule.ok && simule.type === "confirme" && simule.recu.simule).toBe(true);

@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vote par QR code</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root {
+    --bleu: #1768e5; --bleu-fonce: #0c55c2; --bleu-pale: #e2edff; --bleu-texte: #1259c9;
+    --encre: #0d1830; --encre-2: #1d2b43; --gris: #47546b; --gris-clair: #5b6880;
+    --filet: #d6dde8; --filet-doux: #e3e8f0; --champ-bord: #bfcad9;
+    --fond: #e9eef5; --surface: #fff; --surface-2: #f3f6fa;
+    --ombre: 0 1px 2px rgba(13,24,48,.06), 0 6px 18px rgba(13,24,48,.05);
+    --vert: #157a56; --vert-pale: #daf4e9; --rouge: #b42318; --rouge-pale: #fde8e6; --rouge-bord: #eeb4ae;
+    --orange: #9a5b00; --orange-pale: #fff1d6;
+    --titre-bloc: #0b2a66; --titre-accent: #5ea4ff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Outfit, system-ui, sans-serif; background: var(--fond); color: var(--encre); font-size: 15px; line-height: 1.5; }
+  button, input, select, textarea { font: inherit; }
+
+  /* Sélecteur d'écran de la maquette */
+  .maquette { position: sticky; top: 0; z-index: 50; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; padding: 10px 16px; background: #050f26; color: #dbe6ff; font-size: 13px; }
+  .maquette b { letter-spacing: 3px; text-transform: uppercase; font-size: 11px; color: #8fa9d9; margin-right: 8px; }
+  .maquette button { border: 1px solid rgba(255,255,255,.15); background: transparent; color: #dbe6ff; border-radius: 999px; padding: 6px 14px; cursor: pointer; font-weight: 600; }
+  .maquette button.actif { background: var(--bleu); border-color: var(--bleu); color: #fff; }
+  .ecran { display: none; }
+  .ecran.actif { display: block; }
+
+  /* Coque du panneau */
+  .coque { display: flex; min-height: calc(100vh - 46px); }
+  .lateral { width: 260px; flex-shrink: 0; padding: 28px 16px; background: linear-gradient(180deg,#0b2a66,#081d4a); color: #dbe6ff; }
+  .rubrique { padding: 18px 14px 10px; color: #8fa9d9; font-size: 12px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; }
+  .rubrique:first-child { padding-top: 0; }
+  .lien { height: 48px; padding: 0 16px; display: flex; align-items: center; border-left: 3px solid transparent; border-radius: 12px; font-weight: 500; }
+  .lien.actif { color: #5ea4ff; background: rgba(255,255,255,.1); border-left-color: #5ea4ff; font-weight: 600; }
+  .contenu { flex: 1; min-width: 0; padding: 36px 40px 64px; }
+  .largeur { max-width: 1100px; }
+  .surtitre { color: var(--gris); font-size: 12px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; margin-top: 12px; }
+  .titre { margin: 0; font-size: clamp(28px,3.6vw,46px); font-weight: 800; font-style: italic; letter-spacing: -1.5px; line-height: 1.05; text-transform: uppercase; }
+  .titre em { display: inline-block; padding: .02em .16em .04em .12em; border-radius: 6px; background: var(--titre-bloc); color: var(--titre-accent); }
+  .onglets { margin-top: 22px; display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--filet); }
+  .onglet { padding: 12px 16px; border-bottom: 3px solid transparent; color: var(--gris); font-size: 12px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; white-space: nowrap; }
+  .onglet.actif { color: var(--bleu-texte); border-bottom-color: var(--bleu); }
+  .onglet .nouveau { margin-left: 6px; padding: 1px 6px; border-radius: 6px; background: var(--bleu); color: #fff; font-size: 9px; letter-spacing: 1px; }
+
+  .carte { margin-top: 20px; border: 1px solid var(--filet); border-radius: 14px; background: var(--surface); box-shadow: var(--ombre); overflow: hidden; }
+  .carteHaut { padding: 22px 24px 18px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .carteTitre { margin: 0; font-size: 17px; font-weight: 600; }
+  .carteTexte { margin: 4px 0 0; color: var(--gris); font-size: 14px; }
+  .carteCorps { padding: 0 24px 22px; }
+  .cartePied { padding: 14px 24px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; border-top: 1px solid var(--filet-doux); background: var(--surface-2); color: var(--gris); font-size: 13px; }
+  .pastilles { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .pastille { padding: 3px 10px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--filet); color: var(--encre-2); font-size: 12px; font-weight: 600; }
+  .pastille.bleue { background: var(--bleu-pale); border-color: transparent; color: var(--bleu-texte); }
+  .pastille.orange { background: var(--orange-pale); border-color: transparent; color: var(--orange); }
+  .pastille.verte { background: var(--vert-pale); border-color: transparent; color: var(--vert); }
+
+  .bouton { height: 44px; padding: 0 20px; border: 0; border-radius: 13px; display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; white-space: nowrap; }
+  .principal { color: #fff; background: linear-gradient(135deg,#2b7bff,var(--bleu)); box-shadow: 0 6px 16px rgba(23,104,229,.25); }
+  .secondaire { color: var(--encre-2); background: var(--surface); border: 1px solid var(--champ-bord); }
+  .petit { height: 36px; padding: 0 14px; font-size: 11px; border-radius: 10px; }
+  .whatsapp { color: #fff; background: #1fa855; }
+
+  .formulaire { padding: 0 24px 22px; display: grid; grid-template-columns: repeat(auto-fill,minmax(230px,1fr)); gap: 16px; }
+  .champ { display: flex; flex-direction: column; gap: 6px; }
+  .champ > span { font-size: 13px; font-weight: 600; color: var(--encre-2); }
+  .champ input, .champ select, textarea { height: 44px; padding: 0 12px; border: 1px solid var(--champ-bord); border-radius: 10px; background: var(--surface); color: var(--encre); }
+  .pleine { grid-column: 1 / -1; }
+
+  /* Choix en cartes radio */
+  .choix { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 12px; }
+  .option { position: relative; display: flex; gap: 12px; padding: 16px; border: 1.5px solid var(--champ-bord); border-radius: 12px; cursor: pointer; background: var(--surface); }
+  .option input { margin-top: 3px; accent-color: var(--bleu); }
+  .option strong { display: block; font-size: 15px; }
+  .option small { color: var(--gris); font-size: 13px; }
+  .option:has(input:checked) { border-color: var(--bleu); background: var(--bleu-pale); }
+  .sousChoix { margin-top: 12px; padding: 16px; border-radius: 12px; background: var(--surface-2); border: 1px dashed var(--champ-bord); }
+  .sousChoix p { margin: 0 0 6px; font-size: 13px; color: var(--gris); }
+
+  /* Liens & QR */
+  .qrBloc { display: grid; grid-template-columns: 180px 1fr; gap: 24px; align-items: start; }
+  .qr { width: 180px; height: 180px; padding: 12px; border-radius: 14px; background: #fff; border: 1px solid var(--filet); display: grid; place-items: center; }
+  .qr img, .qr canvas { width: 156px !important; height: 156px !important; }
+  .url { display: flex; gap: 8px; align-items: center; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--filet); font-family: ui-monospace, Consolas, monospace; font-size: 13px; color: var(--bleu-texte); overflow-wrap: anywhere; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .chiffres { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 16px; }
+  .chiffres div { font-size: 13px; color: var(--gris); }
+  .chiffres strong { display: block; font-size: 24px; color: var(--encre); font-weight: 800; }
+  .jauge { height: 8px; border-radius: 99px; background: var(--filet-doux); overflow: hidden; margin-top: 10px; }
+  .jauge i { display: block; height: 100%; background: var(--bleu); }
+
+  .depot { display: flex; align-items: center; gap: 14px; padding: 18px; border: 2px dashed var(--champ-bord); border-radius: 12px; background: var(--surface-2); }
+  .depot .ic { width: 44px; height: 44px; border-radius: 12px; background: var(--bleu-pale); color: var(--bleu); display: grid; place-items: center; font-size: 20px; flex-shrink: 0; }
+  .depot small { display: block; color: var(--gris); }
+  .deuxCol { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  textarea { height: 118px; padding: 10px 12px; resize: vertical; width: 100%; font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gris); padding: 10px 12px; border-bottom: 1px solid var(--filet); }
+  td { padding: 11px 12px; border-bottom: 1px solid var(--filet-doux); }
+  td.num { font-family: ui-monospace, Consolas, monospace; }
+  .filtres { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .filtres input { height: 38px; padding: 0 12px; border: 1px solid var(--champ-bord); border-radius: 10px; min-width: 220px; }
+  .note { margin-top: 16px; padding: 14px 16px; border-radius: 12px; background: var(--bleu-pale); color: var(--encre-2); font-size: 14px; }
+
+  /* Téléphone */
+  .scene { display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; padding: 40px 16px; }
+  .legende { max-width: 340px; }
+  .legende h2 { margin: 0 0 8px; font-size: 26px; font-weight: 800; font-style: italic; text-transform: uppercase; letter-spacing: -.5px; }
+  .legende p { color: var(--gris); }
+  .legende ol { padding-left: 20px; color: var(--encre-2); }
+  .legende code { background: #fff; border: 1px solid var(--filet); border-radius: 6px; padding: 1px 6px; }
+  .tel { width: 360px; max-width: 100%; height: 720px; border-radius: 40px; border: 10px solid #0d1830; background: #f6f8fc; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 30px 60px rgba(13,24,48,.25); }
+  .telHaut { padding: 22px 20px 20px; color: #fff; background: linear-gradient(160deg,#0b2a66,#1768e5); }
+  .telHaut small { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #a9c8ff; font-weight: 700; }
+  .telHaut h3 { margin: 6px 0 2px; font-size: 22px; font-weight: 800; font-style: italic; text-transform: uppercase; line-height: 1.1; }
+  .telHaut p { margin: 0; font-size: 13px; color: #d6e4ff; }
+  .telCorps { flex: 1; overflow-y: auto; padding: 20px; }
+  .telCorps label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .telCorps input { width: 100%; height: 50px; padding: 0 14px; border: 1.5px solid var(--champ-bord); border-radius: 12px; font-size: 18px; letter-spacing: 1px; }
+  .telCorps .aide { font-size: 12px; color: var(--gris); margin-top: 6px; }
+  .telBouton { width: 100%; height: 52px; margin-top: 16px; border: 0; border-radius: 14px; color: #fff; background: linear-gradient(135deg,#2b7bff,var(--bleu)); font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; }
+  .telBouton:disabled { opacity: .45; cursor: not-allowed; }
+  .message { margin-top: 14px; padding: 14px; border-radius: 12px; font-size: 14px; }
+  .message.erreur { background: var(--rouge-pale); color: var(--rouge); border: 1px solid var(--rouge-bord); }
+  .message.ok { background: var(--vert-pale); color: var(--vert); }
+  .candidat { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1.5px solid var(--filet); border-radius: 14px; background: #fff; margin-bottom: 10px; cursor: pointer; }
+  .candidat .photo { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg,#cfe0ff,#9dbdf5); display: grid; place-items: center; font-weight: 800; color: var(--titre-bloc); }
+  .candidat strong { display: block; font-style: italic; font-weight: 700; }
+  .candidat small { color: var(--gris); }
+  .candidat.choisi { border-color: var(--bleu); background: var(--bleu-pale); }
+  .candidat .rond { margin-left: auto; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--champ-bord); }
+  .candidat.choisi .rond { border: 7px solid var(--bleu); }
+  .badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: var(--vert-pale); color: var(--vert); font-size: 12px; font-weight: 700; margin-bottom: 14px; }
+  .fin { text-align: center; padding-top: 50px; }
+  .fin .coche { width: 84px; height: 84px; margin: 0 auto 18px; border-radius: 50%; background: var(--vert-pale); color: var(--vert); display: grid; place-items: center; font-size: 42px; }
+  .fin h4 { margin: 0 0 6px; font-size: 22px; font-weight: 800; font-style: italic; text-transform: uppercase; }
+  .fin p { color: var(--gris); margin: 0; }
+  .lienTexte { background: none; border: 0; color: var(--bleu-texte); font-weight: 600; cursor: pointer; padding: 0; margin-top: 12px; }
+
+  /* Affiche */
+  .afficheZone { padding: 40px 16px; display: flex; justify-content: center; }
+  .affiche { width: 560px; max-width: 100%; background: #fff; border-radius: 6px; box-shadow: 0 20px 50px rgba(13,24,48,.2); overflow: hidden; text-align: center; }
+  .afficheHaut { padding: 36px 28px 30px; color: #fff; background: linear-gradient(160deg,#0b2a66,#1768e5); }
+  .afficheHaut small { letter-spacing: 5px; text-transform: uppercase; font-weight: 700; color: #a9c8ff; font-size: 12px; }
+  .afficheHaut h2 { margin: 10px 0 0; font-size: 38px; font-weight: 800; font-style: italic; text-transform: uppercase; line-height: 1; }
+  .afficheHaut h2 em { display: inline-block; padding: 0 .15em; border-radius: 6px; background: #fff; color: var(--bleu); }
+  .afficheQr { width: 280px; height: 280px; margin: 34px auto 16px; padding: 14px; border: 2px solid var(--filet); border-radius: 18px; display: grid; place-items: center; }
+  .afficheQr img, .afficheQr canvas { width: 248px !important; height: 248px !important; }
+  .etapes { display: flex; justify-content: center; gap: 22px; padding: 0 24px 30px; flex-wrap: wrap; }
+  .etapes div { width: 140px; font-size: 13px; color: var(--encre-2); }
+  .etapes b { display: grid; place-items: center; width: 34px; height: 34px; margin: 0 auto 6px; border-radius: 50%; background: var(--bleu-pale); color: var(--bleu); }
+  .affichePied { padding: 14px; background: var(--surface-2); color: var(--gris); font-size: 12px; border-top: 1px solid var(--filet); }
+
+  @media (max-width: 860px) {
+    .lateral { display: none; }
+    .contenu { padding: 24px 16px 48px; }
+    .qrBloc, .deuxCol { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="maquette">
+  <b>Maquette</b>
+  <button data-ecran="grille" class="actif">1 · Grille de vote</button>
+  <button data-ecran="liens">2 · Liens &amp; QR codes</button>
+  <button data-ecran="votant">3 · Côté votant</button>
+  <button data-ecran="affiche">4 · Affiche à imprimer</button>
+</nav>
+
+<!-- ================= 1. GRILLE ================= -->
+<section class="ecran actif" id="grille">
+  <div class="coque">
+    <aside class="lateral">
+      <div class="rubrique">Concours</div>
+      <div class="lien">Tableau de bord</div>
+      <div class="lien actif">Sélections</div>
+      <div class="lien">Paramètres</div>
+      <div class="rubrique">Organisation</div>
+      <div class="lien">Candidats</div>
+      <div class="lien">Recettes</div>
+      <div class="lien">Équipe</div>
+    </aside>
+    <main class="contenu"><div class="largeur">
+      <h1 class="titre">Sélection <em>Cocody</em></h1>
+      <div class="surtitre">Sélections · n° 1 · Grand Prix Saveurs d'Abidjan</div>
+      <nav class="onglets">
+        <span class="onglet">Pilotage</span><span class="onglet actif">Grille de vote</span><span class="onglet">Candidats</span>
+        <span class="onglet">Liens &amp; QR codes<span class="nouveau">NOUVEAU</span></span>
+        <span class="onglet">Vote en ligne</span><span class="onglet">Notes du jury</span><span class="onglet">Résultats</span>
+      </nav>
+
+      <section class="carte">
+        <div class="carteHaut"><div>
+          <h2 class="carteTitre">Jury professionnel</h2>
+          <div class="pastilles"><span class="pastille">En salle</span><span class="pastille">Notes sur 40 pts</span><span class="pastille bleue">Part 50 %</span></div>
+        </div></div>
+        <div class="cartePied"><span>4 critères · saisie depuis le panneau</span><span>Pas de lien public</span></div>
+      </section>
+
+      <section class="carte">
+        <div class="carteHaut"><div>
+          <h2 class="carteTitre">Vote des invités</h2>
+          <div class="pastilles"><span class="pastille">Par QR code</span><span class="pastille">Une voix par personne</span><span class="pastille orange">Restreint · 128 numéros</span><span class="pastille bleue">Part 30 %</span></div>
+        </div></div>
+        <div class="cartePied"><span>Seuls les numéros de la liste peuvent voter, une seule fois.</span><span style="color:var(--bleu-texte);font-weight:600">Voir le lien et le QR code →</span></div>
+      </section>
+
+      <section class="carte">
+        <div class="carteHaut"><div>
+          <h2 class="carteTitre">Vote du public</h2>
+          <div class="pastilles"><span class="pastille">En ligne</span><span class="pastille">Voix payantes · 200 FCFA</span><span class="pastille verte">Normal · ouvert à tous</span><span class="pastille bleue">Part 20 %</span></div>
+        </div></div>
+        <div class="cartePied"><span>Page publique existante, avec son propre QR code.</span><span style="color:var(--bleu-texte);font-weight:600">Voir le lien et le QR code →</span></div>
+      </section>
+
+      <section class="carte">
+        <div class="carteHaut"><div>
+          <h2 class="carteTitre">Ajouter un type de vote</h2>
+          <p class="carteTexte">Choisissez comment on vote, puis qui a le droit de voter.</p>
+        </div></div>
+        <div class="formulaire">
+          <label class="champ"><span>Nom</span><input value="Vote des invités"></label>
+          <label class="champ"><span>Part dans la note finale (%)</span><input value="30"></label>
+
+          <div class="champ pleine"><span>Comment vote-t-on ?</span>
+            <div class="choix">
+              <label class="option"><input type="radio" name="mode"><span><strong>Notes sur critères</strong><small>Le jury note chaque candidat (goût, présentation…).</small></span></label>
+              <label class="option"><input type="radio" name="mode" checked><span><strong>Voix unique par QR code</strong><small>Sans critère : on scanne, on tape son numéro, on choisit un candidat. Une voix par numéro.</small></span></label>
+              <label class="option"><input type="radio" name="mode"><span><strong>Voix payantes en ligne</strong><small>La page publique actuelle, avec paiement mobile.</small></span></label>
+            </div>
+          </div>
+
+          <div class="champ pleine"><span>Qui peut voter ?</span>
+            <div class="choix">
+              <label class="option"><input type="radio" name="acces" id="accesNormal"><span><strong>Normal</strong><small>Tout le monde, une seule fois par numéro de téléphone.</small></span></label>
+              <label class="option"><input type="radio" name="acces" id="accesRestreint" checked><span><strong>Restreint</strong><small>Seulement les numéros autorisés. Numéro inconnu = vote refusé.</small></span></label>
+            </div>
+            <div class="sousChoix" id="sousRestreint">
+              <p>Vous ajouterez les numéros autorisés juste après, dans l'onglet <b>Liens &amp; QR codes</b> : par fichier Excel / CSV ou en les tapant.</p>
+            </div>
+          </div>
+          <div class="pleine"><button class="bouton principal">Ajouter le type</button></div>
+        </div>
+      </section>
+    </div></main>
+  </div>
+</section>
+
+<!-- ================= 2. LIENS & QR ================= -->
+<section class="ecran" id="liens">
+  <div class="coque">
+    <aside class="lateral">
+      <div class="rubrique">Concours</div>
+      <div class="lien">Tableau de bord</div>
+      <div class="lien actif">Sélections</div>
+      <div class="lien">Paramètres</div>
+      <div class="rubrique">Organisation</div>
+      <div class="lien">Candidats</div>
+      <div class="lien">Recettes</div>
+      <div class="lien">Équipe</div>
+    </aside>
+    <main class="contenu"><div class="largeur">
+      <h1 class="titre">Sélection <em>Cocody</em></h1>
+      <div class="surtitre">Sélections · n° 1 · Grand Prix Saveurs d'Abidjan</div>
+      <nav class="onglets">
+        <span class="onglet">Pilotage</span><span class="onglet">Grille de vote</span><span class="onglet">Candidats</span>
+        <span class="onglet actif">Liens &amp; QR codes</span>
+        <span class="onglet">Vote en ligne</span><span class="onglet">Notes du jury</span><span class="onglet">Résultats</span>
+      </nav>
+
+      <!-- Vote restreint -->
+      <section class="carte">
+        <div class="carteHaut">
+          <div>
+            <h2 class="carteTitre">Vote des invités</h2>
+            <div class="pastilles"><span class="pastille">Voix unique</span><span class="pastille orange">Restreint</span><span class="pastille verte">Ouvert</span></div>
+          </div>
+          <button class="bouton secondaire petit">Fermer ce vote</button>
+        </div>
+        <div class="carteCorps">
+          <div class="qrBloc">
+            <div class="qr" id="qrInvites"></div>
+            <div>
+              <div class="url">digitalyx-vote.app/q/<b>k7m2-invites</b></div>
+              <div class="actions">
+                <button class="bouton secondaire petit">Copier le lien</button>
+                <button class="bouton secondaire petit">Télécharger le QR (PNG)</button>
+                <button class="bouton secondaire petit" data-aller="affiche">Imprimer l'affiche</button>
+                <button class="bouton whatsapp petit">Partager sur WhatsApp</button>
+              </div>
+              <div class="chiffres">
+                <div><strong>128</strong>numéros autorisés</div>
+                <div><strong>47</strong>ont voté</div>
+                <div><strong>81</strong>n'ont pas encore voté</div>
+              </div>
+              <div class="jauge"><i style="width:37%"></i></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="carte">
+        <div class="carteHaut"><div>
+          <h2 class="carteTitre">Numéros autorisés · Vote des invités</h2>
+          <p class="carteTexte">Un numéro absent de cette liste ne peut pas voter. Chaque numéro vote une seule fois.</p>
+        </div></div>
+        <div class="carteCorps">
+          <div class="deuxCol">
+            <div>
+              <div class="depot">
+                <div class="ic">⇪</div>
+                <div><strong>Importer un fichier</strong><small>Excel (.xlsx) ou CSV · une colonne « téléphone », une colonne « nom » facultative</small>
+                  <button class="bouton secondaire petit" style="margin-top:8px">Choisir le fichier</button></div>
+              </div>
+              <p class="carteTexte" style="margin-top:10px">Les doublons et les numéros invalides sont signalés avant l'import ; rien n'est ajouté sans votre accord.</p>
+            </div>
+            <div>
+              <label class="champ"><span>Ou tapez les numéros (un par ligne)</span>
+                <textarea placeholder="07 01 02 03 04 ; Awa Koné&#10;05 06 07 08 09">0701020304 ; Awa Koné
+0506070809 ; Yao Kouassi
+0144556677</textarea></label>
+              <button class="bouton principal petit" style="margin-top:10px">Ajouter 3 numéros</button>
+            </div>
+          </div>
+
+          <div class="filtres" style="margin-top:22px">
+            <input placeholder="Rechercher un numéro ou un nom">
+            <span class="pastille bleue">Tous (128)</span><span class="pastille">Ont voté (47)</span><span class="pastille">Pas encore (81)</span>
+            <span style="margin-left:auto"><button class="bouton secondaire petit">Exporter</button></span>
+          </div>
+          <table>
+            <thead><tr><th>Téléphone</th><th>Nom</th><th>Statut</th><th>Ajouté par</th><th></th></tr></thead>
+            <tbody>
+              <tr><td class="num">+225 07 01 02 03 04</td><td>Awa Koné</td><td><span class="pastille">Pas encore voté</span></td><td>Saisie</td><td><button class="bouton secondaire petit">Retirer</button></td></tr>
+              <tr><td class="num">+225 05 06 07 08 09</td><td>Yao Kouassi</td><td><span class="pastille verte">A voté · 21:14</span></td><td>invites.xlsx</td><td><button class="bouton secondaire petit" disabled title="Déjà voté : on ne retire pas un numéro qui a voté" style="opacity:.4">Retirer</button></td></tr>
+              <tr><td class="num">+225 01 44 55 66 77</td><td>—</td><td><span class="pastille verte">A voté · 20:52</span></td><td>invites.xlsx</td><td><button class="bouton secondaire petit" disabled style="opacity:.4">Retirer</button></td></tr>
+              <tr><td class="num">+225 07 88 99 00 11</td><td>Mariam Touré</td><td><span class="pastille">Pas encore voté</span></td><td>invites.xlsx</td><td><button class="bouton secondaire petit">Retirer</button></td></tr>
+            </tbody>
+          </table>
+          <p class="carteTexte" style="margin-top:10px">Le nom du candidat choisi n'est jamais affiché ici : l'organisateur voit qui a voté, pas pour qui.</p>
+        </div>
+      </section>
+
+      <!-- Vote normal -->
+      <section class="carte">
+        <div class="carteHaut">
+          <div>
+            <h2 class="carteTitre">Vote du public</h2>
+            <div class="pastilles"><span class="pastille">Voix payantes</span><span class="pastille verte">Normal · ouvert à tous</span><span class="pastille verte">Ouvert</span></div>
+          </div>
+        </div>
+        <div class="carteCorps">
+          <div class="qrBloc">
+            <div class="qr" id="qrPublic"></div>
+            <div>
+              <div class="url">digitalyx-vote.app/q/<b>k7m2-public</b></div>
+              <div class="actions">
+                <button class="bouton secondaire petit">Copier le lien</button>
+                <button class="bouton secondaire petit">Télécharger le QR (PNG)</button>
+                <button class="bouton secondaire petit">Imprimer l'affiche</button>
+                <button class="bouton whatsapp petit">Partager sur WhatsApp</button>
+              </div>
+              <div class="note">Pas de liste : tout le monde peut voter. La voix gratuite reste limitée à une par numéro ; les voix payées ne sont pas limitées.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div></main>
+  </div>
+</section>
+
+<!-- ================= 3. VOTANT ================= -->
+<section class="ecran" id="votant">
+  <div class="scene">
+    <div class="legende">
+      <h2>Après le scan</h2>
+      <p>Le QR code ouvre directement la page du vote, sans application à installer.</p>
+      <ol>
+        <li>Le votant tape son numéro.</li>
+        <li>Numéro inconnu : refusé.<br>Déjà utilisé : refusé.</li>
+        <li>Sinon il choisit un candidat et confirme.</li>
+        <li>Le numéro est aussitôt bloqué pour ce vote.</li>
+      </ol>
+      <p>Essayez dans le téléphone :</p>
+      <p><code>07 01 02 03 04</code> autorisé<br><code>05 06 07 08 09</code> a déjà voté<br>tout autre numéro : non reconnu</p>
+    </div>
+
+    <div class="tel">
+      <div class="telHaut">
+        <small>Sélection Cocody</small>
+        <h3>Vote des invités</h3>
+        <p>Grand Prix Saveurs d'Abidjan · une voix par invité</p>
+      </div>
+      <div class="telCorps" id="tel"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 4. AFFICHE ================= -->
+<section class="ecran" id="affiche">
+  <div class="afficheZone">
+    <div class="affiche">
+      <div class="afficheHaut">
+        <small>Grand Prix Saveurs d'Abidjan · Sélection Cocody</small>
+        <h2>Votez <em>ici</em></h2>
+      </div>
+      <div class="afficheQr" id="qrAffiche"></div>
+      <div style="font-weight:800;font-style:italic;text-transform:uppercase;font-size:20px">Vote des invités</div>
+      <p style="color:var(--gris);margin:4px 0 24px">Réservé aux invités inscrits · une voix par personne</p>
+      <div class="etapes">
+        <div><b>1</b>Scannez le QR code</div>
+        <div><b>2</b>Tapez votre numéro de téléphone</div>
+        <div><b>3</b>Choisissez votre candidat</div>
+      </div>
+      <div class="affichePied">digitalyx-vote.app/q/k7m2-invites</div>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Navigation de la maquette
+  function montrer(id) {
+    document.querySelectorAll(".ecran").forEach(e => e.classList.toggle("actif", e.id === id));
+    document.querySelectorAll(".maquette button").forEach(b => b.classList.toggle("actif", b.dataset.ecran === id));
+    window.scrollTo(0, 0);
+  }
+  document.querySelectorAll("[data-ecran]").forEach(b => b.onclick = () => montrer(b.dataset.ecran));
+  document.querySelectorAll("[data-aller]").forEach(b => b.onclick = () => montrer(b.dataset.aller));
+  document.querySelectorAll(".onglet").forEach(o => {
+    if (o.textContent.startsWith("Liens")) o.style.cursor = "pointer", o.onclick = () => montrer("liens");
+    if (o.textContent.startsWith("Grille")) o.style.cursor = "pointer", o.onclick = () => montrer("grille");
+  });
+  document.querySelectorAll("#grille .cartePied span:last-child").forEach(s => {
+    if (s.textContent.includes("QR")) s.style.cursor = "pointer", s.onclick = () => montrer("liens");
+  });
+
+  // Sous-choix « restreint »
+  const sous = document.getElementById("sousRestreint");
+  document.querySelectorAll("input[name=acces]").forEach(r => r.onchange = () => {
+    sous.style.display = document.getElementById("accesRestreint").checked ? "" : "none";
+  });
+
+  // QR codes (exemples)
+  function qr(id, texte) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    try { new QRCode(el, { text: texte, width: 256, height: 256, colorDark: "#0b2a66", colorLight: "#ffffff" }); }
+    catch { el.textContent = "QR"; }
+  }
+  qr("qrInvites", "https://digitalyx-vote.app/q/k7m2-invites");
+  qr("qrPublic", "https://digitalyx-vote.app/q/k7m2-public");
+  qr("qrAffiche", "https://digitalyx-vote.app/q/k7m2-invites");
+
+  // Parcours du votant
+  const tel = document.getElementById("tel");
+  const candidats = [["AK", "Awa Koné", "Attiéké poisson braisé"], ["MT", "Mariam Touré", "Kedjenou revisité"], ["KY", "Koffi Yao", "Garba gastronomique"], ["SD", "Sita Diallo", "Foutou sauce graine"]];
+  const autorises = { "0701020304": "libre", "0506070809": "vote" };
+  let numero = "";
+
+  function etapeNumero(erreur) {
+    tel.innerHTML = `
+      <label for="n">Votre numéro de téléphone</label>
+      <input id="n" inputmode="tel" placeholder="07 00 00 00 00" value="${numero}">
+      <div class="aide">Le numéro sous lequel vous avez été invité.</div>
+      ${erreur ? `<div class="message erreur">${erreur}</div>` : ""}
+      <button class="telBouton" id="go">Continuer</button>`;
+    document.getElementById("go").onclick = () => {
+      numero = document.getElementById("n").value;
+      const cle = numero.replace(/\D/g, "").replace(/^225/, "");
+      if (cle.length !== 10) return etapeNumero("Numéro invalide. Exemple : 07 00 00 00 00.");
+      if (!(cle in autorises)) return etapeNumero("<b>Numéro non reconnu.</b><br>Ce vote est réservé aux invités inscrits. Rapprochez-vous de l'organisateur.");
+      if (autorises[cle] === "vote") return etapeNumero("<b>Ce numéro a déjà voté.</b><br>Une seule voix par invité.");
+      etapeChoix(cle);
+    };
+  }
+
+  function etapeChoix(cle) {
+    let choisi = null;
+    tel.innerHTML = `<div class="badge">✓ Numéro reconnu</div><label>Choisissez votre candidat</label>` +
+      candidats.map((c, i) => `<div class="candidat" data-i="${i}"><div class="photo">${c[0]}</div><div><strong>${c[1]}</strong><small>${c[2]}</small></div><span class="rond"></span></div>`).join("") +
+      `<button class="telBouton" id="ok" disabled>Valider mon vote</button><div class="aide" style="text-align:center">Votre vote est définitif.</div>`;
+    tel.querySelectorAll(".candidat").forEach(el => el.onclick = () => {
+      tel.querySelectorAll(".candidat").forEach(x => x.classList.remove("choisi"));
+      el.classList.add("choisi"); choisi = +el.dataset.i;
+      document.getElementById("ok").disabled = false;
+    });
+    document.getElementById("ok").onclick = () => {
+      autorises[cle] = "vote";
+      tel.innerHTML = `<div class="fin"><div class="coche">✓</div><h4>Merci !</h4><p>Votre voix pour <b>${candidats[choisi][1]}</b> est enregistrée.</p><p style="margin-top:10px">Ce numéro ne peut plus voter pour ce vote.</p>
+        <button class="lienTexte" id="encore">Essayer un autre numéro (maquette)</button></div>`;
+      document.getElementById("encore").onclick = () => { numero = ""; etapeNumero(); };
+    };
+  }
+  etapeNumero();
+</script>
+</body>
+</html>

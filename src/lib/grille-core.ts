@@ -186,6 +186,7 @@ export function creationsDepuisModeles(
     canal: string;
     payant: boolean;
     avecCriteres: boolean;
+    acces: string;
     part: number;
     deroule: string;
     ordre: number;
@@ -197,6 +198,7 @@ export function creationsDepuisModeles(
     canal: m.canal,
     payant: m.payant,
     avecCriteres: m.avecCriteres,
+    acces: m.acces,
     part: m.part,
     deroule: m.deroule,
     ordre: m.ordre,

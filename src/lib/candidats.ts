@@ -119,7 +119,8 @@ export async function inscrire(organisationId: string, selectionId: string, cand
     orderBy: { ordre: "desc" },
     select: { ordre: true },
   });
-  const depart = (derniere?.ordre ?? -1) + 1;
+  // Numéros de passage à partir de 1 : la page publique les affiche (#0001).
+  const depart = (derniere?.ordre ?? 0) + 1;
   await prisma.participation.createMany({
     data: candidats.map((c, i) => ({ selectionId, candidatId: c.id, ordre: depart + i })),
     skipDuplicates: true,
