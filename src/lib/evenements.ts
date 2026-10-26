@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import { slugifier, slugLibre, type SaisieEvenement, type SaisieSelection } from "./evenements-core";
+import { selectionVitrine, slugifier, slugLibre, statutEvenement, type SaisieEvenement, type SaisieSelection } from "./evenements-core";
 import { creationsDepuisModeles, creationsGrilleProposee } from "./grille-core";
 
 /**
@@ -22,6 +22,117 @@ export function listerEvenements(organisationId: string) {
       selections: { select: { etat: true }, orderBy: { rang: "asc" } },
     },
   });
+}
+
+/**
+ * Cartes de la page « Mes événements » : statut, sélection en vitrine,
+ * candidats inscrits et voix comptées (vote en ligne et par QR, paiements
+ * simulés exclus, comme dans les résultats officiels).
+ */
+export async function listerCartesEvenements(organisationId: string) {
+  const evenements = await prisma.evenement.findMany({
+    where: { organisationId },
+    orderBy: { creeLe: "desc" },
+    include: {
+      organisation: { select: { nom: true } },
+      selections: { select: { id: true, etat: true, lieu: true, debut: true, libelle: true }, orderBy: { rang: "asc" } },
+    },
+  });
+  const [participations, typesVoix] = await Promise.all([
+    prisma.participation.findMany({
+      where: { selection: { evenement: { organisationId } } },
+      select: { candidatId: true, selection: { select: { evenementId: true } } },
+    }),
+    prisma.typeVote.findMany({
+      where: { canal: { in: ["EN_LIGNE", "QR"] }, selection: { evenement: { organisationId } } },
+      select: { id: true, selection: { select: { evenementId: true } } },
+    }),
+  ]);
+  const sommes = await prisma.suffrage.groupBy({
+    by: ["typeVoteId"],
+    where: {
+      typeVoteId: { in: typesVoix.map((t) => t.id) },
+      annuleLe: null,
+      NOT: { paiement: { is: { simule: true } } },
+    },
+    _sum: { poids: true },
+  });
+
+  const evenementDuType = new Map(typesVoix.map((t) => [t.id, t.selection.evenementId]));
+  const voix = new Map<string, number>();
+  for (const s of sommes) {
+    const e = evenementDuType.get(s.typeVoteId);
+    if (e) voix.set(e, (voix.get(e) ?? 0) + (s._sum.poids ?? 0));
+  }
+  const candidats = new Map<string, Set<string>>();
+  for (const p of participations) {
+    const e = p.selection.evenementId;
+    if (!candidats.has(e)) candidats.set(e, new Set());
+    candidats.get(e)!.add(p.candidatId);
+  }
+
+  return evenements.map((e) => {
+    const vitrine = selectionVitrine(e.selections);
+    return {
+      id: e.id,
+      nom: e.nom,
+      edition: e.edition,
+      afficheUrl: e.afficheUrl,
+      organisation: e.organisation.nom,
+      statut: statutEvenement(e.selections.map((s) => s.etat)),
+      lieu: vitrine?.lieu ?? vitrine?.libelle ?? null,
+      date: vitrine?.debut ?? e.date,
+      candidats: candidats.get(e.id)?.size ?? 0,
+      voix: voix.get(e.id) ?? 0,
+      creeLe: e.creeLe,
+    };
+  });
+}
+
+/**
+ * Prépare l'édition suivante d'un événement : même nom, édition + 1, même
+ * affiche (copiée, pour que chaque événement garde la sienne) et même grille
+ * de référence. Sans sélection ni candidat : on repart d'une page blanche.
+ */
+export async function nouvelleEdition(organisationId: string, evenementId: string): Promise<Resultat<string>> {
+  const source = await prisma.evenement.findFirst({
+    where: { id: evenementId, organisationId },
+    include: { typesModeles: { include: { criteres: true }, orderBy: [{ ordre: "asc" }, { id: "asc" }] } },
+  });
+  if (!source) return INTROUVABLE;
+
+  const idSource = idImage(source.afficheUrl);
+  const image = idSource ? await prisma.image.findFirst({ where: { id: idSource, organisationId } }) : null;
+
+  const nouvel = await prisma.$transaction(async (tx) => {
+    const copie = image
+      ? await tx.image.create({ data: { organisationId, mimeType: image.mimeType, data: image.data } })
+      : null;
+    return tx.evenement.create({
+      data: {
+        organisationId,
+        nom: source.nom,
+        edition: source.edition === null ? null : source.edition + 1,
+        sousTitre: source.sousTitre,
+        date: null,
+        afficheUrl: copie ? `/api/images/${copie.id}` : null,
+        typesModeles: {
+          create: source.typesModeles.map((t) => ({
+            libelle: t.libelle,
+            canal: t.canal,
+            payant: t.payant,
+            avecCriteres: t.avecCriteres,
+            acces: t.acces,
+            part: t.part,
+            deroule: t.deroule,
+            ordre: t.ordre,
+            criteres: { create: t.criteres.map((c) => ({ libelle: c.libelle, ordre: c.ordre, bareme: c.bareme })) },
+          })),
+        },
+      },
+    });
+  });
+  return { ok: true, valeur: nouvel.id };
 }
 
 export function evenementDeLOrganisation(organisationId: string, evenementId: string) {

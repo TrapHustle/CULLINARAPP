@@ -1,29 +1,32 @@
 import type { Metadata } from "next";
-import { FormulaireAction } from "@/components/espace/formulaire-action";
+import e from "@/components/espace/evenements.module.css";
+import { ListeOrganisations } from "@/components/espace/liste-organisations";
+import o from "@/components/espace/organisations.module.css";
 import styles from "@/components/espace/panel.module.css";
 import { exigerSuperAdmin } from "@/lib/espace";
-import { dateLongue, nombre } from "@/lib/format-espace";
-import { listerOrganisations } from "@/lib/plateforme";
-import { reglerOrganisationAction, supprimerOrganisationAction } from "@/lib/plateforme-actions";
+import { nombre } from "@/lib/format-espace";
+import { chiffresPlateforme, commissionsParOrganisation, listerOrganisations } from "@/lib/plateforme";
 
 export const metadata: Metadata = { title: "Organisations — Plateforme DIGITALYX-VOTE" };
 
 export default async function PageOrganisations() {
   await exigerSuperAdmin();
-  const organisations = await listerOrganisations();
+  const [organisations, chiffres, commissions] = await Promise.all([
+    listerOrganisations(),
+    chiffresPlateforme(),
+    commissionsParOrganisation(),
+  ]);
   const serveurReel = process.env.PAIEMENT_MODE === "sirap";
+  const aReverser = commissions.reduce((s, c) => s + c.resteDu, 0);
 
   return (
     <>
-      <div className={styles.entete}>
+      <div className={e.entete}>
         <div>
-          <div className={styles.surtitre}>Clients de la plateforme</div>
-          <h1 className={styles.titre}>
-            Les <em>organisations</em>
+          <div className={e.surtitre}>Clients de la plateforme</div>
+          <h1 className={e.titre}>
+            Organisations<span>.</span>
           </h1>
-          <p className={styles.sousTitre}>
-            Une organisation s&rsquo;inscrit seule sur /inscription. Ici : part reversée, paiements réels, suspension.
-          </p>
         </div>
       </div>
 
@@ -39,77 +42,43 @@ export default async function PageOrganisations() {
         </div>
       ) : null}
 
-      {organisations.length === 0 ? (
-        <section className={styles.carte}>
-          <div className={styles.vide}>
-            <strong>Aucune organisation cliente</strong>
-            Elles apparaîtront ici dès leur inscription.
-          </div>
-        </section>
-      ) : null}
+      <div className={o.kpis}>
+        <div className={o.kpi}>
+          <span>Organisations</span>
+          <strong>{nombre(chiffres.organisations)}</strong>
+          {nombre(chiffres.organisations - chiffres.suspendues)} actives · {nombre(chiffres.suspendues)} suspendue
+          {chiffres.suspendues > 1 ? "s" : ""}
+        </div>
+        <div className={o.kpi}>
+          <span>Concours en direct</span>
+          <strong>{nombre(chiffres.ouvertes)}</strong>
+          sélection{chiffres.ouvertes > 1 ? "s" : ""} ouverte{chiffres.ouvertes > 1 ? "s" : ""} au vote
+        </div>
+        <div className={o.kpi}>
+          <span>Encaissé (réel)</span>
+          <strong className={o.vert}>{nombre(chiffres.brut)} F</strong>
+          commission plateforme {nombre(chiffres.commission)} F
+        </div>
+        <div className={`${o.kpi} ${o.kpiFonce}`}>
+          <span>À reverser</span>
+          <strong>{nombre(aReverser)} F</strong>
+          {nombre(chiffres.retraitsAttente.nb)} demande{chiffres.retraitsAttente.nb > 1 ? "s" : ""} de retrait en attente
+        </div>
+      </div>
 
-      {organisations.map((o) => {
-        const proprietaire = o.utilisateurs.find((u) => u.role === "PROPRIETAIRE") ?? o.utilisateurs[0];
-        return (
-          <section key={o.id} className={styles.carte}>
-            <div className={styles.carteHaut}>
-              <div>
-                <h2 className={styles.carteTitre} style={{ fontWeight: 800, fontStyle: "italic" }}>
-                  {o.nom}
-                </h2>
-                <div className={styles.pastilles}>
-                  <span className={`${styles.pastille} ${o.actif ? styles.pastilleVerte : styles.pastilleRouge}`}>
-                    {o.actif ? "Active" : "Suspendue"}
-                  </span>
-                  <span className={`${styles.pastille} ${o.mode === "sirap" ? styles.pastilleBleue : ""}`}>
-                    {o.mode === "sirap" ? "Paiements réels" : "Simulation"}
-                  </span>
-                  <span className={styles.pastille}>{proprietaire?.email ?? "sans compte"}</span>
-                  <span className={styles.pastille}>
-                    {o._count.evenements} événement{o._count.evenements > 1 ? "s" : ""} · {o._count.candidats} candidat
-                    {o._count.candidats > 1 ? "s" : ""}
-                  </span>
-                  <span className={styles.pastille}>Encaissé {nombre(o.brut)} FCFA</span>
-                  <span className={styles.pastille}>Inscrite le {dateLongue(o.creeLe)}</span>
-                </div>
-              </div>
-              <FormulaireAction
-                action={supprimerOrganisationAction.bind(null, o.id)}
-                bouton="Supprimer"
-                variante="danger"
-                confirmer={`Supprimer définitivement « ${o.nom} » et ses données ?`}
-              />
-            </div>
-            <FormulaireAction
-              action={reglerOrganisationAction.bind(null, o.id)}
-              className={styles.formulaire}
-              bouton="Enregistrer"
-              variante="secondaire"
-              style={{ paddingTop: 0 }}
-            >
-              <label className={styles.champ}>
-                <span>Part reversée à l&rsquo;organisation (%)</span>
-                <input name="partOrganisateur" defaultValue={String(o.partOrganisateur).replace(".", ",")} inputMode="decimal" required />
-                <small>La plateforme garde le reste en commission.</small>
-              </label>
-              <label className={styles.champ}>
-                <span>Paiements</span>
-                <select name="mode" defaultValue={o.mode}>
-                  <option value="simulation">Simulation (rien n&rsquo;est prélevé)</option>
-                  <option value="sirap">Réels (passerelle SIRAP)</option>
-                </select>
-              </label>
-              <label className={styles.caseACocher}>
-                <input type="checkbox" name="actif" defaultChecked={o.actif} />
-                <span>
-                  Organisation active
-                  <small>Décochée : plus d&rsquo;accès à l&rsquo;espace, pages de vote fermées. Les données restent.</small>
-                </span>
-              </label>
-            </FormulaireAction>
-          </section>
-        );
-      })}
+      <ListeOrganisations
+        organisations={organisations.map((org) => ({
+          id: org.id,
+          nom: org.nom,
+          actif: org.actif,
+          mode: org.mode === "sirap" ? "sirap" : "simulation",
+          partOrganisateur: org.partOrganisateur,
+          email: (org.utilisateurs.find((u) => u.role === "PROPRIETAIRE") ?? org.utilisateurs[0])?.email ?? null,
+          selectionsOuvertes: org.selectionsOuvertes,
+          brut: org.brut,
+          reverse: org.reverse,
+        }))}
+      />
     </>
   );
 }

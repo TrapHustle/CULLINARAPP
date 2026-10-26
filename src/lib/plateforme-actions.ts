@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { exigerSuperAdmin } from "./espace";
 import type { EtatFormulaire } from "./evenements-actions";
 import { premiereErreur } from "./evenements-core";
-import { reglagesOrganisationSchema, reglerOrganisation, supprimerOrganisation, traiterRetrait } from "./plateforme";
+import { basculerOrganisation, reglagesOrganisationSchema, reglerOrganisation, supprimerOrganisation, traiterRetrait } from "./plateforme";
 import { rafraichirPaiementsSaas } from "./vote-public-saas";
 
 function rafraichir() {
@@ -24,6 +24,14 @@ export async function reglerOrganisationAction(organisationId: string, _e: EtatF
   if (!r.ok) return { erreur: r.erreur };
   rafraichir();
   return { succes: "Réglages enregistrés." };
+}
+
+export async function basculerOrganisationAction(organisationId: string, actif: boolean, _e: EtatFormulaire): Promise<EtatFormulaire> {
+  await exigerSuperAdmin();
+  const r = await basculerOrganisation(organisationId, actif);
+  if (!r.ok) return { erreur: r.erreur };
+  rafraichir();
+  return { succes: actif ? "Organisation réactivée." : "Organisation suspendue." };
 }
 
 export async function supprimerOrganisationAction(organisationId: string, _e: EtatFormulaire): Promise<EtatFormulaire> {

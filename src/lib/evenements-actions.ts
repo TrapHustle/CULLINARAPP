@@ -10,6 +10,7 @@ import {
   deplacerSelection,
   modifierEvenement,
   modifierSelection,
+  nouvelleEdition,
   retirerAffiche,
   supprimerEvenement,
   supprimerSelection,
@@ -69,6 +70,15 @@ export async function creerEvenementAction(_e: EtatFormulaire, form: FormData): 
   const evenement = await creerEvenement(utilisateur.organisationId, analyse.data);
   if (image) await changerAffiche(utilisateur.organisationId, evenement.id, image);
   redirect(`/espace/e/${evenement.id}/selections`);
+}
+
+/** Prépare l'édition suivante d'un événement, puis ouvre ses sélections. */
+export async function nouvelleEditionAction(evenementId: string, _e: EtatFormulaire): Promise<EtatFormulaire> {
+  const utilisateur = await exigerEcriture();
+  const r = await nouvelleEdition(utilisateur.organisationId, evenementId);
+  if (!r.ok) return { erreur: r.erreur };
+  revalidatePath("/espace", "layout");
+  redirect(`/espace/e/${r.valeur}/selections`);
 }
 
 export async function modifierEvenementAction(

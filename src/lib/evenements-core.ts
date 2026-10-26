@@ -110,3 +110,28 @@ export function versChampDateHeure(date: Date | null): string {
 export function premiereErreur(erreur: z.ZodError): string {
   return erreur.issues[0]?.message ?? "Saisie invalide.";
 }
+
+// Liste des événements ---------------------------------------------------------
+
+export type StatutEvenement = "EN_COURS" | "A_VENIR" | "PASSE";
+
+/**
+ * Où en est un événement, d'après ses sélections : en cours dès qu'une est
+ * ouverte, passé quand toutes sont clôturées, à venir sinon (rien d'ouvert
+ * encore, ou pas de sélection).
+ */
+export function statutEvenement(etats: string[]): StatutEvenement {
+  if (etats.includes("OUVERTE")) return "EN_COURS";
+  if (etats.length > 0 && etats.every((e) => e === "CLOTUREE")) return "PASSE";
+  return "A_VENIR";
+}
+
+/** La sélection qui représente l'événement : l'ouverte, sinon la prochaine à ouvrir, sinon la dernière. */
+export function selectionVitrine<T extends { etat: string }>(selections: T[]): T | null {
+  return (
+    selections.find((s) => s.etat === "OUVERTE") ??
+    selections.find((s) => s.etat === "PREPAREE") ??
+    selections[selections.length - 1] ??
+    null
+  );
+}

@@ -60,9 +60,18 @@ export async function listerOrganisations() {
     _sum: { montant: true },
   });
   const parOrg = new Map(brut.map((b) => [b.organisationId, b._sum.montant ?? 0]));
+  const [ouvertes, reverses] = await Promise.all([
+    prisma.selection.findMany({ where: { etat: "OUVERTE" }, select: { evenement: { select: { organisationId: true } } } }),
+    prisma.demandeRetrait.groupBy({ by: ["organisationId"], where: { statut: "PAID" }, _sum: { montant: true } }),
+  ]);
+  const enCours = new Map<string, number>();
+  for (const s of ouvertes) enCours.set(s.evenement.organisationId, (enCours.get(s.evenement.organisationId) ?? 0) + 1);
+  const reverse = new Map(reverses.map((r) => [r.organisationId, r._sum.montant ?? 0]));
   return organisations.map((o) => ({
     ...o,
     brut: parOrg.get(o.id) ?? 0,
+    reverse: reverse.get(o.id) ?? 0,
+    selectionsOuvertes: enCours.get(o.id) ?? 0,
     mode: (o.paiementConfig as { mode?: string } | null)?.mode === "sirap" ? "sirap" : "simulation",
   }));
 }
@@ -90,6 +99,12 @@ export async function reglerOrganisation(
     data: { partOrganisateur: saisie.partOrganisateur, actif: saisie.actif, paiementConfig: config as Prisma.InputJsonValue },
   });
   return OK;
+}
+
+/** Suspend ou réactive une organisation, sans toucher à ses autres réglages. */
+export async function basculerOrganisation(organisationId: string, actif: boolean): Promise<Resultat> {
+  const { count } = await prisma.organisation.updateMany({ where: { id: organisationId, ...CLIENTES }, data: { actif } });
+  return count === 1 ? OK : INTROUVABLE;
 }
 
 /** Supprime une organisation sans trace comptable (paiement, retrait, archive). */

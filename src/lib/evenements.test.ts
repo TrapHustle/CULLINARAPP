@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { evenementSchema, selectionSchema, slugifier, slugLibre, versChampDateHeure } from "./evenements-core";
+import { evenementSchema, selectionSchema, selectionVitrine, slugifier, slugLibre, statutEvenement, versChampDateHeure } from "./evenements-core";
 
 describe("lien public d'une sélection", () => {
   it("retire accents, ponctuation et majuscules", () => {
@@ -53,5 +53,21 @@ describe("saisie d'une sélection", () => {
   it("refuse une fin avant le début", () => {
     const r = selectionSchema.safeParse({ ...base, debut: "2026-10-20T18:30", fin: "2026-10-20T18:00" });
     expect(r.success).toBe(false);
+  });
+});
+
+describe("statut d'un événement dans « Mes événements »", () => {
+  it("en cours dès qu'une sélection est ouverte, passé quand toutes sont clôturées", () => {
+    expect(statutEvenement(["CLOTUREE", "OUVERTE", "PREPAREE"])).toBe("EN_COURS");
+    expect(statutEvenement(["CLOTUREE", "CLOTUREE"])).toBe("PASSE");
+    expect(statutEvenement(["CLOTUREE", "PREPAREE"])).toBe("A_VENIR");
+    expect(statutEvenement([])).toBe("A_VENIR");
+  });
+
+  it("met en vitrine la sélection ouverte, sinon la prochaine, sinon la dernière", () => {
+    expect(selectionVitrine([{ etat: "CLOTUREE", n: 1 }, { etat: "OUVERTE", n: 2 }])?.n).toBe(2);
+    expect(selectionVitrine([{ etat: "CLOTUREE", n: 1 }, { etat: "PREPAREE", n: 2 }])?.n).toBe(2);
+    expect(selectionVitrine([{ etat: "CLOTUREE", n: 1 }, { etat: "CLOTUREE", n: 2 }])?.n).toBe(2);
+    expect(selectionVitrine([])).toBeNull();
   });
 });

@@ -1,0 +1,223 @@
+/* Page « Organisations » du super-admin : variables de panel.module.css (jour et nuit). */
+
+.kpis {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.kpi {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--ombre);
+  color: var(--gris);
+  font-size: 12px;
+}
+
+.kpi span {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.kpi strong {
+  display: block;
+  margin: 4px 0 2px;
+  color: var(--encre);
+  font-size: 22px;
+  font-weight: 800;
+  font-style: italic;
+  font-variant-numeric: tabular-nums;
+}
+
+.kpiFonce {
+  background: #0d1830;
+  color: #c9d6ee;
+}
+
+.kpiFonce span {
+  color: #a9c0ea;
+}
+
+.kpiFonce strong {
+  color: #fff;
+}
+
+.barre {
+  margin-top: 22px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.liste {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.carte {
+  overflow: hidden;
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--ombre);
+}
+
+.ligne {
+  padding: 14px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--bleu-pale);
+  color: var(--bleu);
+  font-size: 20px;
+  font-weight: 800;
+  font-style: italic;
+}
+
+.avatarEteint {
+  background: var(--surface-2);
+  color: var(--point);
+}
+
+.identite {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.identite h2 {
+  margin: 0;
+  color: var(--encre);
+  font-size: 17px;
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: -0.3px;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--gris);
+  font-size: 12px;
+}
+
+.montant {
+  min-width: 110px;
+  text-align: right;
+}
+
+.montant span {
+  display: block;
+  color: var(--gris);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.montant strong {
+  font-size: 16px;
+  font-weight: 800;
+  font-style: italic;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.vert {
+  color: var(--vert);
+}
+
+.bleu {
+  color: var(--bleu-texte);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.interrupteur {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--filet);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--gris);
+  cursor: pointer;
+}
+
+.interrupteur:hover {
+  color: var(--rouge);
+}
+
+.gerer {
+  height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 12px;
+  background: #0d1830;
+  color: #fff;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.reglages {
+  border-top: 1px solid var(--filet);
+  background: var(--surface-2);
+}
+
+.compte {
+  margin: 0;
+  padding: 16px 24px 0;
+  color: var(--gris);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.compte strong {
+  color: var(--encre);
+}
+
+@media (max-width: 640px) {
+  .montant {
+    min-width: 0;
+    flex: 1 1 40%;
+    text-align: left;
+  }
+
+  .actions {
+    width: 100%;
+  }
+
+  .gerer {
+    flex: 1;
+  }
+}

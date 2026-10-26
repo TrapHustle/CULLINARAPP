@@ -38,6 +38,11 @@ export async function exigerUtilisateur() {
 /** Rôles autorisés à modifier la configuration (RG 0.4). */
 const ROLES_ECRITURE = new Set(["PROPRIETAIRE", "ORGANISATEUR"]);
 
+/** Vrai si ce rôle peut modifier la configuration : sert à masquer les boutons inutiles. */
+export function peutModifier(role: string): boolean {
+  return ROLES_ECRITURE.has(role);
+}
+
 /** Garde des actions qui modifient : un compte en lecture seule ou jury est refusé. */
 export async function exigerEcriture() {
   const utilisateur = await exigerUtilisateur();
