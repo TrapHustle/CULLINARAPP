@@ -94,7 +94,7 @@ export default async function PagePilotage({
             </strong>
             <span>
               Le jury ne peut pas {sansCriteres.length > 1 ? "les" : "le"} noter, et {sansCriteres.length > 1 ? "leurs parts" : "sa part"}{" "}
-              ({sansCriteres.map((t) => `${t.part.toLocaleString("fr-FR")} %`).join(" + ")}) sort du classement. Ajoutez les critères dans
+              ({sansCriteres.map((t) => `${t.part.toLocaleString("fr-FR")} %`).join(" + ")}) {sansCriteres.length > 1 ? "sortent" : "sort"} du classement. Ajoutez les critères dans
               l&rsquo;onglet <Link href={`${base}/grille`}>Grille de vote</Link>.
             </span>
           </div>
