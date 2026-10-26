@@ -1,6 +1,7 @@
 import { prisma } from "./prisma";
 import type { Resultat } from "./evenements";
 import {
+  codeLien,
   creationsDepuisModeles,
   creationsGrilleProposee,
   type PalierSaisi,
@@ -137,7 +138,7 @@ export async function ajouterType(organisationId: string, niveau: Niveau, saisie
   if (niveau.kind === "evenement") {
     await prisma.typeVoteModele.create({ data: { ...data, evenementId: niveau.id } });
   } else {
-    await prisma.typeVote.create({ data: { ...data, selectionId: niveau.id } });
+    await prisma.typeVote.create({ data: { ...data, selectionId: niveau.id, lien: codeLien() } });
   }
   return OK;
 }

@@ -6,12 +6,25 @@ import { MAX_VOTE_PRICE, MIN_VOTE_PRICE, PAYMENT_METHODS, type PaymentMethod } f
  * ligne. Règles de saisie et contrôles, sans base ni réseau (RG 3, 4, 7, 8.3).
  */
 
-export const CANAUX = ["SALLE", "EN_LIGNE"] as const;
+export const CANAUX = ["SALLE", "EN_LIGNE", "QR"] as const;
 export type Canal = (typeof CANAUX)[number];
 
 export const LIBELLES_CANAL: Record<Canal, string> = {
   SALLE: "En salle",
   EN_LIGNE: "En ligne",
+  QR: "Par QR code",
+};
+
+/**
+ * Qui peut voter par le lien d'un vote "QR" : tout numéro, une fois
+ * ("OUVERT"), ou seulement les numéros autorisés, une fois ("RESTREINT").
+ */
+export const ACCES = ["OUVERT", "RESTREINT"] as const;
+export type Acces = (typeof ACCES)[number];
+
+export const LIBELLES_ACCES: Record<Acces, string> = {
+  OUVERT: "Normal · ouvert à tous",
+  RESTREINT: "Restreint",
 };
 
 export const MODES_EN_LIGNE = ["A", "B", "C"] as const;
@@ -62,12 +75,18 @@ const entier = (min: number, max: number, message: string) =>
 export const typeVoteSchema = z
   .object({
     libelle: z.string().trim().min(2, "Indiquez le nom du type de vote.").max(60, "Ce nom est trop long (60 caractères au plus)."),
-    canal: z.enum(CANAUX, { message: "Choisissez le canal : en salle ou en ligne." }),
+    canal: z.enum(CANAUX, { message: "Choisissez le canal : en salle, en ligne ou par QR code." }),
     avecCriteres: z.boolean(),
+    acces: z.enum(ACCES, { message: "Choisissez qui peut voter." }).default("OUVERT"),
     part: decimal("La part est un pourcentage, par exemple 40.").refine((v) => v <= 100, "La part ne peut pas dépasser 100 %."),
   })
-  // Le vote en ligne compte des voix : il n'a jamais de critère (RG 4.2).
-  .transform((d) => ({ ...d, avecCriteres: d.canal === "EN_LIGNE" ? false : d.avecCriteres }));
+  // Le vote en ligne et le vote par QR comptent des voix : jamais de critère
+  // (RG 4.2). Seul le vote par QR peut être restreint à une liste.
+  .transform((d) => ({
+    ...d,
+    avecCriteres: d.canal === "SALLE" ? d.avecCriteres : false,
+    acces: d.canal === "QR" ? d.acces : ("OUVERT" as const),
+  }));
 
 export const critereSchema = z.object({
   libelle: z.string().trim().min(2, "Indiquez le nom du critère.").max(60, "Ce nom est trop long (60 caractères au plus)."),
@@ -179,6 +198,17 @@ export function creationsGrilleProposee() {
   }));
 }
 
+const ALPHABET_LIEN = "abcdefghjkmnpqrstuvwxyz23456789";
+
+/**
+ * Code du lien public d'un type de vote (/q/<code>) : court, pour un QR code
+ * peu dense et facile à scanner, et tiré au hasard pour ne pas se deviner.
+ */
+export function codeLien(): string {
+  const octets = crypto.getRandomValues(new Uint8Array(10));
+  return Array.from(octets, (o) => ALPHABET_LIEN[o % ALPHABET_LIEN.length]).join("");
+}
+
 /** Créations imbriquées qui recopient une grille de référence dans une sélection (RG 3.2). */
 export function creationsDepuisModeles(
   modeles: {
@@ -199,6 +229,7 @@ export function creationsDepuisModeles(
     payant: m.payant,
     avecCriteres: m.avecCriteres,
     acces: m.acces,
+    lien: codeLien(),
     part: m.part,
     deroule: m.deroule,
     ordre: m.ordre,

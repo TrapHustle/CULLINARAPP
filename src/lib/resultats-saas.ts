@@ -94,7 +94,9 @@ export async function calculerResultats(selectionId: string, options: OptionsCal
     } else {
       const voix = new Map(selection.participations.map((p) => [p.id, 0]));
       for (const s of duType) voix.set(s.participationId, (voix.get(s.participationId) ?? 0) + s.poids);
-      const enLigne = notesEnLigne(voix, mode, selection.paliers);
+      // Seul le vote payant en ligne suit le mode choisi (paliers, leader) :
+      // les autres voix (QR, salle sans critère) se lisent en part de voix.
+      const enLigne = notesEnLigne(voix, type.canal === "EN_LIGNE" ? mode : "A", selection.paliers);
       for (const p of selection.participations) {
         parCandidat.set(p.id, { note: enLigne?.get(p.id) ?? null, volume: voix.get(p.id) ?? 0 });
       }

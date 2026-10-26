@@ -40,6 +40,7 @@ function lireType(form: FormData) {
     libelle: lire(form, "libelle"),
     canal: lire(form, "canal"),
     avecCriteres: form.get("avecCriteres") === "on",
+    acces: lire(form, "acces") || "OUVERT",
     part: lire(form, "part"),
   };
 }

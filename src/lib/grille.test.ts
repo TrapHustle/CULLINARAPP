@@ -25,6 +25,15 @@ describe("grille de vote", () => {
     expect(r.avecCriteres).toBe(false);
   });
 
+  it("le vote par QR compte des voix et seul lui peut être restreint", () => {
+    const qr = typeVoteSchema.parse({ libelle: "Invités", canal: "QR", avecCriteres: true, acces: "RESTREINT", part: "30" });
+    expect(qr.avecCriteres).toBe(false);
+    expect(qr.acces).toBe("RESTREINT");
+    const salle = typeVoteSchema.parse({ libelle: "Jury", canal: "SALLE", avecCriteres: true, acces: "RESTREINT", part: "40" });
+    expect(salle.acces).toBe("OUVERT");
+    expect(typeVoteSchema.safeParse({ libelle: "Invités", canal: "QR", avecCriteres: false, acces: "PRIVE", part: "30" }).success).toBe(false);
+  });
+
   it("lit une part décimale à la française", () => {
     expect(typeVoteSchema.parse({ libelle: "Jury", canal: "SALLE", avecCriteres: true, part: "33,5" }).part).toBe(33.5);
     expect(typeVoteSchema.safeParse({ libelle: "Jury", canal: "SALLE", avecCriteres: true, part: "120" }).success).toBe(false);

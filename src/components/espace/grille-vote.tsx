@@ -8,7 +8,7 @@ import {
   supprimerTypeAction,
 } from "@/lib/grille-actions";
 import type { GrilleLue } from "@/lib/grille";
-import { BAREME_MAX, LIBELLES_CANAL, problemesGrille, sommeDesParts, type Canal } from "@/lib/grille-core";
+import { BAREME_MAX, LIBELLES_ACCES, LIBELLES_CANAL, problemesGrille, sommeDesParts, type Acces, type Canal } from "@/lib/grille-core";
 import { BoutonEnvoi, FormulaireAction } from "./formulaire-action";
 import { Icone } from "./icone";
 import styles from "./panel.module.css";
@@ -59,8 +59,19 @@ export function GrilleVote({ evenementId, selectionId, types, modifiable }: Prop
                 <div className={styles.pastilles}>
                   <span className={styles.pastille}>{LIBELLES_CANAL[type.canal as Canal] ?? type.canal}</span>
                   <span className={styles.pastille}>
-                    {type.avecCriteres ? `Notes sur ${nf(baremeTotal)} pts` : type.payant ? "Voix payantes" : "Voix"}
+                    {type.avecCriteres
+                      ? `Notes sur ${nf(baremeTotal)} pts`
+                      : type.payant
+                        ? "Voix payantes"
+                        : type.canal === "QR"
+                          ? "Une voix par personne"
+                          : "Voix"}
                   </span>
+                  {type.canal === "QR" ? (
+                    <span className={`${styles.pastille} ${type.acces === "RESTREINT" ? styles.pastilleOrange : styles.pastilleVerte}`}>
+                      {LIBELLES_ACCES[type.acces as Acces] ?? type.acces}
+                    </span>
+                  ) : null}
                   <span className={`${styles.pastille} ${styles.pastilleBleue}`}>Part {nf(type.part)} %</span>
                 </div>
               </div>
@@ -85,7 +96,7 @@ export function GrilleVote({ evenementId, selectionId, types, modifiable }: Prop
                 variante="secondaire"
                 discret
               >
-                <ChampsType libelle={type.libelle} canal={type.canal} avecCriteres={type.avecCriteres} part={type.part} />
+                <ChampsType libelle={type.libelle} canal={type.canal} avecCriteres={type.avecCriteres} acces={type.acces} part={type.part} />
               </FormulaireAction>
             ) : null}
 
@@ -173,7 +184,11 @@ export function GrilleVote({ evenementId, selectionId, types, modifiable }: Prop
                 <p className={styles.carteTexte}>
                   {type.canal === "EN_LIGNE"
                     ? "Compte les voix du public sur la page de vote. Le prix, la voix gratuite et le mode de calcul se règlent dans l’onglet « Vote en ligne » de chaque sélection."
-                    : "Compte des voix, sans critère (une voix par votant)."}
+                    : type.canal === "QR"
+                      ? type.acces === "RESTREINT"
+                        ? "On scanne le QR code, on tape son numéro, on choisit un candidat. Seuls les numéros de la liste autorisée votent, une seule fois. Le lien, le QR code et la liste sont dans l’onglet « Liens & QR codes » de chaque sélection."
+                        : "On scanne le QR code, on tape son numéro, on choisit un candidat. Tout le monde peut voter, une seule fois par numéro. Le lien et le QR code sont dans l’onglet « Liens & QR codes » de chaque sélection."
+                      : "Compte des voix, sans critère (une voix par votant)."}
                 </p>
               </div>
             )}
@@ -186,7 +201,7 @@ export function GrilleVote({ evenementId, selectionId, types, modifiable }: Prop
           <div className={styles.carteHaut} style={{ paddingBottom: 0 }}>
             <div>
               <h2 className={styles.carteTitre}>Ajouter un type de vote</h2>
-              <p className={styles.carteTexte}>Par exemple un jury spécial, ou un vote de la salle sans critère.</p>
+              <p className={styles.carteTexte}>Par exemple un jury spécial, un vote de la salle sans critère, ou un vote des invités par QR code.</p>
             </div>
           </div>
           <FormulaireAction
@@ -195,7 +210,7 @@ export function GrilleVote({ evenementId, selectionId, types, modifiable }: Prop
             bouton="Ajouter le type"
             vider
           >
-            <ChampsType libelle="" canal="SALLE" avecCriteres part={0} />
+            <ChampsType libelle="" canal="SALLE" avecCriteres acces="OUVERT" part={0} />
           </FormulaireAction>
         </section>
       ) : null}
@@ -205,7 +220,19 @@ export function GrilleVote({ evenementId, selectionId, types, modifiable }: Prop
   );
 }
 
-function ChampsType({ libelle, canal, avecCriteres, part }: { libelle: string; canal: string; avecCriteres: boolean; part: number }) {
+function ChampsType({
+  libelle,
+  canal,
+  avecCriteres,
+  acces,
+  part,
+}: {
+  libelle: string;
+  canal: string;
+  avecCriteres: boolean;
+  acces: string;
+  part: number;
+}) {
   return (
     <>
       <label className={styles.champ}>
@@ -216,7 +243,15 @@ function ChampsType({ libelle, canal, avecCriteres, part }: { libelle: string; c
         <span>Canal</span>
         <select name="canal" defaultValue={canal}>
           <option value="SALLE">En salle (jury, public présent)</option>
-          <option value="EN_LIGNE">En ligne (page publique)</option>
+          <option value="EN_LIGNE">En ligne (page publique, voix payantes)</option>
+          <option value="QR">Par QR code (une voix par personne)</option>
+        </select>
+      </label>
+      <label className={styles.champ}>
+        <span>Qui peut voter ? (QR code)</span>
+        <select name="acces" defaultValue={acces}>
+          <option value="OUVERT">Normal : tout le monde, une fois par numéro</option>
+          <option value="RESTREINT">Restreint : seulement les numéros autorisés</option>
         </select>
       </label>
       <label className={styles.champ}>
@@ -227,7 +262,7 @@ function ChampsType({ libelle, canal, avecCriteres, part }: { libelle: string; c
         <input type="checkbox" name="avecCriteres" defaultChecked={avecCriteres} />
         <span>
           Noter sur des critères
-          <small>Sinon, on compte des voix. Toujours des voix pour le vote en ligne.</small>
+          <small>Sinon, on compte des voix. Toujours des voix en ligne et par QR code.</small>
         </span>
       </label>
     </>

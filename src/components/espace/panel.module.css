@@ -26,6 +26,8 @@
   --vert-pale: #daf4e9;
   --violet: #5b3fc4;
   --violet-pale: #ebe6ff;
+  --orange: #9a5b00;
+  --orange-pale: #fff1d6;
   --rouge: #b42318;
   --rouge-pale: #fde8e6;
   --rouge-bord: #eeb4ae;
@@ -68,6 +70,8 @@
   --vert-pale: #113328;
   --violet: #b3a5ff;
   --violet-pale: #251f47;
+  --orange: #ffc266;
+  --orange-pale: #3a2a0c;
   --rouge: #ff8a80;
   --rouge-pale: #3b1714;
   --rouge-bord: #6b2a24;
@@ -1272,6 +1276,12 @@
   background: var(--vert-pale);
   border-color: transparent;
   color: var(--vert);
+}
+
+.pastilleOrange {
+  background: var(--orange-pale);
+  border-color: transparent;
+  color: var(--orange);
 }
 
 .pastilleRouge {

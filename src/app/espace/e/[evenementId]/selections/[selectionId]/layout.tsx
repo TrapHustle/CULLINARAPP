@@ -47,6 +47,7 @@ export default async function LayoutSelection({
           { href: base, libelle: "Pilotage" },
           { href: `${base}/grille`, libelle: "Grille de vote" },
           { href: `${base}/candidats`, libelle: "Candidats" },
+          { href: `${base}/liens`, libelle: "Liens & QR codes" },
           { href: `${base}/en-ligne`, libelle: "Vote en ligne" },
           { href: `${base}/notes`, libelle: "Notes du jury" },
           { href: `${base}/resultats`, libelle: "Résultats" },

@@ -1,0 +1,287 @@
+/* Page du vote par QR code : ouverte sur un téléphone, d'un scan. */
+
+.page {
+  --bleu: #1768e5;
+  --bleu-pale: #e2edff;
+  --encre: #0d1830;
+  --gris: #47546b;
+  --filet: #d6dde8;
+  --champ-bord: #bfcad9;
+  --vert: #157a56;
+  --vert-pale: #daf4e9;
+  --rouge: #b42318;
+  --rouge-pale: #fde8e6;
+  --rouge-bord: #eeb4ae;
+  --surface: #ffffff;
+  --fond: #e9eef5;
+
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 24px 16px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--fond);
+  color: var(--encre);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+@media (prefers-color-scheme: dark) {
+  .page {
+    --bleu: #3b82f6;
+    --bleu-pale: #172a4d;
+    --encre: #eef2f8;
+    --gris: #aeb9cb;
+    --filet: #2a3750;
+    --champ-bord: #3a4a66;
+    --vert: #5ad6a6;
+    --vert-pale: #113328;
+    --rouge: #ff8a80;
+    --rouge-pale: #3b1714;
+    --rouge-bord: #6b2a24;
+    --surface: #121b2c;
+    --fond: #0a111d;
+  }
+}
+
+.carte {
+  width: 100%;
+  max-width: 440px;
+  overflow: hidden;
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: 0 20px 50px rgba(13, 24, 48, 0.15);
+}
+
+.haut {
+  padding: 24px 22px 22px;
+  color: #fff;
+  background: linear-gradient(160deg, #0b2a66, #1768e5);
+}
+
+.haut small {
+  color: #a9c8ff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+/* Les titres héritent de la police de la page, pas du serif global. */
+.haut h1,
+.merci h2 {
+  font-family: inherit;
+}
+
+.haut h1 {
+  margin: 6px 0 2px;
+  font-size: 24px;
+  font-weight: 800;
+  font-style: italic;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.haut p {
+  margin: 0;
+  color: #d6e4ff;
+  font-size: 13px;
+}
+
+.corps {
+  padding: 22px;
+}
+
+.corps label,
+.consigne {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.corps input {
+  width: 100%;
+  height: 52px;
+  padding: 0 14px;
+  border: 1.5px solid var(--champ-bord);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--encre);
+  font: inherit;
+  font-size: 18px;
+  letter-spacing: 1px;
+}
+
+.corps input:focus-visible {
+  outline: 3px solid var(--bleu-pale);
+  border-color: var(--bleu);
+}
+
+.aide {
+  margin-top: 6px;
+  color: var(--gris);
+  font-size: 13px;
+}
+
+.bouton {
+  width: 100%;
+  height: 54px;
+  margin-top: 16px;
+  border: 0;
+  border-radius: 14px;
+  color: #fff;
+  background: linear-gradient(135deg, #2b7bff, #1768e5);
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.bouton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.erreur {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid var(--rouge-bord);
+  border-radius: 12px;
+  background: var(--rouge-pale);
+  color: var(--rouge);
+  font-size: 14px;
+}
+
+.badge {
+  display: inline-flex;
+  margin-bottom: 14px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--vert-pale);
+  color: var(--vert);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.candidat {
+  width: 100%;
+  min-height: 72px;
+  margin-bottom: 10px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1.5px solid var(--filet);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--encre);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.candidat:focus-visible {
+  outline: 3px solid var(--bleu-pale);
+  border-color: var(--bleu);
+}
+
+.choisi {
+  border-color: var(--bleu);
+  background: var(--bleu-pale);
+}
+
+.photo {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #cfe0ff, #9dbdf5);
+  color: #0b2a66;
+  font-weight: 800;
+  object-fit: cover;
+}
+
+.identite {
+  min-width: 0;
+}
+
+.identite strong {
+  display: block;
+  font-style: italic;
+  font-weight: 700;
+}
+
+.identite small {
+  color: var(--gris);
+}
+
+.rond {
+  width: 22px;
+  height: 22px;
+  margin-left: auto;
+  flex-shrink: 0;
+  border: 2px solid var(--champ-bord);
+  border-radius: 50%;
+}
+
+.choisi .rond {
+  border: 7px solid var(--bleu);
+}
+
+.merci,
+.ferme {
+  padding: 30px 0 10px;
+  text-align: center;
+}
+
+.merci h2 {
+  margin: 0 0 6px;
+  font-size: 24px;
+  font-weight: 800;
+  font-style: italic;
+  text-transform: uppercase;
+}
+
+.merci p,
+.ferme p {
+  margin: 0 0 8px;
+  color: var(--gris);
+}
+
+.ferme strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 18px;
+}
+
+.coche {
+  width: 84px;
+  height: 84px;
+  margin: 0 auto 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--vert-pale);
+  color: var(--vert);
+  font-size: 42px;
+}
+
+.marque {
+  margin: 18px 0 0;
+  color: var(--gris);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .candidat,
+  .bouton {
+    transition: border-color 0.15s ease, background-color 0.15s ease, opacity 0.15s ease;
+  }
+}
