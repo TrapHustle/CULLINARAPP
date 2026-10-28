@@ -1,0 +1,170 @@
+/*
+ * Écran de chargement de la page d'accueil (proposition A « Sobre »).
+ * Tout est en CSS : il se retire seul, sans attendre de JavaScript.
+ */
+
+.ecran {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #fbfcfe;
+  color: #101d35;
+  animation: disparait 0.35s ease-in 0.85s forwards;
+}
+
+/* Déjà vu pendant cette session : on ne le remontre pas. */
+:global(html[data-chargement="vu"]) .ecran {
+  display: none;
+}
+
+.halo {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.haloUn {
+  width: 430px;
+  height: 430px;
+  left: -230px;
+  top: 60px;
+  background: #eef5ff;
+}
+
+.haloDeux {
+  width: 370px;
+  height: 370px;
+  right: -200px;
+  bottom: 40px;
+  background: #f1efff;
+}
+
+.centre {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  padding: 0 24px;
+  text-align: center;
+}
+
+.logo {
+  width: 84px;
+  height: 84px;
+  border-radius: 24px;
+  background: #1768e5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 18px 40px rgba(23, 104, 229, 0.28);
+  animation: respire 1.2s ease-in-out infinite;
+}
+
+.coche {
+  stroke-dasharray: 30;
+  stroke-dashoffset: 30;
+  animation: trace 0.55s ease-out 0.1s forwards;
+}
+
+.texte {
+  opacity: 0;
+  animation: apparait 0.45s ease-out 0.2s forwards;
+}
+
+.nom {
+  font-size: clamp(28px, 5vw, 38px);
+  font-weight: 700;
+  letter-spacing: -1.4px;
+}
+
+.slogan {
+  margin-top: 6px;
+  font-size: 16px;
+  color: #58647a;
+}
+
+.piste {
+  width: 200px;
+  height: 5px;
+  border-radius: 5px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.barre {
+  width: 0;
+  height: 5px;
+  border-radius: 5px;
+  background: #1768e5;
+  animation: remplit 0.8s ease-in-out forwards;
+}
+
+@keyframes disparait {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes trace {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes apparait {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes remplit {
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes respire {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* Animations réduites : l'écran reste fixe et s'efface très vite. */
+@media (prefers-reduced-motion: reduce) {
+  .ecran {
+    animation: disparait 0.01s linear 0.3s forwards;
+  }
+
+  .logo,
+  .coche,
+  .texte,
+  .barre {
+    animation: none;
+  }
+
+  .coche {
+    stroke-dashoffset: 0;
+  }
+
+  .texte {
+    opacity: 1;
+  }
+
+  .barre {
+    width: 100%;
+  }
+}

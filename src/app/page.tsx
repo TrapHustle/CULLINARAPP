@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Chargement } from "@/components/accueil/chargement";
 import { Marque } from "@/components/accueil/marque";
 import { Navigation } from "@/components/accueil/navigation";
 import { Icone, type NomIcone } from "@/components/espace/icone";
@@ -198,6 +199,7 @@ const FORMULES = [
 export default function Accueil() {
   return (
     <div className={`${dmSans.className} ${c("page")}`}>
+      <Chargement />
       <Navigation />
 
       <main>
