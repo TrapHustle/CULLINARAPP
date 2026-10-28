@@ -271,6 +271,91 @@
   font-size: 42px;
 }
 
+/* Vote noté sur critères ---------------------------------------------------- */
+
+.fait {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.statut {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--bleu);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.fait .statut {
+  color: var(--vert);
+}
+
+.candidatNote {
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--filet);
+}
+
+.bareme {
+  color: var(--gris);
+  font-weight: 500;
+}
+
+.notes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  gap: 8px;
+}
+
+.note {
+  height: 52px;
+  border: 1.5px solid var(--filet);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--encre);
+  font: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.note:focus-visible {
+  outline: 3px solid var(--bleu-pale);
+  border-color: var(--bleu);
+}
+
+.noteChoisie {
+  border-color: var(--bleu);
+  background: var(--bleu);
+  color: #fff;
+}
+
+.navigation {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+}
+
+.navigation .bouton {
+  margin-top: 0;
+}
+
+.boutonSecondaire {
+  flex: 0 0 auto;
+  height: 54px;
+  padding: 0 18px;
+  border: 1.5px solid var(--champ-bord);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--encre);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .marque {
   margin: 18px 0 0;
   color: var(--gris);

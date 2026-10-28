@@ -23,11 +23,13 @@ export default async function PageAffiche({ params }: { params: Promise<{ typeVo
 
   const url = `${await adresseBase()}${chemin}`;
   const qr = await imageQr(url, 900);
-  const restreint = type.canal === "QR" && type.acces === "RESTREINT";
-  const etapes =
-    type.canal === "QR"
-      ? ["Scannez le QR code", "Tapez votre numéro de téléphone", "Choisissez votre candidat"]
-      : ["Scannez le QR code", "Choisissez votre candidat", "Votez gratuitement ou achetez des voix"];
+  const parLien = type.canal !== "EN_LIGNE";
+  const restreint = parLien && type.acces === "RESTREINT";
+  const etapes = !parLien
+    ? ["Scannez le QR code", "Choisissez votre candidat", "Votez gratuitement ou achetez des voix"]
+    : type.canal === "SALLE" && type.avecCriteres
+      ? ["Scannez le QR code", "Tapez votre numéro de téléphone", "Notez chaque candidat"]
+      : ["Scannez le QR code", "Tapez votre numéro de téléphone", "Choisissez votre candidat"];
 
   return (
     <div className={`${outfit.className} ${styles.page}`}>
@@ -49,8 +51,8 @@ export default async function PageAffiche({ params }: { params: Promise<{ typeVo
         <p className={styles.public}>
           {restreint
             ? "Réservé aux personnes inscrites · une voix par personne"
-            : type.canal === "QR"
-              ? "Ouvert à tous · une voix par numéro de téléphone"
+            : parLien
+              ? "Ouvert à tous · une seule fois par numéro de téléphone"
               : "Ouvert à tous"}
         </p>
         <ol className={styles.etapes}>

@@ -4,7 +4,17 @@ import ExcelJS from "exceljs";
 import { revalidatePath } from "next/cache";
 import { exigerEcriture } from "./espace";
 import type { EtatFormulaire } from "./evenements-actions";
-import { ajouterNumeros, basculerQr, retirerNumero, verifierNumeroQr, voterQr, type ResultatNumero, type ResultatVoteQr } from "./vote-qr";
+import {
+  ajouterNumeros,
+  basculerQr,
+  changerAcces,
+  noterQr,
+  retirerNumero,
+  verifierNumeroQr,
+  voterQr,
+  type ResultatNumero,
+  type ResultatVoteQr,
+} from "./vote-qr";
 import { lireCsv, lireListe, lireSaisie, NUMEROS_MAX_PAR_AJOUT, type ListeLue } from "./vote-qr-core";
 
 /**
@@ -20,6 +30,20 @@ export async function voterQrAction(lien: string, participationId: string, telep
   return voterQr(String(lien), String(participationId), String(telephone ?? ""));
 }
 
+export async function noterQrAction(
+  lien: string,
+  participationId: string,
+  telephone: string,
+  valeurs: Record<string, number>,
+): Promise<ResultatVoteQr> {
+  // Ne garde que des paires critère → nombre : le reste est revérifié par `noterQr`.
+  const propres: Record<string, number> = {};
+  for (const [critereId, valeur] of Object.entries(valeurs ?? {})) {
+    if (typeof critereId === "string" && typeof valeur === "number") propres[critereId] = valeur;
+  }
+  return noterQr(String(lien), String(participationId), String(telephone ?? ""), propres);
+}
+
 // Panneau ---------------------------------------------------------------------
 
 function rafraichir() {
@@ -32,6 +56,18 @@ export async function basculerQrAction(typeVoteId: string, ouvert: boolean, _e: 
   if (!r.ok) return { erreur: r.erreur };
   rafraichir();
   return { succes: ouvert ? "Lien ouvert : on peut voter." : "Lien fermé." };
+}
+
+export async function changerAccesAction(
+  typeVoteId: string,
+  acces: "OUVERT" | "RESTREINT",
+  _e: EtatFormulaire,
+): Promise<EtatFormulaire> {
+  const utilisateur = await exigerEcriture();
+  const r = await changerAcces(utilisateur.organisationId, typeVoteId, acces === "RESTREINT" ? "RESTREINT" : "OUVERT");
+  if (!r.ok) return { erreur: r.erreur };
+  rafraichir();
+  return { succes: acces === "RESTREINT" ? "Réservé aux numéros de la liste." : "Ouvert à tous, une fois par numéro." };
 }
 
 /** Ajoute une liste lue, et dit ce qui a été écarté. */

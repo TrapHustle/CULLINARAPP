@@ -16,8 +16,8 @@ export const LIBELLES_CANAL: Record<Canal, string> = {
 };
 
 /**
- * Qui peut voter par le lien d'un vote "QR" : tout numéro, une fois
- * ("OUVERT"), ou seulement les numéros autorisés, une fois ("RESTREINT").
+ * Qui peut voter par le lien d'un vote "QR" ou en salle : tout numéro
+ * ("OUVERT"), ou seulement les numéros autorisés ("RESTREINT").
  */
 export const ACCES = ["OUVERT", "RESTREINT"] as const;
 export type Acces = (typeof ACCES)[number];
@@ -81,11 +81,11 @@ export const typeVoteSchema = z
     part: decimal("La part est un pourcentage, par exemple 40.").refine((v) => v <= 100, "La part ne peut pas dépasser 100 %."),
   })
   // Le vote en ligne et le vote par QR comptent des voix : jamais de critère
-  // (RG 4.2). Seul le vote par QR peut être restreint à une liste.
+  // (RG 4.2). Le vote en ligne, payant, n'a pas de liste de numéros.
   .transform((d) => ({
     ...d,
     avecCriteres: d.canal === "SALLE" ? d.avecCriteres : false,
-    acces: d.canal === "QR" ? d.acces : ("OUVERT" as const),
+    acces: d.canal === "EN_LIGNE" ? ("OUVERT" as const) : d.acces,
   }));
 
 export const critereSchema = z.object({

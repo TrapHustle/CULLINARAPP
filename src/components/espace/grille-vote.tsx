@@ -284,7 +284,7 @@ function ChampsType({
         </select>
       </label>
       <label className={styles.champ}>
-        <span>Qui peut voter ? (QR code)</span>
+        <span>Qui peut voter par le lien et le QR code ?</span>
         <select name="acces" defaultValue={acces}>
           <option value="OUVERT">Normal : tout le monde, une fois par numéro</option>
           <option value="RESTREINT">Restreint : seulement les numéros autorisés</option>

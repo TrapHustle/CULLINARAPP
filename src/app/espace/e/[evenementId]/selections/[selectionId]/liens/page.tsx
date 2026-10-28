@@ -9,7 +9,7 @@ import { exigerUtilisateur } from "@/lib/espace";
 import { LIBELLES_ACCES, type Acces } from "@/lib/grille-core";
 import { adresseBase, cheminVote, imageQr } from "@/lib/liens-publics";
 import { lireLiens, lireNumeros } from "@/lib/vote-qr";
-import { ajouterSaisieAction, basculerQrAction, importerAction } from "@/lib/vote-qr-actions";
+import { ajouterSaisieAction, basculerQrAction, changerAccesAction, importerAction } from "@/lib/vote-qr-actions";
 
 export const metadata: Metadata = { title: "Liens & QR codes — DIGITALYX-VOTE" };
 
@@ -29,13 +29,10 @@ export default async function PageLiens({
   const { selection } = lus;
   const base = await adresseBase();
   const cloturee = selection.etat === "CLOTUREE";
-  const avecLien = lus.types.filter((t) => cheminVote(t, selection.slug) !== null);
-  const enSalle = lus.types.filter((t) => cheminVote(t, selection.slug) === null);
-
   const cartes = await Promise.all(
-    avecLien.map(async (t) => {
+    lus.types.map(async (t) => {
       const url = `${base}${cheminVote(t, selection.slug)}`;
-      const numeros = t.canal === "QR" && t.acces === "RESTREINT" ? await lireNumeros(utilisateur.organisationId, t.id) : null;
+      const numeros = t.canal !== "EN_LIGNE" && t.acces === "RESTREINT" ? await lireNumeros(utilisateur.organisationId, t.id) : null;
       return { type: t, url, qr: await imageQr(url), numeros };
     }),
   );
@@ -52,20 +49,29 @@ export default async function PageLiens({
         </div>
       ) : null}
 
-      {avecLien.length === 0 ? (
+      {cartes.length === 0 ? (
         <div className={`${styles.bandeau} ${styles.bandeauAlerte}`}>
           <Icone nom="bouclier" taille={18} />
           <div>
-            <strong>Aucun vote par lien dans cette sélection</strong>
-            <span>Ajoutez un type « Par QR code » ou « En ligne » dans l&rsquo;onglet Grille de vote.</span>
+            <strong>Aucun type de vote dans cette sélection</strong>
+            <span>Ajoutez-en dans l&rsquo;onglet Grille de vote.</span>
           </div>
         </div>
       ) : null}
 
       {cartes.map(({ type, url, qr, numeros }) => {
-        const estQr = type.canal === "QR";
+        // Tous les votes sauf le vote en ligne passent par `/q/<lien>` : un
+        // interrupteur, et un accès ouvert à tous ou réservé à une liste.
+        const estQr = type.canal !== "EN_LIGNE";
+        const enSalle = type.canal === "SALLE";
+        const notes = enSalle && type.avecCriteres;
         const restreint = estQr && type.acces === "RESTREINT";
-        const ouvert = estQr ? type.ouvert : selection.voteEnLigneOuvert;
+        const ouvert = !estQr
+          ? selection.voteEnLigneOuvert
+          : enSalle
+            ? type.ouvert && selection.voteSalleOuvert
+            : type.ouvert;
+        const nature = !estQr ? "Voix payantes" : notes ? "Notes sur critères" : "Voix unique";
         const partage = `https://wa.me/?text=${encodeURIComponent(`${selection.evenement.nom} · ${selection.libelle} — ${type.libelle} : votez ici ${url}`)}`;
         const fichier = `qr-${selection.slug}-${type.libelle}`.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").replace(/[^a-z0-9]+/g, "-");
         return (
@@ -75,7 +81,8 @@ export default async function PageLiens({
                 <div>
                   <h2 className={styles.carteTitre}>{type.libelle}</h2>
                   <div className={styles.pastilles}>
-                    <span className={styles.pastille}>{estQr ? "Voix unique" : "Voix payantes"}</span>
+                    <span className={styles.pastille}>{nature}</span>
+                    {enSalle ? <span className={styles.pastille}>En salle</span> : null}
                     <span className={`${styles.pastille} ${restreint ? styles.pastilleOrange : styles.pastilleVerte}`}>
                       {estQr ? LIBELLES_ACCES[type.acces as Acces] : LIBELLES_ACCES.OUVERT}
                     </span>
@@ -83,14 +90,32 @@ export default async function PageLiens({
                   </div>
                 </div>
                 {estQr && !cloturee ? (
-                  <FormulaireAction
-                    action={basculerQrAction.bind(null, type.id, !type.ouvert)}
-                    bouton={type.ouvert ? "Fermer ce vote" : "Ouvrir ce vote"}
-                    variante={type.ouvert ? "secondaire" : "principal"}
-                    confirmer={type.ouvert ? `Fermer le vote « ${type.libelle} » ? Plus personne ne pourra voter par ce lien.` : undefined}
-                  />
+                  <div className={l.actions}>
+                    {type.votants === 0 ? (
+                      <FormulaireAction
+                        action={changerAccesAction.bind(null, type.id, restreint ? "OUVERT" : "RESTREINT")}
+                        bouton={restreint ? "Ouvrir à tous" : "Réserver à une liste"}
+                        variante="secondaire"
+                      />
+                    ) : null}
+                    <FormulaireAction
+                      action={basculerQrAction.bind(null, type.id, !type.ouvert)}
+                      bouton={type.ouvert ? "Fermer ce vote" : "Ouvrir ce vote"}
+                      variante={type.ouvert ? "secondaire" : "principal"}
+                      confirmer={type.ouvert ? `Fermer le vote « ${type.libelle} » ? Plus personne ne pourra voter par ce lien.` : undefined}
+                    />
+                  </div>
                 ) : null}
               </div>
+              {enSalle && type.ouvert && !selection.voteSalleOuvert && !cloturee ? (
+                <div className={`${styles.bandeau} ${styles.bandeauAlerte}`} style={{ margin: "0 24px" }}>
+                  <Icone nom="horloge" taille={18} />
+                  <div>
+                    <strong>Le vote en salle est suspendu</strong>
+                    <span>Ce lien n&rsquo;accepte rien tant que le vote en salle n&rsquo;est pas repris dans l&rsquo;onglet Pilotage.</span>
+                  </div>
+                </div>
+              ) : null}
               <div className={styles.carteCorps}>
                 <div className={l.qrBloc}>
                   <div className={l.qr}>
@@ -123,7 +148,8 @@ export default async function PageLiens({
                             <strong>{nf(type.autorises)}</strong>numéros autorisés
                           </div>
                           <div>
-                            <strong>{nf(type.votants)}</strong>ont voté
+                            <strong>{nf(type.votants)}</strong>
+                            {notes ? "ont noté" : "ont voté"}
                           </div>
                           <div>
                             <strong>{nf(Math.max(0, type.autorises - type.votants))}</strong>n&rsquo;ont pas encore voté
@@ -136,7 +162,8 @@ export default async function PageLiens({
                     ) : estQr ? (
                       <div className={l.chiffres}>
                         <div>
-                          <strong>{nf(type.votants)}</strong>personnes ont voté
+                          <strong>{nf(type.votants)}</strong>
+                          {notes ? "personnes ont noté" : "personnes ont voté"}
                         </div>
                       </div>
                     ) : (
@@ -145,8 +172,14 @@ export default async function PageLiens({
                         les voix payées ne le sont pas. Elle s&rsquo;ouvre et se ferme depuis l&rsquo;onglet Pilotage.
                       </div>
                     )}
-                    {estQr && !restreint ? (
-                      <div className={l.note}>Pas de liste : tout le monde peut voter, une seule fois par numéro de téléphone.</div>
+                    {estQr ? (
+                      <div className={l.note}>
+                        {notes
+                          ? "Chacun tape son numéro, puis note chaque candidat, critère par critère : une seule note par numéro et par candidat."
+                          : "Chacun tape son numéro, puis choisit un candidat : une seule voix par numéro."}{" "}
+                        {restreint ? "Seuls les numéros de la liste ci-dessous peuvent voter." : "Pas de liste : tout le monde peut voter."}
+                        {enSalle ? " À ouvrir sur une tablette de la salle ou sur le téléphone des votants." : ""}
+                      </div>
                     ) : null}
                   </div>
                 </div>
@@ -215,9 +248,9 @@ export default async function PageLiens({
         );
       })}
 
-      {enSalle.length > 0 ? (
+      {cartes.some((c) => c.type.canal === "SALLE") ? (
         <p className={styles.noteBas}>
-          Sans lien public : {enSalle.map((t) => t.libelle).join(", ")} — ces votes se saisissent depuis l&rsquo;onglet Notes du jury.
+          Les votes en salle peuvent aussi être saisis à la main depuis l&rsquo;onglet Notes du jury (fiches papier).
         </p>
       ) : null}
     </>

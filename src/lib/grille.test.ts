@@ -25,12 +25,14 @@ describe("grille de vote", () => {
     expect(r.avecCriteres).toBe(false);
   });
 
-  it("le vote par QR compte des voix et seul lui peut être restreint", () => {
+  it("le vote par QR compte des voix ; seul le vote en ligne ne peut pas être restreint", () => {
     const qr = typeVoteSchema.parse({ libelle: "Invités", canal: "QR", avecCriteres: true, acces: "RESTREINT", part: "30" });
     expect(qr.avecCriteres).toBe(false);
     expect(qr.acces).toBe("RESTREINT");
     const salle = typeVoteSchema.parse({ libelle: "Jury", canal: "SALLE", avecCriteres: true, acces: "RESTREINT", part: "40" });
-    expect(salle.acces).toBe("OUVERT");
+    expect(salle.acces).toBe("RESTREINT");
+    const enLigne = typeVoteSchema.parse({ libelle: "En ligne", canal: "EN_LIGNE", avecCriteres: false, acces: "RESTREINT", part: "30" });
+    expect(enLigne.acces).toBe("OUVERT");
     expect(typeVoteSchema.safeParse({ libelle: "Invités", canal: "QR", avecCriteres: false, acces: "PRIVE", part: "30" }).success).toBe(false);
   });
 
