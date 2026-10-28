@@ -16,9 +16,11 @@
   animation: disparait 0.35s ease-in 0.85s forwards;
 }
 
-/* Déjà vu pendant cette session : on ne le remontre pas. */
-:global(html[data-chargement="vu"]) .ecran {
-  display: none;
+/* Jamais sur papier : les affiches s'impriment sans lui. */
+@media print {
+  .ecran {
+    display: none;
+  }
 }
 
 .halo {

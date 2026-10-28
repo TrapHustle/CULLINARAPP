@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Chargement } from "@/components/accueil/chargement";
 import { publicUrl } from "@/lib/network";
 
 const siteUrl = publicUrl();
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             __html: `(function(){try{var t=localStorage.getItem('theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();`,
           }}
         />
+        <Chargement />
         {children}
       </body>
     </html>
