@@ -69,10 +69,14 @@ function visibles(appareil: Appareil): Prisma.SelectionWhereInput {
     : { evenement: { organisation: { actif: true } } };
 }
 
-/** Les concours que la tablette peut ouvrir : en préparation (pour les télécharger à l'avance) ou ouverts. */
+/**
+ * Les concours que la tablette propose : ouverts, vote en salle en cours. Une
+ * sélection pas encore ouverte, ou dont le vote en salle est suspendu
+ * (Pilotage → Suspendre), n'apparaît pas : on ne peut pas y voter.
+ */
 export async function listerConcours(appareil: Appareil) {
   const selections = await prisma.selection.findMany({
-    where: { ...visibles(appareil), etat: { in: ["PREPAREE", "OUVERTE"] } },
+    where: { ...visibles(appareil), etat: "OUVERTE", voteSalleOuvert: true },
     orderBy: [{ debut: "asc" }, { creeLe: "asc" }],
     include: {
       evenement: { select: { nom: true, afficheUrl: true, organisation: { select: { nom: true } } } },
