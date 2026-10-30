@@ -15,19 +15,54 @@ export const metadata: Metadata = { title: "Vue d’ensemble — DIGITALYX-VOTE"
 /** Nombre de candidats affichés dans la carte du vote en cours. */
 const TETE_DE_CLASSEMENT = 5;
 
+interface SelectionVue {
+  etat: string;
+  fin: Date | null;
+  voteEnLigneOuvert: boolean;
+  voteSalleOuvert: boolean;
+  typesVote: { canal: string }[];
+}
+
+/** Pastilles d'état du vote en ligne et du vote en salle d'une sélection ouverte. */
+function PastillesVote({ selection, maintenant }: { selection: SelectionVue; maintenant: Date }) {
+  if (selection.etat !== "OUVERTE") return null;
+  const enLigne = selection.typesVote.some((t) => t.canal === "EN_LIGNE");
+  const enSalle = selection.typesVote.some((t) => t.canal === "SALLE");
+  const finPassee = selection.fin !== null && selection.fin <= maintenant;
+  return (
+    <div className={styles.pastilles}>
+      {enLigne ? (
+        selection.voteEnLigneOuvert && !finPassee ? (
+          <span className={`${styles.pastille} ${styles.pastilleVerte}`}>Vote en ligne en cours</span>
+        ) : (
+          <span className={`${styles.pastille} ${styles.pastilleOrange}`}>
+            Vote en ligne {finPassee ? "terminé" : "suspendu"}
+          </span>
+        )
+      ) : null}
+      {enSalle ? (
+        <span className={`${styles.pastille} ${selection.voteSalleOuvert ? styles.pastilleBleue : styles.pastilleOrange}`}>
+          Vote en salle {selection.voteSalleOuvert ? "ouvert" : "suspendu"}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 export default async function PageVueEnsemble({ params }: { params: Promise<{ evenementId: string }> }) {
   const { evenementId } = await params;
   const utilisateur = await exigerUtilisateur();
   const evenement = await evenementDeLOrganisation(utilisateur.organisationId, evenementId);
   if (!evenement) notFound();
 
-  const { selections, participations, voix } = await chiffresEvenement(utilisateur.organisationId, evenementId);
+  const { selections, participations, voix, voixParSelection } = await chiffresEvenement(utilisateur.organisationId, evenementId);
   const ouverte = selections.find((s) => s.etat === "OUVERTE") ?? null;
   const prochaine = selections.find((s) => s.etat === "PREPAREE") ?? null;
   const resultats = ouverte ? await calculerResultats(ouverte.id) : null;
   const tete = resultats?.classement.filter((l) => l.note !== null).slice(0, TETE_DE_CLASSEMENT) ?? [];
 
   const base = `/espace/e/${evenementId}`;
+  const maintenant = new Date();
 
   return (
     <>
@@ -98,9 +133,10 @@ export default async function PageVueEnsemble({ params }: { params: Promise<{ ev
                     .filter(Boolean)
                     .join(" · ") || "Classement provisoire"}
                 </p>
+                <PastillesVote selection={ouverte} maintenant={maintenant} />
               </div>
               <Link href={`${base}/selections/${ouverte.id}`} className={`${styles.bouton} ${styles.boutonSecondaire}`}>
-                Ouvrir
+                Voir la sélection
               </Link>
             </div>
             <div className={styles.carteCorps}>
@@ -170,6 +206,56 @@ export default async function PageVueEnsemble({ params }: { params: Promise<{ ev
           </div>
         )}
       </section>
+
+      {selections.length > 0 ? (
+        <section className={styles.carte}>
+          <div className={styles.carteHaut}>
+            <div>
+              <h2 className={styles.carteTitre}>Toutes les sélections</h2>
+              <p className={styles.carteTexte}>Dans l&rsquo;ordre du concours. La dernière est la finale.</p>
+            </div>
+          </div>
+          <ul className={styles.lignes}>
+            {selections.map((s) => (
+              <li key={s.id} className={styles.ligne}>
+                <span className={styles.ligneRang}>{s.rang}</span>
+                <div className={styles.ligneTexte}>
+                  <Link href={`${base}/selections/${s.id}`}>{s.libelle}</Link>
+                  <div className={styles.ligneMeta}>
+                    {s.lieu ? (
+                      <span>
+                        <Icone nom="lieu" taille={14} />
+                        {s.lieu}
+                      </span>
+                    ) : null}
+                    {s.fin ? (
+                      <span>
+                        <Icone nom="horloge" taille={14} />
+                        fin du vote en ligne le {dateHeure(s.fin)}
+                      </span>
+                    ) : null}
+                    <span>
+                      <Icone nom="personnes" taille={14} />
+                      {nombre(s._count.participations)} candidat{s._count.participations > 1 ? "s" : ""}
+                    </span>
+                    <span>
+                      <Icone nom="urne" taille={14} />
+                      {nombre(voixParSelection.get(s.id) ?? 0)} voix
+                    </span>
+                  </div>
+                  <PastillesVote selection={s} maintenant={maintenant} />
+                </div>
+                <span className={`${styles.etat} ${styles[`etat${s.etat}`]}`}>{LIBELLES_ETAT[s.etat as EtatSelection]}</span>
+                <div className={styles.ligneActions}>
+                  <Link href={`${base}/selections/${s.id}`} className={`${styles.bouton} ${styles.boutonSecondaire}`}>
+                    Voir
+                  </Link>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </>
   );
 }

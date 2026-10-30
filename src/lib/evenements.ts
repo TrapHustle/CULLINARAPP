@@ -349,15 +349,29 @@ export async function chiffresEvenement(organisationId: string, evenementId: str
     prisma.selection.findMany({
       where: { evenementId, evenement: { organisationId } },
       orderBy: { rang: "asc" },
-      include: { _count: { select: { participations: true } } },
+      include: {
+        _count: { select: { participations: true } },
+        typesVote: { select: { id: true, canal: true } },
+      },
     }),
     prisma.participation.count({ where: filtre }),
     // Les voix des paiements simulés ne comptent jamais dans un chiffre officiel.
-    prisma.suffrage.aggregate({
+    prisma.suffrage.groupBy({
+      by: ["typeVoteId"],
       where: { participation: filtre, annuleLe: null, NOT: { paiement: { is: { simule: true } } } },
       _sum: { poids: true },
     }),
   ]);
 
-  return { selections, participations, voix: suffrages._sum.poids ?? 0 };
+  const selectionDuType = new Map(selections.flatMap((s) => s.typesVote.map((t) => [t.id, s.id] as const)));
+  const voixParSelection = new Map<string, number>();
+  let voix = 0;
+  for (const s of suffrages) {
+    const n = s._sum.poids ?? 0;
+    voix += n;
+    const sel = selectionDuType.get(s.typeVoteId);
+    if (sel) voixParSelection.set(sel, (voixParSelection.get(sel) ?? 0) + n);
+  }
+
+  return { selections, participations, voix, voixParSelection };
 }
