@@ -6,14 +6,22 @@ import { MAX_VOTE_PRICE, MIN_VOTE_PRICE, PAYMENT_METHODS, type PaymentMethod } f
  * ligne. Règles de saisie et contrôles, sans base ni réseau (RG 3, 4, 7, 8.3).
  */
 
-export const CANAUX = ["SALLE", "EN_LIGNE", "QR"] as const;
+export const CANAUX = ["SALLE", "EN_LIGNE", "GRATUIT", "UNIQUE", "QR"] as const;
 export type Canal = (typeof CANAUX)[number];
 
 export const LIBELLES_CANAL: Record<Canal, string> = {
   SALLE: "En salle",
-  EN_LIGNE: "En ligne",
+  EN_LIGNE: "En ligne payant",
+  GRATUIT: "En ligne gratuit",
+  UNIQUE: "Vote unique",
   QR: "Par QR code",
 };
+
+/** Canaux notés sur critères au choix ; les autres comptent toujours des voix. */
+export const CANAUX_A_CRITERES: readonly string[] = ["SALLE", "UNIQUE"];
+
+/** Canaux dont on règle qui vote : tout numéro, ou une liste autorisée. */
+export const CANAUX_A_ACCES: readonly string[] = ["QR", "UNIQUE", "GRATUIT", "SALLE"];
 
 /**
  * Qui peut voter par le lien d'un vote "QR" ou en salle : tout numéro
@@ -75,16 +83,18 @@ const entier = (min: number, max: number, message: string) =>
 export const typeVoteSchema = z
   .object({
     libelle: z.string().trim().min(2, "Indiquez le nom du type de vote.").max(60, "Ce nom est trop long (60 caractères au plus)."),
-    canal: z.enum(CANAUX, { message: "Choisissez le canal : en salle, en ligne ou par QR code." }),
+    canal: z.enum(CANAUX, { message: "Choisissez le canal du vote." }),
+    actif: z.boolean().default(true),
     avecCriteres: z.boolean(),
     acces: z.enum(ACCES, { message: "Choisissez qui peut voter." }).default("OUVERT"),
     part: decimal("La part est un pourcentage, par exemple 40.").refine((v) => v <= 100, "La part ne peut pas dépasser 100 %."),
   })
-  // Le vote en ligne et le vote par QR comptent des voix : jamais de critère
-  // (RG 4.2). Le vote en ligne, payant, n'a pas de liste de numéros.
+  // Le vote en ligne (payant ou gratuit) et le vote par QR comptent des voix :
+  // jamais de critère (RG 4.2). Le vote en ligne payant n'a pas de liste de
+  // numéros.
   .transform((d) => ({
     ...d,
-    avecCriteres: d.canal === "SALLE" ? d.avecCriteres : false,
+    avecCriteres: CANAUX_A_CRITERES.includes(d.canal) ? d.avecCriteres : false,
     acces: d.canal === "EN_LIGNE" ? ("OUVERT" as const) : d.acces,
   }));
 
@@ -217,6 +227,7 @@ export function creationsDepuisModeles(
     payant: boolean;
     avecCriteres: boolean;
     acces: string;
+    actif: boolean;
     part: number;
     deroule: string;
     ordre: number;
@@ -229,6 +240,7 @@ export function creationsDepuisModeles(
     payant: m.payant,
     avecCriteres: m.avecCriteres,
     acces: m.acces,
+    actif: m.actif,
     lien: codeLien(),
     part: m.part,
     deroule: m.deroule,
@@ -242,6 +254,8 @@ export function creationsDepuisModeles(
 export interface TypeAControler {
   libelle: string;
   canal: string;
+  /** Absent : actif (grilles lues avant l'ajout de la case). */
+  actif?: boolean;
   avecCriteres: boolean;
   part: number;
   criteres: unknown[];
@@ -252,21 +266,33 @@ export function sommeDesParts(types: { part: number }[]): number {
   return Math.round(types.reduce((s, t) => s + t.part, 0) * 100) / 100;
 }
 
-/** Ce qui manque à une grille pour qu'on puisse voter avec (RG 4). Vide si rien. */
+/** Les types cochés : seuls eux reçoivent des votes et comptent dans la note finale. */
+export function typesActifs<T extends { actif?: boolean }>(types: T[]): T[] {
+  return types.filter((t) => t.actif !== false);
+}
+
+/**
+ * Ce qui manque à une grille pour qu'on puisse voter avec (RG 4). Vide si
+ * rien. Seuls les types cochés sont contrôlés : leurs parts font 100 %.
+ */
 export function problemesGrille(types: TypeAControler[]): string[] {
   const problemes: string[] = [];
   if (types.length === 0) return ["Ajoutez au moins un type de vote."];
+  const actifs = typesActifs(types);
+  if (actifs.length === 0) return ["Activez au moins un type de vote."];
 
-  const somme = sommeDesParts(types);
-  if (somme !== 100) problemes.push(`Les parts font ${somme.toLocaleString("fr-FR")} % au total : il faut 100 %.`);
+  const somme = sommeDesParts(actifs);
+  if (somme !== 100) problemes.push(`Les parts des types activés font ${somme.toLocaleString("fr-FR")} % au total : il faut 100 %.`);
 
-  for (const t of types) {
-    if (t.part <= 0) problemes.push(`« ${t.libelle} » a une part nulle : donnez-lui une part ou supprimez-le.`);
-    if (t.avecCriteres && t.criteres.length === 0) problemes.push(`« ${t.libelle} » note sur des critères, mais n'en a aucun.`);
+  for (const t of actifs) {
+    if (t.part <= 0) problemes.push(`« ${t.libelle} » a une part nulle : donnez-lui une part ou décochez-le.`);
+    if (t.avecCriteres && t.criteres.length === 0) {
+      problemes.push(`« ${t.libelle} » est noté sur des critères mais n'en a aucun : ajoutez des critères, ou passez-le en vote par voix.`);
+    }
   }
 
-  if (types.filter((t) => t.canal === "EN_LIGNE").length > 1) {
-    problemes.push("Un seul type de vote en ligne par grille.");
+  if (actifs.filter((t) => t.canal === "EN_LIGNE").length > 1) {
+    problemes.push("Un seul type de vote en ligne payant par grille.");
   }
   return problemes;
 }

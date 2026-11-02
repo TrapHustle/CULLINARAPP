@@ -42,6 +42,28 @@ describe("schémas", () => {
     expect(suffrageTabletteSchema.safeParse({ ...v, valeurs: null }).success).toBe(true);
   });
 
+  it("accepte une correction (remplace) et le nom du juré", () => {
+    const v = {
+      id: "6f1c1d1e-2a3b-4c5d-8e9f-0a1b2c3d4e5f",
+      typeVoteId: "jury",
+      participationId: "p1",
+      jure: 1,
+      jureNom: "  Awa  ",
+      remplace: "7f1c1d1e-2a3b-4c5d-8e9f-0a1b2c3d4e5f",
+    };
+    const lu = suffrageTabletteSchema.parse(v);
+    expect(lu.jureNom).toBe("Awa");
+    expect(lu.remplace).toBe(v.remplace);
+    expect(suffrageTabletteSchema.safeParse({ ...v, remplace: "pas-un-uuid" }).success).toBe(false);
+  });
+
+  it("lit les annulations, vides par défaut", () => {
+    expect(lotTabletteSchema.parse({ suffrages: [] }).annulations).toEqual([]);
+    const id = "6f1c1d1e-2a3b-4c5d-8e9f-0a1b2c3d4e5f";
+    expect(lotTabletteSchema.parse({ suffrages: [], annulations: [id] }).annulations).toEqual([id]);
+    expect(lotTabletteSchema.safeParse({ suffrages: [], annulations: ["x"] }).success).toBe(false);
+  });
+
   it("borne la taille d'un lot", () => {
     expect(lotTabletteSchema.safeParse({ suffrages: Array(LOT_MAX).fill({}) }).success).toBe(true);
     expect(lotTabletteSchema.safeParse({ suffrages: Array(LOT_MAX + 1).fill({}) }).success).toBe(false);

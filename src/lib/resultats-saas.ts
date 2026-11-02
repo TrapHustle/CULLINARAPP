@@ -53,7 +53,8 @@ export async function calculerResultats(selectionId: string, options: OptionsCal
     where: { id: selectionId },
     include: {
       paliers: true,
-      typesVote: { include: { criteres: true }, orderBy: { ordre: "asc" } },
+      // Seuls les types cochés dans la grille comptent dans la note finale.
+      typesVote: { where: { actif: true }, include: { criteres: true }, orderBy: { ordre: "asc" } },
       participations: { include: { candidat: true }, orderBy: { ordre: "asc" } },
     },
   });

@@ -14,7 +14,8 @@ export const LOT_MAX = 500;
 /**
  * Un vote saisi sur une tablette. `id` est tiré par la tablette : renvoyé dix
  * fois, il ne crée qu'un vote. `valeurs` donne une note par critère pour un
- * vote avec critères ; il est absent pour un vote par voix.
+ * vote avec critères ; il est absent pour un vote par voix. `jureNom` vient du
+ * mode « Jury spécial ». `remplace` : le vote déjà envoyé que celui-ci corrige.
  */
 export const suffrageTabletteSchema = z.object({
   id: z.string().uuid("Identifiant de vote invalide."),
@@ -22,12 +23,16 @@ export const suffrageTabletteSchema = z.object({
   participationId: z.string().min(1).max(64),
   jure: z.number().int().min(1).max(999),
   valeurs: z.record(z.string().min(1).max(64), z.number().int().min(0).max(1000)).nullish(),
+  jureNom: z.string().trim().min(1).max(60).nullish(),
+  remplace: z.string().uuid().nullish(),
 });
 
 export type SuffrageTablette = z.infer<typeof suffrageTabletteSchema>;
 
 export const lotTabletteSchema = z.object({
   suffrages: z.array(z.unknown()).max(LOT_MAX, `Pas plus de ${LOT_MAX} votes par envoi.`),
+  /** Votes déjà envoyés qu'un juré a effacés. Traités après les nouveaux votes. */
+  annulations: z.array(z.string().uuid()).max(LOT_MAX, `Pas plus de ${LOT_MAX} annulations par envoi.`).default([]),
 });
 
 /**

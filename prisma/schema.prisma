@@ -474,12 +474,14 @@ model TypeVoteModele {
   id           String  @id @default(cuid())
   evenementId  String
   libelle      String
-  /// "SALLE" | "EN_LIGNE" | "QR"
+  /// "SALLE" | "EN_LIGNE" | "GRATUIT" | "UNIQUE" | "QR" — voir `TypeVote.canal`.
   canal        String
   payant       Boolean @default(false)
   avecCriteres Boolean @default(true)
   /// "OUVERT" | "RESTREINT" — voir `TypeVote.acces`.
   acces        String  @default("OUVERT")
+  /// Voir `TypeVote.actif`.
+  actif        Boolean @default(true)
   part         Float   @default(0)
   /// "BY_CANDIDATE" | "BY_JUROR"
   deroule      String  @default("BY_CANDIDATE")
@@ -509,8 +511,12 @@ model TypeVote {
   id           String  @id @default(cuid())
   selectionId  String
   libelle      String
-  /// "SALLE" | "EN_LIGNE" | "QR". "QR" : voix unique, sans critère, par le
-  /// lien du type (QR code) ; remplace les tablettes quand on n'en a pas.
+  /// "SALLE" | "EN_LIGNE" | "GRATUIT" | "UNIQUE" | "QR".
+  /// "GRATUIT" : page publique sans paiement, une voix par numéro pour tout
+  /// le concours. "UNIQUE" : vote ponctuel par le lien du type (QR code), une
+  /// fois par numéro, avec ou sans critères — pour un but précis, ou quand les
+  /// tablettes tombent en panne. "QR" : ancien vote à voix unique sans
+  /// critère, gardé pour les grilles qui l'utilisent.
   canal        String
   payant       Boolean @default(false)
   /// RG 4.2 : sans critère, on compte des voix ; avec, on note.
@@ -524,6 +530,9 @@ model TypeVote {
   ouvert       Boolean @default(false)
   /// Part dans la note finale, en pourcentage (RG 4.5).
   part         Float   @default(0)
+  /// Coché dans la grille : seul un type actif reçoit des votes et compte
+  /// dans la note finale ; les parts des types actifs font 100 %.
+  actif        Boolean @default(true)
   /// "BY_CANDIDATE" | "BY_JUROR" — déroulé sur les tablettes.
   deroule      String  @default("BY_CANDIDATE")
   ordre        Int     @default(0)
@@ -604,6 +613,11 @@ model Suffrage {
   origine         String
   tableId         String?
   jureIndex       Int?
+  /// Nom saisi sur une tablette en mode « Jury spécial ».
+  jureNom         String?
+  /// Vote corrigé : celui qu'il remplace, annulé au même moment. Garde la
+  /// trace des corrections d'un juré.
+  remplaceId      String?
   paiementId      String?   @unique
   votantId        String?   @unique
   creeLe          DateTime  @default(now())

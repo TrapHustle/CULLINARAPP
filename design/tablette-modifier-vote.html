@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Modifier ou effacer</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap">
+<style>
+/* Maquette : un juré corrige son vote sur l'appli des tablettes (Flutter).
+   Couleurs du thème « Bleu » de l'appli (lib/ui/theme.dart). */
+:root {
+  --fond: #e6eaf0; --surface: #ffffff; --ligne: #e2e7ee; --texte: #101d35; --doux: #58647a;
+  --accent: #1768e5; --accent-pale: #eaf2ff; --succes: #1b7a57; --succes-pale: #e6f8f1;
+  --alerte: #a24a0c; --alerte-pale: #fff3e8; --page: #d5dbe4; --cadre: #0d1830;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --page: #0b1220; --cadre: #000; }
+}
+:root[data-theme="dark"] { --page: #0b1220; --cadre: #000; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: "Outfit", system-ui, sans-serif; background: var(--page); color: var(--texte); }
+.page { max-width: 1500px; margin: 0 auto; padding: 28px 24px 60px; }
+.intro { background: var(--surface); border-radius: 18px; padding: 22px 24px; max-width: 980px; }
+.intro h1 { margin: 0 0 6px; font-size: 26px; }
+.intro p { margin: 0; color: var(--doux); line-height: 1.5; }
+.regles { margin: 16px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.regles li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; line-height: 1.45; }
+.regles li span:first-child { width: 28px; height: 28px; border-radius: 8px; background: var(--accent-pale); color: var(--accent); display: grid; place-items: center; font-weight: 800; font-size: 14px; }
+.ecrans { display: flex; gap: 28px; flex-wrap: wrap; margin-top: 28px; align-items: flex-start; }
+.ecran { width: 360px; max-width: 100%; }
+.legende { font-weight: 700; margin: 0 0 4px; }
+.legende small { display: block; font-weight: 400; color: var(--doux); font-size: 14px; margin-top: 2px; line-height: 1.4; }
+.tel { margin-top: 12px; border: 10px solid var(--cadre); border-radius: 34px; overflow: hidden; background: var(--fond); height: 720px; display: flex; flex-direction: column; position: relative; }
+.barre { background: var(--surface); border-bottom: 1px solid var(--ligne); height: 56px; display: flex; align-items: center; padding: 0 12px 0 16px; gap: 10px; flex: none; }
+.barre .titre { font-weight: 700; font-size: 19px; flex: 1; }
+.etiq { background: var(--accent-pale); color: var(--accent); font-weight: 700; padding: 4px 10px; border-radius: 8px; font-size: 14px; }
+.pastille { background: var(--succes-pale); color: var(--succes); border-radius: 100px; padding: 5px 10px; font-weight: 700; font-size: 13px; }
+.ico { width: 36px; height: 36px; display: grid; place-items: center; font-size: 18px; color: var(--texte); }
+.corps { flex: 1; overflow: hidden; padding: 16px; display: flex; flex-direction: column; }
+.btn { border: 0; border-radius: 14px; font: inherit; font-weight: 700; font-size: 17px; height: 56px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-p { background: var(--accent); color: #fff; }
+.btn-s { background: var(--surface); color: var(--texte); border: 1px solid var(--ligne); font-size: 16px; font-weight: 600; height: 52px; }
+.lien { text-align: center; color: var(--doux); font-size: 14px; margin-top: 10px; }
+.neuf { outline: 3px solid #f59e0b; outline-offset: 3px; border-radius: 14px; position: relative; }
+.neuf::after { content: "nouveau"; position: absolute; top: -12px; right: 10px; background: #f59e0b; color: #241a00; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 100px; letter-spacing: .05em; }
+
+/* Écran merci */
+.merci { text-align: center; margin-top: 14px; }
+.rond { width: 76px; height: 76px; border-radius: 50%; background: var(--succes-pale); color: var(--succes); display: grid; place-items: center; margin: 0 auto 14px; font-size: 38px; }
+.merci h2 { margin: 0; font-size: 26px; line-height: 1.15; }
+.merci p { color: var(--doux); margin: 6px 0 0; }
+.recap { background: var(--surface); border: 1px solid var(--ligne); border-radius: 14px; padding: 12px 14px; margin: 16px 0 14px; font-size: 15px; }
+.recap div { display: flex; justify-content: space-between; padding: 3px 0; }
+.recap .tot { border-top: 1px solid var(--ligne); margin-top: 6px; padding-top: 8px; font-weight: 800; }
+
+/* Grille */
+.entete { font-weight: 700; font-size: 21px; line-height: 1.2; }
+.entete small { display: block; font-weight: 400; color: var(--doux); font-size: 14px; margin-top: 2px; }
+.grille { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+.carte { background: var(--surface); border: 1px solid var(--ligne); border-radius: 16px; overflow: hidden; }
+.carte.fait { background: var(--fond); }
+.photo { height: 120px; background: var(--accent-pale); display: grid; place-items: center; font-weight: 800; color: var(--accent); font-size: 32px; position: relative; }
+.photo .num { position: absolute; left: 8px; top: 8px; background: var(--surface); color: var(--texte); border-radius: 8px; padding: 3px 8px; font-size: 12px; font-weight: 800; }
+.fait .photo::after { content: "✓"; position: absolute; inset: 0; background: rgba(16,29,53,.45); display: grid; place-items: center; color: var(--succes); font-size: 0; }
+.fait .photo .coche { position: absolute; width: 48px; height: 48px; border-radius: 50%; background: var(--succes-pale); color: var(--succes); display: grid; place-items: center; font-size: 26px; z-index: 1; }
+.carte .txt { padding: 10px 12px 12px; }
+.carte .nom { font-weight: 700; font-size: 15px; }
+.carte .st { font-weight: 700; font-size: 13px; color: var(--accent); margin-top: 4px; }
+.fait .st { color: var(--succes); }
+.modif { display: inline-flex; align-items: center; gap: 4px; margin-top: 14px; font-size: 13px; font-weight: 700; color: var(--accent); background: var(--accent-pale); padding: 5px 10px; border-radius: 8px; }
+
+/* Notation en correction */
+.bandeau { background: var(--alerte-pale); color: var(--alerte); border-radius: 12px; padding: 10px 12px; font-size: 14px; font-weight: 600; display: flex; gap: 8px; align-items: flex-start; }
+.cand { display: flex; align-items: center; gap: 10px; background: var(--surface); margin: -16px -16px 12px; padding: 12px 16px; border-bottom: 1px solid var(--ligne); }
+.cand .av { width: 44px; height: 44px; border-radius: 50%; background: var(--accent-pale); color: var(--accent); display: grid; place-items: center; font-weight: 800; }
+.cand b { flex: 1; font-size: 17px; }
+.cand .vt { background: var(--texte); color: var(--surface); border-radius: 10px; padding: 6px 10px; font-weight: 700; font-size: 14px; }
+.chips { display: flex; gap: 8px; margin: 12px 0 10px; overflow: hidden; }
+.chip { border: 1px solid var(--ligne); background: #fdf8ff; border-radius: 10px; padding: 8px 12px; font-weight: 600; font-size: 14px; white-space: nowrap; }
+.chip.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+.crit { text-align: center; }
+.crit small { color: var(--doux); font-weight: 700; letter-spacing: .1em; font-size: 12px; }
+.crit .l { font-size: 34px; font-weight: 800; color: var(--accent); line-height: 1.1; }
+.crit .s { font-weight: 800; font-size: 19px; }
+.notes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0 14px; }
+.n { aspect-ratio: 1.15; background: var(--surface); border: 1px solid var(--ligne); border-radius: 12px; display: grid; place-items: center; font-weight: 800; font-size: 22px; box-shadow: 0 3px 8px rgba(16,29,53,.12); position: relative; }
+.n.on { background: var(--accent); color: #fff; border: 3px solid var(--texte); }
+.n.avant::after { content: "avant"; position: absolute; bottom: 3px; font-size: 10px; font-weight: 700; color: var(--alerte); }
+
+/* Feuille staff */
+.voile { position: absolute; inset: 0; background: rgba(16,29,53,.45); }
+.feuille { position: absolute; left: 0; right: 0; bottom: 0; background: var(--surface); border-radius: 22px 22px 0 0; padding: 10px 16px 18px; }
+.poignee { width: 40px; height: 5px; border-radius: 4px; background: var(--ligne); margin: 0 auto 12px; }
+.feuille h3 { margin: 0; font-size: 19px; }
+.feuille .sous { color: var(--doux); font-size: 14px; margin: 2px 0 12px; }
+.vote { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; padding: 11px 0; border-top: 1px solid var(--ligne); }
+.vote b { display: block; }
+.vote small { color: var(--doux); font-size: 13px; }
+.vote .pts { font-weight: 800; font-variant-numeric: tabular-nums; }
+.vote .pts s { color: var(--doux); font-weight: 600; margin-right: 6px; }
+.mini { border: 1px solid var(--ligne); border-radius: 10px; padding: 7px 12px; font-weight: 700; font-size: 14px; background: var(--surface); color: var(--accent); }
+.mini.off { color: var(--doux); background: var(--fond); }
+.tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 100px; margin-left: 4px; vertical-align: 2px; }
+.tag-ok { background: var(--succes-pale); color: var(--succes); }
+.tag-c { background: var(--alerte-pale); color: var(--alerte); }
+
+.question { margin-top: 30px; background: var(--surface); border-radius: 18px; padding: 18px 22px; max-width: 980px; line-height: 1.5; }
+.question h2 { margin: 0 0 6px; font-size: 19px; }
+.question p { margin: 6px 0 0; color: var(--doux); }
+</style>
+</head>
+<body>
+<div class="page">
+  <section class="intro">
+    <h1>Modifier ou effacer un vote · appli des tablettes</h1>
+    <p>Tout se fait sur la grille des candidats : à côté du <b>✓</b> d'un candidat noté, un <b>✎</b> pour modifier et une <b>🗑</b> pour effacer. Pas d'écran à part.</p>
+    <ul class="regles">
+      <li><span>✎</span><span><b>Modifier</b> rouvre l'écran de notation avec les notes déjà remplies. En validant, le nouveau vote <b>remplace</b> l'ancien.</span></li>
+      <li><span>🗑</span><span><b>Effacer</b> demande une confirmation. Le candidat redevient « À noter » pour ce votant.</span></li>
+      <li><span>↺</span><span>Sur le serveur, rien n'est supprimé : l'ancien vote est <b>annulé</b> et reste visible, barré, dans le détail des votes de l'espace organisateur.</span></li>
+      <li><span>⚡</span><span>Marche <b>hors ligne</b> : la modification part dès que le réseau revient. Impossible une fois le vote terminé sur la tablette ou le concours clôturé.</span></li>
+    </ul>
+  </section>
+
+  <div class="ecrans">
+    <!-- 1. Votant après votant -->
+    <div class="ecran">
+      <p class="legende">① Mode « votant après votant »<small>Le votant en cours voit ses notes : ✎ et 🗑 à côté du ✓.</small></p>
+      <div class="tel">
+        <div class="barre"><span class="etiq">Jury</span><span style="flex:1"></span><span class="pastille">☁ 2</span><span class="ico">🔒</span><span class="ico">⚙</span></div>
+        <div class="corps">
+          <div class="entete">Votant 3, touchez le candidat à noter<small>2 notés sur 4</small></div>
+          <div class="grille">
+            <div class="carte fait"><div class="photo"><span class="num">N° 1</span>KN
+                <div class="actions neuf"><span class="rond-ok">✓</span><span class="rond-act mod">✎</span><span class="rond-act eff">🗑</span></div></div>
+              <div class="txt"><div class="nom">Koffi N'Guessan</div><div class="st">Noté · 26 / 30</div></div></div>
+            <div class="carte fait"><div class="photo"><span class="num">N° 2</span>AD
+                <div class="actions"><span class="rond-ok">✓</span><span class="rond-act mod">✎</span><span class="rond-act eff">🗑</span></div></div>
+              <div class="txt"><div class="nom">Aminata Diallo</div><div class="st">Noté · 27 / 30</div></div></div>
+            <div class="carte"><div class="photo"><span class="num">N° 3</span>IT</div>
+              <div class="txt"><div class="nom">Ibrahim Traoré</div><div class="st">À noter</div></div></div>
+            <div class="carte"><div class="photo"><span class="num">N° 4</span>AY</div>
+              <div class="txt"><div class="nom">Adjoua Yao</div><div class="st">À noter</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Candidat après candidat -->
+    <div class="ecran">
+      <p class="legende">② Mode « candidat après candidat »<small>Plusieurs votants par candidat : chaque note a son ✓ ✎ 🗑 sur la carte.</small></p>
+      <div class="tel">
+        <div class="barre"><span class="etiq">Jury</span><span style="flex:1"></span><span class="pastille">☁ 2</span><span class="ico">🔒</span><span class="ico">⚙</span></div>
+        <div class="corps">
+          <div class="entete">Quel candidat notez-vous ?<small>1 terminé sur 4</small></div>
+          <div class="grille">
+            <div class="carte fait"><div class="photo" style="height:90px"><span class="num">N° 1</span><span class="coche">✓</span>KN</div>
+              <div class="txt"><div class="nom">Koffi N'Guessan</div><div class="st">Terminé · 3 votes</div>
+                <div class="lignes-v neuf">
+                  <div class="lv"><span>✓ V1</span><b>27</b><i class="m">✎</i><i class="e">🗑</i></div>
+                  <div class="lv"><span>✓ V2</span><b>24</b><i class="m">✎</i><i class="e">🗑</i></div>
+                  <div class="lv"><span>✓ V3</span><b>26</b><i class="m">✎</i><i class="e">🗑</i></div>
+                </div></div></div>
+            <div class="carte"><div class="photo" style="height:90px"><span class="num">N° 2</span>AD</div>
+              <div class="txt"><div class="nom">Aminata Diallo</div><div class="st">1 vote · continuer</div>
+                <div class="lignes-v">
+                  <div class="lv"><span>✓ V1</span><b>27</b><i class="m">✎</i><i class="e">🗑</i></div>
+                </div></div></div>
+            <div class="carte"><div class="photo" style="height:90px"><span class="num">N° 3</span>IT</div>
+              <div class="txt"><div class="nom">Ibrahim Traoré</div><div class="st">À noter</div></div></div>
+            <div class="carte"><div class="photo" style="height:90px"><span class="num">N° 4</span>AY</div>
+              <div class="txt"><div class="nom">Adjoua Yao</div><div class="st">À noter</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Notation en modification -->
+    <div class="ecran">
+      <p class="legende">③ Après ✎ : la notation pré-remplie<small>L'ancienne note reste repérée « avant ».</small></p>
+      <div class="tel">
+        <div class="barre"><span class="titre">Candidats</span><span class="pastille">☁ 2</span></div>
+        <div class="corps">
+          <div class="cand"><div class="av">KN</div><b>Koffi N'Guessan</b><span class="vt">Votant 3</span></div>
+          <div class="bandeau neuf">✎ <span>Modification du vote du Votant 3 · avant : 26 / 30.</span></div>
+          <div class="chips"><span class="chip">Goût · 9</span><span class="chip on">Présentation · 7</span><span class="chip">Créativité · 9</span></div>
+          <div class="crit"><small>CRITÈRE 2 SUR 3</small><div class="l">Présentation</div><div class="s">sur 10</div></div>
+          <div class="notes">
+            <div class="n">0</div><div class="n">1</div><div class="n">2</div><div class="n">3</div>
+            <div class="n">4</div><div class="n">5</div><div class="n">6</div><div class="n on">7</div>
+            <div class="n avant">8</div><div class="n">9</div><div class="n">10</div>
+          </div>
+          <button class="btn btn-p">✓ Enregistrer la modification</button>
+          <p class="lien">Annuler · garder 26 / 30</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Effacer -->
+    <div class="ecran">
+      <p class="legende">④ Après 🗑 : confirmation<small>Rien ne s'efface d'un geste distrait.</small></p>
+      <div class="tel">
+        <div class="barre"><span class="etiq">Jury</span><span style="flex:1"></span><span class="pastille">☁ 2</span><span class="ico">🔒</span><span class="ico">⚙</span></div>
+        <div class="corps" style="opacity:.5"><div class="entete">Votant 3, touchez le candidat à noter<small>2 notés sur 4</small></div></div>
+        <div class="voile"></div>
+        <div class="dialogue neuf">
+          <h3>Effacer ce vote ?</h3>
+          <p>Le vote du <b>Votant 3</b> pour <b>Koffi N'Guessan</b> (26 / 30) sera annulé. Le candidat redeviendra « À noter » pour ce votant.</p>
+          <div class="acts"><span>Garder</span><span class="rouge">Effacer</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="question">
+    <h2>À trancher</h2>
+    <p>• Faut-il le <b>code staff</b> pour modifier ou effacer ? Sans code, n'importe quel juré qui tient la tablette peut changer la note d'un autre (surtout en mode « candidat après candidat », où toutes les notes sont visibles). Je propose : sans code en « votant après votant » (on ne voit que ses propres notes), code staff en « candidat après candidat ».</p>
+  </section>
+</div>
+<style>
+.actions { position: absolute; z-index: 2; display: flex; gap: 8px; align-items: center; }
+.rond-ok { width: 46px; height: 46px; border-radius: 50%; background: var(--succes-pale); color: var(--succes); display: grid; place-items: center; font-size: 24px; font-weight: 800; }
+.rond-act { width: 40px; height: 40px; border-radius: 50%; background: var(--surface); display: grid; place-items: center; font-size: 17px; box-shadow: 0 2px 8px rgba(16,29,53,.25); }
+.rond-act.mod { color: var(--accent); }
+.rond-act.eff { color: #b42318; }
+.lignes-v { margin-top: 8px; display: grid; gap: 4px; }
+.lv { white-space: nowrap; display: grid; grid-template-columns: 1fr auto 26px 26px; gap: 3px; align-items: center; font-size: 13px; background: var(--fond); border-radius: 8px; padding: 3px 4px 3px 8px; }
+.lv b { font-variant-numeric: tabular-nums; }
+.lv i { font-style: normal; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: var(--surface); }
+.lv i.m { color: var(--accent); } .lv i.e { color: #b42318; }
+.carte.fait .lv { background: var(--surface); }
+.dialogue { position: absolute; left: 20px; right: 20px; top: 50%; transform: translateY(-50%); background: var(--surface); border-radius: 22px; padding: 22px 20px 16px; z-index: 3; }
+.dialogue h3 { margin: 0 0 8px; font-size: 20px; }
+.dialogue p { margin: 0 0 16px; color: var(--doux); line-height: 1.45; font-size: 15px; }
+.dialogue .acts { display: flex; justify-content: flex-end; gap: 10px; }
+.dialogue .acts span { padding: 10px 14px; border-radius: 100px; font-weight: 700; }
+.dialogue .acts .rouge { background: #b42318; color: #fff; }
+</style>
+</body>
+</html>

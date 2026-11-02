@@ -4,11 +4,12 @@ import { lotTabletteSchema } from "@/lib/tablette-core";
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/tablette/selections/<id>/suffrages — { suffrages: [...] }
+ * POST /api/tablette/selections/<id>/suffrages — { suffrages: [...], annulations?: [...] }
  *
  * Les votes saisis sur la tablette, envoyés par lots (souvent en fin de
- * soirée). Réponse : `acceptes` (identifiants à retirer de la file) et
- * `refuses` (avec le motif, et s'il vaut la peine de réessayer).
+ * soirée), et les votes qu'un juré a effacés. Réponse : `acceptes` et
+ * `annules` (identifiants à retirer de la file) et `refuses` (avec le motif,
+ * et s'il vaut la peine de réessayer).
  */
 export async function POST(request: Request, { params }: { params: Promise<{ selectionId: string }> }) {
   const appareil = await lireAppareil(request);
@@ -24,7 +25,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ sel
   if (!lot.success) return Response.json({ erreur: lot.error.issues[0]?.message ?? "Lot invalide." }, { status: 400 });
 
   const { selectionId } = await params;
-  const resultat = await recevoirSuffrages(appareil, selectionId, lot.data.suffrages);
+  const resultat = await recevoirSuffrages(appareil, selectionId, lot.data.suffrages, lot.data.annulations);
   if (!resultat) return Response.json({ erreur: "Concours introuvable." }, { status: 404 });
   return Response.json(resultat);
 }

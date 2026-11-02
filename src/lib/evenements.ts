@@ -123,6 +123,7 @@ export async function nouvelleEdition(organisationId: string, evenementId: strin
             payant: t.payant,
             avecCriteres: t.avecCriteres,
             acces: t.acces,
+            actif: t.actif,
             part: t.part,
             deroule: t.deroule,
             ordre: t.ordre,

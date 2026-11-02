@@ -58,11 +58,11 @@ describe.skipIf(!RUN)("vote par QR code", () => {
 
     // Grille : jury 40, salle 30, en ligne 30 → jury 40, salle 10, en ligne 10, invités 30, public 10.
     const [, salle, enLigne] = await grille.lireGrille(orgA, niveau);
-    const garder = (t: typeof salle, part: number) => ({ libelle: t.libelle, canal: t.canal as "SALLE", avecCriteres: t.avecCriteres, acces: "OUVERT" as const, part });
+    const garder = (t: typeof salle, part: number) => ({ libelle: t.libelle, canal: t.canal as "SALLE", actif: true, avecCriteres: t.avecCriteres, acces: "OUVERT" as const, part });
     expect((await grille.modifierType(orgA, niveau, salle.id, garder(salle, 10))).ok).toBe(true);
     expect((await grille.modifierType(orgA, niveau, enLigne.id, { ...garder(enLigne, 10), canal: "EN_LIGNE" as never })).ok).toBe(true);
-    expect((await grille.ajouterType(orgA, niveau, { libelle: "Invités", canal: "QR", avecCriteres: false, acces: "RESTREINT", part: 30 })).ok).toBe(true);
-    expect((await grille.ajouterType(orgA, niveau, { libelle: "Public", canal: "QR", avecCriteres: false, acces: "OUVERT", part: 10 })).ok).toBe(true);
+    expect((await grille.ajouterType(orgA, niveau, { libelle: "Invités", canal: "QR", actif: true, avecCriteres: false, acces: "RESTREINT", part: 30 })).ok).toBe(true);
+    expect((await grille.ajouterType(orgA, niveau, { libelle: "Public", canal: "QR", actif: true, avecCriteres: false, acces: "OUVERT", part: 10 })).ok).toBe(true);
 
     const types = await prisma.typeVote.findMany({ where: { selectionId: s1 } });
     const i = types.find((t) => t.libelle === "Invités")!;

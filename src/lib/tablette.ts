@@ -108,7 +108,7 @@ export async function lireConfiguration(appareil: Appareil, selectionId: string)
         include: { candidat: { select: { nom: true, ville: true, photoUrl: true } } },
       },
       typesVote: {
-        where: { canal: "SALLE" },
+        where: { canal: "SALLE", actif: true },
         orderBy: [{ ordre: "asc" }, { id: "asc" }],
         include: { criteres: { orderBy: [{ ordre: "asc" }, { id: "asc" }] } },
       },
@@ -154,13 +154,17 @@ export interface Refus {
  * Reçoit un lot de votes d'une tablette. Chaque vote est traité seul : un
  * vote refusé n'empêche pas les autres. Un vote déjà reçu (même identifiant)
  * est compté comme accepté, sans doublon.
+ *
+ * Un juré peut corriger une note (le nouveau vote porte `remplace`) ou effacer
+ * ses votes (`annulations`) tant que la sélection est ouverte. Rien n'est
+ * supprimé : l'ancien vote est annulé (RG 5.7), ce qui garde la trace.
  */
-export async function recevoirSuffrages(appareil: Appareil, selectionId: string, bruts: unknown[]) {
+export async function recevoirSuffrages(appareil: Appareil, selectionId: string, bruts: unknown[], annulations: string[] = []) {
   const selection = await prisma.selection.findFirst({
     where: { id: selectionId, ...visibles(appareil) },
     include: {
       participations: { select: { id: true } },
-      typesVote: { where: { canal: "SALLE" }, include: { criteres: true } },
+      typesVote: { where: { canal: "SALLE", actif: true }, include: { criteres: true } },
     },
   });
   if (!selection) return null;
@@ -212,18 +216,29 @@ export async function recevoirSuffrages(appareil: Appareil, selectionId: string,
     }
 
     try {
-      await prisma.suffrage.create({
-        data: {
-          id: v.id,
-          participationId: v.participationId,
-          typeVoteId: v.typeVoteId,
-          poids: 1,
-          origine: "TABLETTE",
-          jureIndex: v.jure,
-          valeurs: type.avecCriteres
-            ? { create: type.criteres.map((c) => ({ critereId: c.id, valeur: v.valeurs![c.id] })) }
-            : undefined,
-        },
+      await prisma.$transaction(async (tx) => {
+        if (v.remplace) {
+          // Le vote corrigé est annulé ; s'il n'est jamais arrivé, il n'y a rien à annuler.
+          await tx.suffrage.updateMany({
+            where: { id: v.remplace, origine: "TABLETTE", annuleLe: null, participation: { selectionId } },
+            data: { annuleLe: new Date() },
+          });
+        }
+        await tx.suffrage.create({
+          data: {
+            id: v.id,
+            participationId: v.participationId,
+            typeVoteId: v.typeVoteId,
+            poids: 1,
+            origine: "TABLETTE",
+            jureIndex: v.jure,
+            jureNom: v.jureNom ?? null,
+            remplaceId: v.remplace ?? null,
+            valeurs: type.avecCriteres
+              ? { create: type.criteres.map((c) => ({ critereId: c.id, valeur: v.valeurs![c.id] })) }
+              : undefined,
+          },
+        });
       });
       acceptes.push(v.id);
     } catch (erreur) {
@@ -235,5 +250,20 @@ export async function recevoirSuffrages(appareil: Appareil, selectionId: string,
       throw erreur;
     }
   }
-  return { acceptes, refuses };
+
+  // Votes effacés par un juré : annulés, jamais supprimés.
+  const annules: string[] = [];
+  for (const id of annulations) {
+    if (selection.etat !== "OUVERTE") {
+      refuses.push({ id, raison: "Le concours n'est plus ouvert : le vote ne s'efface plus.", reessayer: false });
+      continue;
+    }
+    await prisma.suffrage.updateMany({
+      where: { id, origine: "TABLETTE", annuleLe: null, participation: { selectionId } },
+      data: { annuleLe: new Date() },
+    });
+    // Déjà annulé, ou jamais reçu : il n'y a plus rien à faire, la tablette peut l'oublier.
+    annules.push(id);
+  }
+  return { acceptes, refuses, annules };
 }

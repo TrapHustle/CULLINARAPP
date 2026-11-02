@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Détail des votes</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap">
+<style>
+/* Maquette : détail des votes depuis le classement (page Résultats de l'espace
+   organisateur). Jetons repris de src/components/espace/panel.module.css. */
+:root {
+  --bleu: #1768e5; --bleu-fonce: #0c55c2; --bleu-pale: #e2edff; --bleu-texte: #1259c9;
+  --encre: #0d1830; --gris: #47546b; --gris-clair: #5b6880;
+  --filet: #d6dde8; --filet-doux: #e3e8f0; --fond: #e9eef5; --surface: #ffffff; --tete: #f3f6fa;
+  --vert: #157a56; --vert-pale: #daf4e9; --orange: #9a5b00; --orange-pale: #fff1d6;
+  --rouge: #b42318; --rouge-pale: #fde8e6; --or: #f2c443; --argent: #d3d9e3; --bronze: #e2b48a;
+  --ombre: 0 1px 2px rgba(13,24,48,.06), 0 6px 18px rgba(13,24,48,.05);
+  --ombre-tiroir: -18px 0 50px rgba(13,24,48,.18);
+  --voile: rgba(13,24,48,.38);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bleu: #3b82f6; --bleu-fonce: #2563eb; --bleu-pale: #172a4d; --bleu-texte: #8ab6ff;
+    --encre: #eef2f8; --gris: #b5c0d2; --gris-clair: #93a0b6;
+    --filet: #2a3a57; --filet-doux: #22314b; --fond: #0b1426; --surface: #121e35; --tete: #16243f;
+    --vert: #6fd3a8; --vert-pale: #12342a; --orange: #f0b45a; --orange-pale: #33260f;
+    --rouge: #f28b82; --rouge-pale: #3a1716;
+    --ombre: 0 1px 2px rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.25);
+    --ombre-tiroir: -18px 0 50px rgba(0,0,0,.5); --voile: rgba(0,0,0,.55);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bleu: #3b82f6; --bleu-fonce: #2563eb; --bleu-pale: #172a4d; --bleu-texte: #8ab6ff;
+  --encre: #eef2f8; --gris: #b5c0d2; --gris-clair: #93a0b6;
+  --filet: #2a3a57; --filet-doux: #22314b; --fond: #0b1426; --surface: #121e35; --tete: #16243f;
+  --vert: #6fd3a8; --vert-pale: #12342a; --orange: #f0b45a; --orange-pale: #33260f;
+  --rouge: #f28b82; --rouge-pale: #3a1716;
+  --ombre: 0 1px 2px rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.25);
+  --ombre-tiroir: -18px 0 50px rgba(0,0,0,.5); --voile: rgba(0,0,0,.55);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: "Outfit", system-ui, sans-serif; background: var(--fond); color: var(--encre); }
+button { font: inherit; color: inherit; }
+.page { max-width: 1240px; margin: 0 auto; padding: 28px 24px 60px; }
+.note-maquette { font-size: 13px; color: var(--gris-clair); margin-bottom: 14px; }
+.note-maquette b { color: var(--bleu-texte); }
+
+/* Classement ----------------------------------------------------------- */
+.carte { background: var(--surface); border: 1px solid var(--filet); border-radius: 16px; box-shadow: var(--ombre); overflow: hidden; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--gris); font-weight: 700;
+     padding: 16px 20px; background: var(--tete); border-bottom: 1px solid var(--filet); white-space: nowrap; }
+td { padding: 14px 20px; border-bottom: 1px solid var(--filet-doux); vertical-align: middle; }
+tr:last-child td { border-bottom: 0; }
+.nombre { text-align: right; }
+.medaille { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--argent); font-weight: 700; color: #0d1830; }
+.m1 { background: var(--or); } .m3 { background: var(--bronze); }
+.candidat { display: flex; align-items: center; gap: 14px; font-weight: 700; font-size: 16px; }
+.portrait { width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; font-weight: 800; font-size: 15px; color: #fff; flex: none; }
+/* La cellule d'un type est un bouton : on touche « 83,33 » pour voir ses votes. */
+.cellule { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; flex-direction: column; align-items: flex-end;
+           padding: 8px 10px; margin: -8px -10px; border-radius: 10px; min-width: 110px; transition: background .15s; }
+.cellule:hover, .cellule:focus-visible { background: var(--bleu-pale); }
+.cellule:focus-visible { outline: 2px solid var(--bleu); outline-offset: 1px; }
+.cellule .valeur { font-size: 17px; font-weight: 500; }
+.cellule .volume { font-size: 13px; color: var(--gris-clair); display: inline-flex; align-items: center; gap: 4px; }
+.cellule:hover .volume, .cellule:focus-visible .volume { color: var(--bleu-texte); text-decoration: underline; text-underline-offset: 3px; }
+.cellule .fleche { opacity: 0; transition: opacity .15s; }
+.cellule:hover .fleche, .cellule:focus-visible .fleche { opacity: 1; }
+.cellule.vide { cursor: default; }
+.cellule.vide:hover { background: none; }
+.cellule.vide .volume { text-decoration: none; color: var(--gris-clair); }
+.finale { font-size: 20px; font-weight: 700; }
+.btn { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--filet); background: var(--surface); border-radius: 10px;
+       padding: 9px 14px; font-weight: 600; font-size: 14px; cursor: pointer; white-space: nowrap; }
+.btn:hover { border-color: var(--bleu); color: var(--bleu-texte); }
+.btn-plein { background: var(--bleu); border-color: var(--bleu); color: #fff; }
+.btn-plein:hover { background: var(--bleu-fonce); color: #fff; }
+.aide { margin-top: 12px; font-size: 13px; color: var(--gris-clair); display: flex; gap: 8px; align-items: center; }
+
+/* Barre au-dessus du classement, avec le menu d'export */
+.barre { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+.barre h1 { margin: 0 0 2px; font-size: 24px; }
+.menu-export { position: relative; }
+.menu { position: absolute; right: 0; top: calc(100% + 8px); width: 340px; max-width: calc(100vw - 32px); background: var(--surface);
+        border: 1px solid var(--filet); border-radius: 14px; box-shadow: 0 14px 40px rgba(13,24,48,.18); padding: 6px; z-index: 5; }
+.menu button { all: unset; box-sizing: border-box; cursor: pointer; display: block; width: 100%; padding: 10px 12px; border-radius: 10px; }
+.menu button:hover, .menu button:focus-visible { background: var(--bleu-pale); }
+.menu b { display: block; font-size: 15px; }
+.menu small { color: var(--gris-clair); font-size: 13px; }
+.menu .option { display: flex; gap: 8px; align-items: center; padding: 10px 12px 8px; border-top: 1px solid var(--filet-doux); margin-top: 4px; font-size: 14px; font-weight: 600; }
+@media (max-width: 760px) { .menu { left: 0; right: auto; } }
+
+/* Cartes (téléphone) */
+.cartes { display: none; list-style: none; margin: 0; padding: 0; gap: 12px; flex-direction: column; }
+.c-carte { background: var(--surface); border: 1px solid var(--filet); border-radius: 16px; padding: 16px; box-shadow: var(--ombre); }
+.c-haut { display: flex; align-items: center; gap: 12px; }
+.c-haut .medaille { width: 36px; height: 36px; font-size: 14px; }
+.c-haut .portrait { width: 40px; height: 40px; }
+.c-nom { flex: 1; font-weight: 700; }
+.c-note { text-align: right; } .c-note strong { font-size: 22px; display: block; } .c-note span { font-size: 12px; color: var(--gris-clair); }
+.c-types { margin-top: 12px; display: grid; gap: 6px; }
+.c-type { all: unset; cursor: pointer; display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center;
+          padding: 10px 12px; border-radius: 10px; background: var(--tete); font-size: 14px; }
+.c-type:active, .c-type:hover { background: var(--bleu-pale); }
+.c-type small { color: var(--gris-clair); }
+.c-type b { font-weight: 700; }
+
+@media (max-width: 760px) {
+  .page { padding: 18px 16px 40px; }
+  .carte, .aide { display: none; }
+  .cartes { display: flex; }
+}
+
+/* Tiroir de détail ------------------------------------------------------ */
+.voile { position: fixed; inset: 0; background: var(--voile); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 10; }
+.voile.ouvert { opacity: 1; pointer-events: auto; }
+.tiroir { position: fixed; top: 0; right: 0; bottom: 0; width: min(760px, 100vw); background: var(--surface); box-shadow: var(--ombre-tiroir);
+          transform: translateX(100%); transition: transform .25s cubic-bezier(.2,.8,.2,1); z-index: 11; display: flex; flex-direction: column; }
+.tiroir.ouvert { transform: none; }
+@media (max-width: 760px) {
+  .tiroir { top: auto; width: 100vw; height: 92vh; border-radius: 18px 18px 0 0; transform: translateY(100%); }
+}
+@media (prefers-reduced-motion: reduce) { .tiroir, .voile { transition: none; } }
+.t-tete { padding: 20px 24px 0; border-bottom: 1px solid var(--filet); }
+.t-ligne { display: flex; align-items: center; gap: 14px; }
+.t-ligne .portrait { width: 52px; height: 52px; }
+.t-titre { flex: 1; min-width: 0; }
+.t-titre small { display: block; color: var(--gris-clair); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; }
+.t-titre h2 { margin: 2px 0 0; font-size: 22px; }
+.t-fermer { all: unset; cursor: pointer; width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; font-size: 22px; color: var(--gris); }
+.t-fermer:hover { background: var(--tete); }
+.onglets { display: flex; gap: 4px; margin-top: 16px; overflow-x: auto; scrollbar-width: none; }
+.onglet { all: unset; cursor: pointer; padding: 10px 14px; border-bottom: 3px solid transparent; font-weight: 600; color: var(--gris); white-space: nowrap; }
+.onglet b { font-weight: 700; margin-left: 6px; color: var(--encre); }
+.onglet[aria-selected="true"] { color: var(--bleu-texte); border-color: var(--bleu); }
+.onglet[aria-selected="true"] b { color: var(--bleu-texte); }
+.t-corps { flex: 1; overflow: auto; padding: 20px 24px 28px; }
+@media (max-width: 760px) { .t-tete { padding: 16px 16px 0; } .t-corps { padding: 16px; } .t-titre h2 { font-size: 19px; } }
+
+.calcul { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: center; padding: 16px 18px; border-radius: 14px; background: var(--bleu-pale); }
+.calcul .gros { font-size: 34px; font-weight: 800; color: var(--bleu-texte); line-height: 1; }
+.calcul .gros span { font-size: 15px; font-weight: 600; color: var(--gris); }
+.calcul p { margin: 0; font-size: 14px; color: var(--encre); line-height: 1.5; }
+.calcul p small { display: block; color: var(--gris); }
+@media (max-width: 520px) { .calcul { grid-template-columns: 1fr; gap: 8px; } }
+
+.criteres { display: grid; gap: 10px; margin: 18px 0 6px; }
+.critere { display: grid; grid-template-columns: 150px 1fr 70px; gap: 12px; align-items: center; font-size: 14px; }
+.piste { height: 8px; background: var(--filet-doux); border-radius: 8px; overflow: hidden; }
+.piste i { display: block; height: 100%; background: var(--bleu); border-radius: 8px; }
+.critere .v { text-align: right; font-weight: 600; }
+@media (max-width: 520px) { .critere { grid-template-columns: 1fr 64px; } .critere .piste { grid-column: 1 / -1; grid-row: 2; } }
+
+h3 { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--gris); margin: 24px 0 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+h3 .btn { letter-spacing: 0; text-transform: none; font-size: 13px; padding: 7px 12px; color: var(--encre); }
+.detail { width: 100%; font-size: 14px; border: 1px solid var(--filet); border-radius: 12px; border-collapse: separate; border-spacing: 0; overflow: hidden; }
+.detail th { font-size: 11px; padding: 10px 12px; letter-spacing: .1em; }
+.detail td { padding: 10px 12px; }
+.detail tr.annule td { color: var(--gris-clair); }
+.detail tr.annule td.barre { text-decoration: line-through; }
+.detail tfoot td { background: var(--tete); font-weight: 700; border-top: 1px solid var(--filet); }
+.etiquette { display: inline-block; padding: 3px 9px; border-radius: 100px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.e-ok { background: var(--vert-pale); color: var(--vert); }
+.e-att { background: var(--orange-pale); color: var(--orange); }
+.e-ko { background: var(--rouge-pale); color: var(--rouge); }
+.e-neutre { background: var(--tete); color: var(--gris); border: 1px solid var(--filet); }
+.mono { font-variant-numeric: tabular-nums; }
+.doux { color: var(--gris-clair); font-size: 13px; }
+.defile { overflow-x: auto; }
+.vide-detail { padding: 28px; text-align: center; color: var(--gris-clair); border: 1px dashed var(--filet); border-radius: 12px; }
+.filtres { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.filtre { all: unset; cursor: pointer; padding: 6px 12px; border-radius: 100px; border: 1px solid var(--filet); font-size: 13px; font-weight: 600; color: var(--gris); }
+.filtre[aria-pressed="true"] { background: var(--encre); border-color: var(--encre); color: var(--surface); }
+
+/* Sur téléphone, chaque vote devient une petite carte : pas de tableau à faire défiler. */
+.v-cartes { display: none; gap: 8px; }
+.v-carte { border: 1px solid var(--filet); border-radius: 12px; padding: 12px 14px; font-size: 14px; }
+.v-carte.annule { opacity: .65; }
+.v-l1 { display: flex; justify-content: space-between; gap: 10px; font-weight: 700; }
+.v-l2 { display: flex; justify-content: space-between; gap: 10px; margin-top: 4px; color: var(--gris); font-size: 13px; flex-wrap: wrap; }
+@media (max-width: 600px) { .defile { display: none; } .v-cartes { display: grid; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <p class="note-maquette"><b>Maquette</b> · Page Résultats d'une sélection. Touchez une note (ex. « 83,33 · 5 vote(s) ») ou le bouton <b>Détails</b>.</p>
+
+  <div class="barre">
+    <div><h1>Classement</h1><span class="doux">Grand Prix des Saveurs · Sélection Yopougon · provisoire, mis à jour à 21:16</span></div>
+    <div class="menu-export">
+      <button class="btn btn-plein" id="exporter" aria-haspopup="true" aria-expanded="false">⤓ Exporter <span aria-hidden="true">▾</span></button>
+      <div class="menu" id="menu" role="menu" hidden>
+        <button role="menuitem"><b>Excel (.xlsx)</b><small>Classement, puis une feuille par type de vote avec chaque vote et chaque paiement</small></button>
+        <button role="menuitem"><b>PDF · procès-verbal</b><small>Classement prêt à imprimer, avec le calcul, la date et les signatures du jury</small></button>
+        <button role="menuitem"><b>CSV</b><small>Classement seul, pour un autre logiciel</small></button>
+        <label class="option"><input type="checkbox" checked> Inclure le détail des votes <small>(Excel et PDF)</small></label>
+      </div>
+    </div>
+  </div>
+
+  <section class="carte">
+    <table>
+      <thead><tr id="entete"></tr></thead>
+      <tbody id="corps"></tbody>
+    </table>
+  </section>
+  <p class="aide">ⓘ Touchez une note pour voir les votes qui la composent.</p>
+
+  <ol class="cartes" id="cartes"></ol>
+</div>
+
+<div class="voile" id="voile"></div>
+<aside class="tiroir" id="tiroir" role="dialog" aria-modal="true" aria-labelledby="t-nom">
+  <div class="t-tete">
+    <div class="t-ligne">
+      <div class="portrait" id="t-portrait"></div>
+      <div class="t-titre"><small id="t-rang"></small><h2 id="t-nom"></h2></div>
+      <button class="t-fermer" id="fermer" aria-label="Fermer">✕</button>
+    </div>
+    <div class="onglets" role="tablist" id="onglets"></div>
+  </div>
+  <div class="t-corps" id="t-corps"></div>
+</aside>
+
+<script>
+// Données d'exemple : cohérentes avec le calcul réel (moyenne des totaux sur
+// le barème ; vote en ligne en part des voix, mode A).
+const PRIX = 200;
+const types = [
+  { id: "jury", libelle: "Jury", part: 40, canal: "SALLE",
+    criteres: [["Goût", 10], ["Présentation", 10], ["Créativité", 10]] },
+  { id: "salle", libelle: "Salle", part: 30, canal: "SALLE",
+    criteres: [["Goût", 10], ["Présentation", 10], ["Envie d'y revenir", 10]] },
+  { id: "ligne", libelle: "Vote en ligne", part: 30, canal: "EN_LIGNE" },
+];
+const moyens = { WAVE: "Wave", ORANGE_MONEY: "Orange Money", MTN: "MTN MoMo", CARD: "Carte" };
+
+const candidats = [
+  { id: "k", nom: "Koffi N'Guessan", ville: "Yopougon", couleur: "#2f7d5b", rang: 1, finale: 71.31,
+    jury: [
+      { votant: "Juré 1", table: "Table A", v: [9, 9, 9], h: "20:41" },
+      { votant: "Juré 2", table: "Table A", v: [8, 8, 8], h: "20:43" },
+      { votant: "Juré 3", table: "Table A", v: [9, 7, 7], h: "20:44", annule: "Corrigé à 20:52" },
+      { votant: "Juré 3", table: "Table A", v: [9, 8, 9], h: "20:52", correction: true },
+      { votant: "Mme Diabaté (jury spécial)", table: "Table B", v: [8, 8, 7], h: "20:47" },
+      { votant: "Juré 1", table: "Table B", v: [9, 8, 8], h: "20:49" },
+    ],
+    salle: [
+      { votant: "Votant 1", table: "Tablette salle 1", v: [10, 9, 9], h: "21:02" },
+      { votant: "Votant 2", table: "Tablette salle 1", v: [9, 9, 9], h: "21:03" },
+      { votant: "Votant 3", table: "Tablette salle 1", v: [10, 10, 9], h: "21:05" },
+      { votant: "Votant 1", table: "Tablette salle 2", v: [9, 8, 9], h: "21:04" },
+      { votant: "Votant 2", table: "Tablette salle 2", v: [10, 9, 9], h: "21:06" },
+      { votant: "Votant 3", table: "Tablette salle 2", v: [9, 9, 10], h: "21:08" },
+    ],
+    paiements: [
+      ["14/10 18:02", "PAY-8F21K", "WAVE", "0707124512", 50, "CONFIRMED"],
+      ["14/10 19:47", "PAY-8F2Q9", "ORANGE_MONEY", "0544890317", 20, "CONFIRMED"],
+      ["15/10 08:15", "PAY-8F3A2", "MTN", "0556120943", 10, "FAILED"],
+      ["15/10 12:30", "PAY-8F3H7", "WAVE", "0102339871", 40, "CONFIRMED"],
+      ["15/10 21:04", "PAY-8F4C0", "CARD", null, 35, "CONFIRMED"],
+      ["16/10 10:11", "PAY-8F4M3", "WAVE", "0707124512", 30, "CONFIRMED"],
+      ["16/10 16:40", "PAY-8F5B8", "ORANGE_MONEY", "0789553201", 35, "CONFIRMED"],
+      ["16/10 22:58", "PAY-8F5T1", "WAVE", "0161728833", 15, "PENDING"],
+      ["17/10 09:02", "SIM-0042", "WAVE", "0700000000", 100, "CONFIRMED", true],
+    ] },
+  { id: "a", nom: "Aminata Diallo", ville: "Cocody", couleur: "#9b3b2e", rang: 2, finale: 63.02,
+    jury: [
+      { votant: "Juré 1", table: "Table A", v: [9, 9, 9], h: "20:55" },
+      { votant: "Juré 2", table: "Table A", v: [9, 9, 9], h: "20:56" },
+      { votant: "Mme Diabaté (jury spécial)", table: "Table B", v: [8, 9, 9], h: "20:58" },
+      { votant: "Juré 1", table: "Table B", v: [9, 9, 8], h: "21:00" },
+    ],
+    salle: [
+      { votant: "Votant 4", table: "Tablette salle 1", v: [3, 3, 2], h: "21:11" },
+      { votant: "Votant 5", table: "Tablette salle 1", v: [3, 2, 2], h: "21:12" },
+      { votant: "Votant 4", table: "Tablette salle 2", v: [3, 3, 3], h: "21:12" },
+      { votant: "Votant 5", table: "Tablette salle 2", v: [2, 3, 3], h: "21:14" },
+      { votant: "Votant 6", table: "Tablette salle 2", v: [3, 2, 3], h: "21:15" },
+    ],
+    paiements: [
+      ["14/10 17:20", "PAY-8E90A", "WAVE", "0749201188", 100, "CONFIRMED"],
+      ["14/10 20:05", "PAY-8E9K2", "ORANGE_MONEY", "0577410922", 80, "CONFIRMED"],
+      ["15/10 11:47", "PAY-8EA31", "WAVE", "0102994410", 60, "CONFIRMED"],
+      ["15/10 18:22", "PAY-8EAZ8", "MTN", "0555018273", 41, "CONFIRMED"],
+      ["16/10 09:30", "PAY-8EB77", "WAVE", "0749201188", 70, "CONFIRMED"],
+      ["16/10 21:13", "PAY-8EBV4", "CARD", null, 50, "CONFIRMED"],
+      ["17/10 07:55", "PAY-8EC02", "ORANGE_MONEY", "0788660041", 20, "FAILED"],
+    ] },
+];
+
+const fr = (n, d = 2) => n.toLocaleString("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d });
+const ent = (n) => n.toLocaleString("fr-FR");
+// Numéro masqué : l'organisateur voit qui a payé sans exposer le numéro entier.
+const masque = (t) => t ? `${t.slice(0, 2)} ${t.slice(2, 4)} •• •• ${t.slice(8)}` : "—";
+const initiales = (n) => n.split(/\s+/).map((m) => m[0]).slice(0, 2).join("").toUpperCase();
+const somme = (a) => a.reduce((x, y) => x + y, 0);
+
+function stats(c, t) {
+  if (t.canal === "EN_LIGNE") {
+    const ok = c.paiements.filter((p) => p[5] === "CONFIRMED" && !p[6]);
+    const voix = somme(ok.map((p) => p[4]));
+    const totalConcours = somme(candidats.map((k) => somme(k.paiements.filter((p) => p[5] === "CONFIRMED" && !p[6]).map((p) => p[4]))));
+    return { voix, totalConcours, note: totalConcours ? (voix / totalConcours) * 100 : null, volume: voix, unite: "voix" };
+  }
+  const votes = c[t.id].filter((v) => !v.annule);
+  const bareme = somme(t.criteres.map((k) => k[1]));
+  const moyenne = votes.length ? somme(votes.map((v) => somme(v.v))) / votes.length : null;
+  return { votes, bareme, moyenne, note: moyenne === null ? null : (moyenne / bareme) * 100, volume: votes.length, unite: "vote(s)" };
+}
+
+// Classement ---------------------------------------------------------------
+document.getElementById("entete").innerHTML =
+  `<th>Rang</th><th>Candidat</th>` +
+  types.map((t) => `<th class="nombre">${t.libelle} · ${t.part} %</th>`).join("") +
+  `<th class="nombre">Note finale / 100</th><th></th>`;
+
+const portrait = (c, cls = "") => `<div class="portrait ${cls}" style="background:${c.couleur}">${initiales(c.nom)}</div>`;
+
+document.getElementById("corps").innerHTML = candidats.map((c) => `
+  <tr>
+    <td><span class="medaille m${c.rang}">${c.rang}</span></td>
+    <td><div class="candidat">${portrait(c)}${c.nom}</div></td>
+    ${types.map((t) => {
+      const s = stats(c, t);
+      return `<td class="nombre"><button class="cellule" data-c="${c.id}" data-t="${t.id}"
+        aria-label="Voir les ${s.volume} ${s.unite} ${t.libelle} de ${c.nom}">
+        <span class="valeur">${s.note === null ? "—" : fr(s.note)}</span>
+        <span class="volume">${ent(s.volume)} ${s.unite} <span class="fleche">›</span></span></button></td>`;
+    }).join("")}
+    <td class="nombre finale">${fr(c.finale)}</td>
+    <td class="nombre"><button class="btn" data-c="${c.id}">Détails</button></td>
+  </tr>`).join("");
+
+document.getElementById("cartes").innerHTML = candidats.map((c) => `
+  <li class="c-carte">
+    <div class="c-haut"><span class="medaille m${c.rang}">${c.rang}</span>${portrait(c)}
+      <div class="c-nom">${c.nom}</div>
+      <div class="c-note"><strong>${fr(c.finale)}</strong><span>/ 100</span></div></div>
+    <div class="c-types">${types.map((t) => {
+      const s = stats(c, t);
+      return `<button class="c-type" data-c="${c.id}" data-t="${t.id}"><span>${t.libelle} · ${t.part} %<br><small>${ent(s.volume)} ${s.unite}</small></span>
+        <b>${s.note === null ? "—" : fr(s.note)}</b><span aria-hidden="true">›</span></button>`;
+    }).join("")}</div>
+  </li>`).join("");
+
+// Tiroir -------------------------------------------------------------------
+const tiroir = document.getElementById("tiroir");
+const voile = document.getElementById("voile");
+let courant = null, dernierFocus = null;
+
+function ouvrir(cId, tId) {
+  dernierFocus = document.activeElement;
+  courant = candidats.find((c) => c.id === cId);
+  document.getElementById("t-portrait").outerHTML = portrait(courant).replace('class="portrait ', 'id="t-portrait" class="portrait ');
+  document.getElementById("t-nom").textContent = courant.nom;
+  document.getElementById("t-rang").textContent = `${courant.rang}ᵉ · ${fr(courant.finale)} / 100 · Détail des votes`;
+  document.getElementById("onglets").innerHTML = types.map((t) => {
+    const s = stats(courant, t);
+    return `<button class="onglet" role="tab" data-t="${t.id}">${t.libelle}<b>${s.note === null ? "—" : fr(s.note)}</b></button>`;
+  }).join("");
+  afficher(tId || types[0].id);
+  tiroir.classList.add("ouvert"); voile.classList.add("ouvert");
+  document.getElementById("fermer").focus();
+}
+function fermer() {
+  tiroir.classList.remove("ouvert"); voile.classList.remove("ouvert");
+  dernierFocus?.focus();
+}
+
+function afficher(tId) {
+  const t = types.find((x) => x.id === tId);
+  document.querySelectorAll(".onglet").forEach((o) => o.setAttribute("aria-selected", o.dataset.t === tId));
+  document.getElementById("t-corps").innerHTML = t.canal === "EN_LIGNE" ? vueEnLigne(t) : vueSalle(t);
+  document.querySelectorAll(".filtre").forEach((f) => f.addEventListener("click", () => filtrer(f)));
+}
+
+function vueSalle(t) {
+  const s = stats(courant, t);
+  const lignes = courant[t.id];
+  if (!lignes.length) return `<div class="vide-detail">Aucun vote ${t.libelle} pour ce candidat.</div>`;
+  const moyCrit = t.criteres.map((k, i) => somme(s.votes.map((v) => v.v[i])) / s.votes.length);
+  const annules = lignes.filter((v) => v.annule).length;
+  return `
+    <div class="calcul">
+      <div class="gros">${fr(s.note)}<span> / 100</span></div>
+      <p>Moyenne des ${s.votes.length} votes : <b>${fr(s.moyenne)} / ${s.bareme}</b> points, ramenée sur 100.
+        <small>${fr(s.moyenne)} ÷ ${s.bareme} × 100 = ${fr(s.note)} · compte pour ${t.part} % de la note finale${annules ? ` · ${annules} vote corrigé, non compté` : ""}</small></p>
+    </div>
+    <h3>Moyenne par critère</h3>
+    <div class="criteres">${t.criteres.map(([lib, max], i) => `
+      <div class="critere"><span>${lib}</span><div class="piste"><i style="width:${moyCrit[i] / max * 100}%"></i></div>
+      <span class="v mono">${fr(moyCrit[i], 1)} / ${max}</span></div>`).join("")}
+    </div>
+    <h3>Chaque vote <button class="btn">Exporter (CSV)</button></h3>
+    <div class="defile"><table class="detail">
+      <thead><tr><th>Votant</th><th>Tablette</th>${t.criteres.map(([l, m]) => `<th class="nombre">${l} /${m}</th>`).join("")}<th class="nombre">Total /${s.bareme}</th><th class="nombre">Heure</th></tr></thead>
+      <tbody>${lignes.map((v) => `
+        <tr class="${v.annule ? "annule" : ""}">
+          <td>${v.votant}${v.annule ? `<br><span class="etiquette e-neutre">${v.annule}</span>` : ""}${v.correction ? ` <span class="etiquette e-ok">correction</span>` : ""}</td>
+          <td class="doux">${v.table}</td>
+          ${v.v.map((x) => `<td class="nombre mono barre">${x}</td>`).join("")}
+          <td class="nombre mono barre"><b>${somme(v.v)}</b></td>
+          <td class="nombre mono doux">${v.h}</td>
+        </tr>`).join("")}</tbody>
+      <tfoot><tr><td colspan="2">Moyenne (${s.votes.length} votes comptés)</td>${moyCrit.map((m) => `<td class="nombre mono">${fr(m, 1)}</td>`).join("")}<td class="nombre mono">${fr(s.moyenne)}</td><td></td></tr></tfoot>
+    </table></div>
+    <div class="v-cartes">${lignes.map((v) => `
+      <div class="v-carte ${v.annule ? "annule" : ""}">
+        <div class="v-l1"><span>${v.votant}</span><span class="mono">${v.annule ? `<s>${somme(v.v)}</s>` : somme(v.v)} / ${s.bareme}</span></div>
+        <div class="v-l2"><span>${t.criteres.map(([l], i) => `${l} ${v.v[i]}`).join(" · ")}</span><span>${v.table} · ${v.h}</span></div>
+        ${v.annule ? `<div class="v-l2"><span class="etiquette e-neutre">${v.annule}</span></div>` : ""}
+      </div>`).join("")}</div>`;
+}
+
+function vueEnLigne(t) {
+  const s = stats(courant, t);
+  const statut = (p) => p[6] ? `<span class="etiquette e-neutre">simulé · non compté</span>`
+    : p[5] === "CONFIRMED" ? `<span class="etiquette e-ok">confirmé</span>`
+    : p[5] === "PENDING" ? `<span class="etiquette e-att">en attente</span>`
+    : `<span class="etiquette e-ko">échoué</span>`;
+  const compte = (p) => p[5] === "CONFIRMED" && !p[6];
+  const ok = courant.paiements.filter(compte);
+  return `
+    <div class="calcul">
+      <div class="gros">${fr(s.note)}<span> / 100</span></div>
+      <p><b>${ent(s.voix)} voix</b> sur les ${ent(s.totalConcours)} voix confirmées de la sélection.
+        <small>${ent(s.voix)} ÷ ${ent(s.totalConcours)} × 100 = ${fr(s.note)} · ${ok.length} paiements · ${ent(s.voix * PRIX)} FCFA encaissés · compte pour ${t.part} %</small></p>
+    </div>
+    <h3>Paiements <button class="btn">Exporter (CSV)</button></h3>
+    <div class="filtres">
+      <button class="filtre" aria-pressed="true" data-f="tous">Tous · ${courant.paiements.length}</button>
+      <button class="filtre" aria-pressed="false" data-f="ok">Comptés · ${ok.length}</button>
+      <button class="filtre" aria-pressed="false" data-f="non">Non comptés · ${courant.paiements.length - ok.length}</button>
+    </div>
+    <div class="defile"><table class="detail">
+      <thead><tr><th>Date</th><th>Référence</th><th>Moyen</th><th>Téléphone</th><th class="nombre">Voix</th><th class="nombre">Montant</th><th>Statut</th></tr></thead>
+      <tbody>${courant.paiements.map((p) => `
+        <tr class="${compte(p) ? "" : "annule"}" data-compte="${compte(p)}">
+          <td class="mono doux">${p[0]}</td><td class="mono">${p[1]}</td><td>${moyens[p[2]]}</td><td class="mono">${masque(p[3])}</td>
+          <td class="nombre mono barre"><b>${ent(p[4])}</b></td><td class="nombre mono">${ent(p[4] * PRIX)} F</td><td>${statut(p)}</td>
+        </tr>`).join("")}</tbody>
+      <tfoot><tr><td colspan="4">Total compté</td><td class="nombre mono">${ent(s.voix)}</td><td class="nombre mono">${ent(s.voix * PRIX)} F</td><td></td></tr></tfoot>
+    </table></div>
+    <div class="v-cartes">${courant.paiements.map((p) => `
+      <div class="v-carte ${compte(p) ? "" : "annule"}" data-compte="${compte(p)}">
+        <div class="v-l1"><span>${ent(p[4])} voix · ${ent(p[4] * PRIX)} F</span>${statut(p)}</div>
+        <div class="v-l2"><span>${moyens[p[2]]} · ${masque(p[3])}</span><span class="mono">${p[0]} · ${p[1]}</span></div>
+      </div>`).join("")}</div>`;
+}
+
+function filtrer(f) {
+  document.querySelectorAll(".filtre").forEach((x) => x.setAttribute("aria-pressed", x === f));
+  document.querySelectorAll("[data-compte]").forEach((el) => {
+    const c = el.dataset.compte === "true";
+    el.style.display = f.dataset.f === "tous" || (f.dataset.f === "ok") === c ? "" : "none";
+  });
+}
+
+const boutonExport = document.getElementById("exporter");
+const menu = document.getElementById("menu");
+const basculerMenu = (ouvert) => { menu.hidden = !ouvert; boutonExport.setAttribute("aria-expanded", ouvert); };
+boutonExport.addEventListener("click", (e) => { e.stopPropagation(); basculerMenu(menu.hidden); });
+menu.addEventListener("click", (e) => { e.stopPropagation(); if (e.target.closest("[role=menuitem]")) basculerMenu(false); });
+document.addEventListener("click", () => basculerMenu(false));
+
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-c]");
+  if (b) return ouvrir(b.dataset.c, b.dataset.t);
+  const o = e.target.closest(".onglet");
+  if (o) return afficher(o.dataset.t);
+});
+document.getElementById("fermer").addEventListener("click", fermer);
+voile.addEventListener("click", fermer);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && tiroir.classList.contains("ouvert")) fermer(); });
+</script>
+</body>
+</html>

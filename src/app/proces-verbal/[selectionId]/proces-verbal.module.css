@@ -1,0 +1,187 @@
+/* Procès-verbal : une feuille A4, noir sur blanc, quel que soit le thème. */
+
+.page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 32px 60px;
+  background: #fff;
+  color: #0d1830;
+  font-size: 13px;
+  line-height: 1.5;
+  color-scheme: light;
+  /* Fond blanc jusqu'aux bords de la fenêtre, même en thème sombre. */
+  box-shadow: 0 0 0 100vmax #fff;
+  clip-path: inset(0 -100vmax);
+}
+
+.imprimer {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 12px;
+  background: #1768e5;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgb(13 24 48 / 0.2);
+}
+
+.entete {
+  padding-bottom: 16px;
+  border-bottom: 2px solid #0d1830;
+}
+
+.surtitre {
+  margin: 0;
+  color: #1259c9;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.entete h1 {
+  margin: 4px 0 0;
+  font-size: 26px;
+  line-height: 1.2;
+}
+
+.selection {
+  margin: 2px 0 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.etat {
+  margin: 8px 0 0;
+  color: #47546b;
+}
+
+.page h2 {
+  margin: 24px 0 8px;
+  font-size: 15px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.page p {
+  margin: 0;
+}
+
+.tableau {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tableau th,
+.tableau td {
+  padding: 6px 8px;
+  border: 1px solid #c9d2df;
+  text-align: left;
+  vertical-align: top;
+}
+
+.tableau th {
+  background: #f1f4f9;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.nombre {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.volume {
+  display: block;
+  color: #5b6880;
+  font-size: 11px;
+}
+
+.finale {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.doux {
+  color: #5b6880;
+}
+
+.marque {
+  margin-left: 4px;
+  color: #1259c9;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.annule td {
+  color: #8a94a6;
+  text-decoration: line-through;
+}
+
+.signatures > div {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.signature {
+  padding: 12px;
+  border: 1px solid #c9d2df;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  font-weight: 700;
+}
+
+.ligneSignature {
+  padding-bottom: 4px;
+  border-bottom: 1px dotted #8a94a6;
+  color: #5b6880;
+  font-weight: 400;
+}
+
+.annexe {
+  break-before: page;
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 24px 16px 80px;
+  }
+
+  .signatures > div {
+    grid-template-columns: 1fr;
+  }
+
+  .tableau {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+
+  .page {
+    max-width: none;
+    padding: 0;
+  }
+
+  .imprimer {
+    display: none;
+  }
+
+  .tableau tr {
+    break-inside: avoid;
+  }
+}

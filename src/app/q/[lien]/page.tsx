@@ -11,15 +11,15 @@ export async function generateMetadata({ params }: { params: Promise<{ lien: str
   const type = await lirePageQr(lien);
   if (!type) return { title: "Vote introuvable" };
   const title = `${type.libelle} · ${type.selection.evenement.nom}`;
-  const action = type.canal === "SALLE" && type.avecCriteres ? "Notez les candidats" : "Votez pour votre candidat préféré";
+  const action = (type.canal === "SALLE" || type.canal === "UNIQUE") && type.avecCriteres ? "Notez les candidats" : "Votez pour votre candidat préféré";
   return { title, description: `${action} · ${type.selection.libelle}`, robots: { index: false } };
 }
 
 /**
- * Page ouverte par le lien ou le QR code d'un type de vote : vote "QR" ou en
- * salle, sur une tablette de la salle ou sur le téléphone du votant. Par voix
- * (un candidat par numéro) ou, pour un vote en salle avec critères, une note
- * par candidat.
+ * Page ouverte par le lien ou le QR code d'un type de vote : vote "QR",
+ * unique, en ligne gratuit ou en salle, sur une tablette de la salle ou sur
+ * le téléphone du votant. Par voix (un candidat par numéro) ou, pour un vote
+ * avec critères, une note par candidat.
  */
 export default async function PageVoteQr({ params }: { params: Promise<{ lien: string }> }) {
   const { lien } = await params;
@@ -27,10 +27,10 @@ export default async function PageVoteQr({ params }: { params: Promise<{ lien: s
   if (!type) notFound();
   // Le lien du vote en ligne mène à sa page publique.
   if (type.canal === "EN_LIGNE") redirect(`/v/${type.selection.slug}`);
-  if (type.canal !== "QR" && type.canal !== "SALLE") notFound();
+  if (!["QR", "UNIQUE", "GRATUIT", "SALLE"].includes(type.canal)) notFound();
 
   const { selection } = type;
-  const avecNotes = type.canal === "SALLE" && type.avecCriteres;
+  const avecNotes = (type.canal === "SALLE" || type.canal === "UNIQUE") && type.avecCriteres;
   return (
     <div className={outfit.className}>
       <VoteQr

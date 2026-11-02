@@ -147,7 +147,7 @@ async function typesDuNiveau(niveau: Niveau) {
     : prisma.typeVote.findMany({ where: { selectionId: niveau.id }, select: { id: true, canal: true, ordre: true } });
 }
 
-/** Un seul type en ligne par grille : la page publique n'en propose qu'un. */
+/** Un seul type en ligne payant par grille : la page publique n'en propose qu'un. */
 async function enLigneEnDouble(niveau: Niveau, saisie: SaisieTypeVote, typeId?: string): Promise<boolean> {
   if (saisie.canal !== "EN_LIGNE") return false;
   const types = await typesDuNiveau(niveau);
@@ -156,7 +156,7 @@ async function enLigneEnDouble(niveau: Niveau, saisie: SaisieTypeVote, typeId?: 
 
 const DOUBLON_EN_LIGNE = {
   ok: false as const,
-  erreur: "Cette grille a déjà un type de vote en ligne : il ne peut y en avoir qu'un.",
+  erreur: "Cette grille a déjà un type de vote en ligne payant : il ne peut y en avoir qu'un.",
 };
 
 export async function ajouterType(organisationId: string, niveau: Niveau, saisie: SaisieTypeVote): Promise<Resultat> {
@@ -188,8 +188,8 @@ export async function modifierType(
   if (controle.valeur.ouverte) {
     const actuel = await prisma.typeVote.findFirst({ where: { id: typeId, selectionId: niveau.id } });
     if (!actuel) return INTROUVABLE;
-    if (actuel.canal !== saisie.canal || actuel.part !== saisie.part || actuel.acces !== saisie.acces) {
-      return { ok: false, erreur: "La sélection est ouverte : le canal, la part et l'accès ne changent plus." };
+    if (actuel.canal !== saisie.canal || actuel.part !== saisie.part || actuel.acces !== saisie.acces || actuel.actif !== saisie.actif) {
+      return { ok: false, erreur: "La sélection est ouverte : le canal, la part, l'accès et l'activation ne changent plus." };
     }
   }
 

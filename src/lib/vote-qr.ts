@@ -6,7 +6,8 @@ import { prisma } from "./prisma";
 import { identifiantQr, type LigneNumero } from "./vote-qr-core";
 
 /**
- * Vote par lien (`/q/<lien>`) : votes "QR" et votes en salle. Accès à la base.
+ * Vote par lien (`/q/<lien>`) : votes "QR", "UNIQUE", "GRATUIT" et votes en
+ * salle. Accès à la base.
  *
  * Côté public : on tape son numéro, puis
  *  - vote par voix (QR, ou en salle sans critère) : on choisit un candidat,
@@ -21,17 +22,20 @@ import { identifiantQr, type LigneNumero } from "./vote-qr-core";
 
 const INTROUVABLE = { ok: false as const, erreur: "Introuvable." };
 
-/** Les canaux qui se votent par `/q/<lien>`. Le vote en ligne a sa page `/v/<slug>`. */
-const CANAUX_LIEN = ["QR", "SALLE"];
+/** Les canaux qui se votent par `/q/<lien>`. Le vote en ligne payant a sa page `/v/<slug>`. */
+const CANAUX_LIEN = ["QR", "UNIQUE", "GRATUIT", "SALLE"];
+
+/** Canaux dont le lien s'ouvre et se ferme seul, sans suivre le vote en salle. */
+const CANAUX_AUTONOMES = ["QR", "UNIQUE", "GRATUIT"];
 
 /** Vote par voix (un candidat par numéro), par opposition à la notation sur critères. */
 function parVoix(t: { canal: string; avecCriteres: boolean }) {
-  return t.canal === "QR" || (t.canal === "SALLE" && !t.avecCriteres);
+  return t.canal === "QR" || t.canal === "GRATUIT" || ((t.canal === "SALLE" || t.canal === "UNIQUE") && !t.avecCriteres);
 }
 
-/** Vote en salle noté sur critères. */
+/** Vote noté sur critères (en salle ou vote unique). */
 function parNotes(t: { canal: string; avecCriteres: boolean }) {
-  return t.canal === "SALLE" && t.avecCriteres;
+  return (t.canal === "SALLE" || t.canal === "UNIQUE") && t.avecCriteres;
 }
 
 /**
@@ -73,16 +77,17 @@ export const lirePageQr = cache(async (lien: string) => {
 export function voteQrOuvert(
   t: {
     canal: string;
+    actif: boolean;
     ouvert: boolean;
     selection: { etat: string; fin: Date | null; voteSalleOuvert: boolean; evenement: { organisation: { actif: boolean } } };
   },
   maintenant = new Date(),
 ): boolean {
   const lienOuvert =
-    t.canal === "QR"
+    CANAUX_AUTONOMES.includes(t.canal)
       ? t.ouvert && (t.selection.fin === null || t.selection.fin > maintenant)
       : t.canal === "SALLE" && t.ouvert && t.selection.voteSalleOuvert;
-  return lienOuvert && t.selection.etat === "OUVERTE" && t.selection.evenement.organisation.actif;
+  return t.actif && lienOuvert && t.selection.etat === "OUVERTE" && t.selection.evenement.organisation.actif;
 }
 
 /** `notes` : pour un vote noté, les candidats que ce numéro a déjà notés. */
@@ -90,13 +95,30 @@ export type ResultatNumero = { ok: true; notes?: string[] } | { ok: false; erreu
 
 const NON_RECONNU = "Numéro non reconnu. Ce vote est réservé aux personnes inscrites : rapprochez-vous de l'organisateur.";
 const DEJA_VOTE = "Ce numéro a déjà voté. Une seule voix par personne.";
+const DEJA_VOTE_CONCOURS = "Ce numéro a déjà voté gratuitement dans ce concours. Une seule voix gratuite par personne.";
 const DEJA_NOTE = "Vous avez déjà noté ce candidat. Une seule note par personne et par candidat.";
+
+/**
+ * Le vote en ligne gratuit donne une seule voix par numéro pour tout le
+ * concours, toutes sélections confondues.
+ */
+async function aVoteGratuitDansLeConcours(evenementId: string, identifiant: string): Promise<boolean> {
+  const deja = await prisma.votant.findFirst({
+    where: { identifiant, typeVote: { canal: "GRATUIT", selection: { evenementId } } },
+    select: { id: true },
+  });
+  return deja !== null;
+}
 
 /**
  * Contrôle du numéro avant de montrer les candidats. Le vote le refait de toute façon.
  * `unParNumero` : le numéro ne vote qu'une fois en tout (vote par voix).
  */
-async function controlerNumero(type: { id: string; acces: string }, telephone: string, unParNumero = true) {
+async function controlerNumero(
+  type: { id: string; acces: string; canal: string; selection: { evenementId: string } },
+  telephone: string,
+  unParNumero = true,
+) {
   const identifiant = identifiantQr(telephone, type.acces);
   if (!identifiant) {
     return { ok: false as const, erreur: "Numéro invalide. Exemple : 07 00 00 00 00." };
@@ -114,6 +136,9 @@ async function controlerNumero(type: { id: string; acces: string }, telephone: s
       select: { id: true },
     });
     if (deja) return { ok: false as const, erreur: DEJA_VOTE };
+    if (type.canal === "GRATUIT" && (await aVoteGratuitDansLeConcours(type.selection.evenementId, identifiant))) {
+      return { ok: false as const, erreur: DEJA_VOTE_CONCOURS };
+    }
   }
   return { ok: true as const, identifiant };
 }
@@ -152,7 +177,14 @@ export async function voterQr(lien: string, participationId: string, telephone: 
         data: { selectionId: type.selectionId, typeVoteId: type.id, identifiant: c.identifiant },
       });
       await tx.suffrage.create({
-        data: { id: randomUUID(), participationId, typeVoteId: type.id, poids: 1, origine: "QR", votantId: votant.id },
+        data: {
+          id: randomUUID(),
+          participationId,
+          typeVoteId: type.id,
+          poids: 1,
+          origine: type.canal === "GRATUIT" ? "GRATUIT" : "QR",
+          votantId: votant.id,
+        },
       });
     });
   } catch (erreur) {
@@ -251,7 +283,7 @@ export async function lireLiens(organisationId: string, selectionId: string) {
   };
 }
 
-/** Un type de l'organisation qui se vote par `/q/<lien>` ("QR" ou en salle), ou rien. */
+/** Un type de l'organisation qui se vote par `/q/<lien>`, ou rien. */
 async function typeQr(organisationId: string, typeVoteId: string) {
   return prisma.typeVote.findFirst({
     where: { id: typeVoteId, canal: { in: CANAUX_LIEN }, selection: { evenement: { organisationId } } },

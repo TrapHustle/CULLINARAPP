@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FormulaireSelection, SupprimerSelection } from "@/components/espace/formulaires-evenement";
+import { BoutonOuvrir } from "@/components/espace/bouton-ouvrir";
 import { FormulaireAction } from "@/components/espace/formulaire-action";
 import { Icone } from "@/components/espace/icone";
 import styles from "@/components/espace/panel.module.css";
@@ -37,14 +38,14 @@ export default async function PagePilotage({
 
   const controles = controlesDe(selection);
   const pret = peutOuvrir(controles);
-  const enLigne = selection.typesVote.some((t) => t.canal === "EN_LIGNE");
+  const enLigne = selection.typesVote.some((t) => t.canal === "EN_LIGNE" && t.actif);
   // Ouverte : classement en direct ; clôturée : classement figé de l'archive.
   const resultats = selection.etat === "PREPAREE" ? null : await vueResultats(utilisateur.organisationId, selectionId);
   const suivante = selection.etat === "CLOTUREE" ? await selectionSuivante(evenementId, selection.rang) : null;
   const proposes = resultats ? qualifiesProposes(resultats.lignes, selection.nbQualifies) : new Set<string>();
   const base = `/espace/e/${evenementId}/selections/${selectionId}`;
   // Un type noté sans critère : ni fiche ni tablette ne peuvent le noter, sa part est perdue.
-  const sansCriteres = selection.typesVote.filter((t) => t.avecCriteres && t.criteres.length === 0);
+  const sansCriteres = selection.typesVote.filter((t) => t.actif && t.avecCriteres && t.criteres.length === 0);
 
   return (
     <>
@@ -67,7 +68,14 @@ export default async function PagePilotage({
                 boutonEnvoi="Ouverture…"
                 confirmer="Ouvrir la sélection au vote ? La grille et le mode de calcul seront figés."
               />
-            ) : null}
+            ) : (
+              <BoutonOuvrir
+                base={base}
+                manques={controles
+                  .filter((c) => !c.ok)
+                  .map((c) => ({ libelle: c.libelle, points: c.points?.length ? c.points : [c.detail ?? ""], onglet: c.onglet ?? "" }))}
+              />
+            )}
           </div>
           <ul className={styles.controles}>
             {controles.map((c) => (
@@ -231,7 +239,7 @@ export default async function PagePilotage({
         </section>
       ) : null}
 
-      <section className={styles.carte}>
+      <section id="informations" className={styles.carte}>
         <div className={styles.carteHaut} style={{ paddingBottom: 0 }}>
           <div>
             <h2 className={styles.carteTitre}>Informations</h2>

@@ -36,6 +36,29 @@ describe("grille de vote", () => {
     expect(typeVoteSchema.safeParse({ libelle: "Invités", canal: "QR", avecCriteres: false, acces: "PRIVE", part: "30" }).success).toBe(false);
   });
 
+  it("ne contrôle que les types activés : leurs parts font 100 %", () => {
+    const jury = { libelle: "Jury", canal: "SALLE", avecCriteres: true, part: 60, criteres: [{}] };
+    const enLigne = { libelle: "En ligne", canal: "EN_LIGNE", avecCriteres: false, part: 40, criteres: [] };
+    // Un type décoché, même sans part ni critère, ne gêne pas.
+    const unique = { libelle: "Secours", canal: "UNIQUE", actif: false, avecCriteres: true, part: 0, criteres: [] };
+    expect(problemesGrille([jury, enLigne, unique])).toEqual([]);
+    expect(problemesGrille([jury, { ...enLigne, actif: false }]).join(" ")).toMatch(/60 %/);
+    expect(problemesGrille([{ ...jury, actif: false }])).toEqual(["Activez au moins un type de vote."]);
+  });
+
+  it("propose de passer en vote par voix un type noté sans critère", () => {
+    const p = problemesGrille([{ libelle: "Jury", canal: "SALLE", avecCriteres: true, part: 100, criteres: [] }]);
+    expect(p.join(" ")).toMatch(/ajoutez des critères, ou passez-le en vote par voix/);
+  });
+
+  it("vote unique : critères et accès au choix ; en ligne gratuit : toujours des voix", () => {
+    const base = { libelle: "Secours", avecCriteres: true, acces: "RESTREINT", part: "20" };
+    const unique = typeVoteSchema.parse({ ...base, canal: "UNIQUE" });
+    expect(unique).toMatchObject({ canal: "UNIQUE", avecCriteres: true, acces: "RESTREINT", actif: true });
+    const gratuit = typeVoteSchema.parse({ ...base, canal: "GRATUIT", actif: false });
+    expect(gratuit).toMatchObject({ canal: "GRATUIT", avecCriteres: false, acces: "RESTREINT", actif: false });
+  });
+
   it("lit une part décimale à la française", () => {
     expect(typeVoteSchema.parse({ libelle: "Jury", canal: "SALLE", avecCriteres: true, part: "33,5" }).part).toBe(33.5);
     expect(typeVoteSchema.safeParse({ libelle: "Jury", canal: "SALLE", avecCriteres: true, part: "120" }).success).toBe(false);
@@ -78,6 +101,18 @@ describe("contrôle d'ouverture", () => {
 
   it("laisse ouvrir une sélection complète", () => {
     expect(peutOuvrir(controlesOuverture(prete))).toBe(true);
+  });
+
+  it("indique où corriger chaque manque", () => {
+    const controles = controlesOuverture({ ...prete, participations: [], prixVote: 0 });
+    const ko = controles.filter((c) => !c.ok).map((c) => c.onglet);
+    expect(ko).toEqual(["candidats", "en-ligne"]);
+  });
+
+  it("ignore le vote en ligne payant décoché", () => {
+    const sansEnLigne = types.map((t) => (t.canal === "EN_LIGNE" ? { ...t, actif: false } : t));
+    const grille = sansEnLigne.map((t) => (t.libelle === "Jury" ? { ...t, part: 70 } : t));
+    expect(peutOuvrir(controlesOuverture({ ...prete, types: grille, moyensPaiement: [] }))).toBe(true);
   });
 
   it("bloque sans deux candidats disponibles, en mode B sans palier, ou avec une fin passée", () => {

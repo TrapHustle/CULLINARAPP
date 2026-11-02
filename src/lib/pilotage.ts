@@ -54,7 +54,7 @@ export async function ouvrir(organisationId: string, selectionId: string): Promi
     where: { id: selectionId, etat: "PREPAREE" },
     data: {
       etat: "OUVERTE",
-      voteEnLigneOuvert: s.typesVote.some((t) => t.canal === "EN_LIGNE"),
+      voteEnLigneOuvert: s.typesVote.some((t) => t.canal === "EN_LIGNE" && t.actif),
       voteSalleOuvert: true,
       debut: s.debut ?? maintenant,
     },
@@ -64,6 +64,8 @@ export async function ouvrir(organisationId: string, selectionId: string): Promi
     where: { selectionId, disponible: true, ouverteLe: null },
     data: { ouverteLe: maintenant },
   });
+  // Le vote en ligne gratuit s'ouvre avec la sélection, comme le payant.
+  await prisma.typeVote.updateMany({ where: { selectionId, canal: "GRATUIT", actif: true }, data: { ouvert: true } });
   return OK;
 }
 
@@ -71,7 +73,7 @@ export async function ouvrir(organisationId: string, selectionId: string): Promi
 export async function basculerEnLigne(organisationId: string, selectionId: string, ouvert: boolean): Promise<Resultat> {
   const s = await prisma.selection.findFirst({
     where: { id: selectionId, evenement: { organisationId } },
-    include: { typesVote: { where: { canal: "EN_LIGNE" }, select: { id: true } } },
+    include: { typesVote: { where: { canal: "EN_LIGNE", actif: true }, select: { id: true } } },
   });
   if (!s) return INTROUVABLE;
   if (s.etat !== "OUVERTE") return { ok: false, erreur: "Le vote en ligne ne se règle que sur une sélection ouverte." };
@@ -155,7 +157,7 @@ function instantane(s: SelectionPilotage, r: Awaited<ReturnType<typeof calculerR
   return {
     calculeLe: new Date().toISOString(),
     modeEnLigne: s.modeEnLigne,
-    types: s.typesVote.map((t) => ({ id: t.id, libelle: t.libelle, part: t.part, canal: t.canal })),
+    types: s.typesVote.filter((t) => t.actif).map((t) => ({ id: t.id, libelle: t.libelle, part: t.part, canal: t.canal })),
     classement: r.classement.map((l) => ({
       rang: l.rang,
       note: l.note,

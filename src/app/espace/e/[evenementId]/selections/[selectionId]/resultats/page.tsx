@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { Portrait } from "@/components/espace/candidat";
+import { DetailVotes } from "@/components/espace/detail-votes";
 import { Icone } from "@/components/espace/icone";
 import styles from "@/components/espace/panel.module.css";
 import r from "@/components/espace/resultats.module.css";
@@ -30,6 +31,7 @@ export default async function PageResultats({
 
   const base = `/espace/e/${evenementId}/selections/${selectionId}/resultats`;
   const enDirect = vue.selection.etat === "OUVERTE";
+  const suffixeEssai = essai && !vue.figeLe ? "?essai=1" : "";
   const notes = vue.lignes.filter((l) => l.note !== null);
   const egalites = notes.some((l) => l.egalite);
   // Un type sans aucun vote sort du calcul (RG 8.4) : barré sur téléphone.
@@ -62,12 +64,23 @@ export default async function PageResultats({
               {essai ? "Vue officielle" : "Inclure les simulés"}
             </Link>
           ) : null}
-          <a
-            href={`/api/espace/resultats/${selectionId}${essai && !vue.figeLe ? "?essai=1" : ""}`}
-            className={`${styles.bouton} ${styles.boutonSecondaire} ${styles.boutonPetit}`}
-          >
-            Export CSV
-          </a>
+          <details className={r.export}>
+            <summary className={`${styles.bouton} ${styles.boutonSecondaire} ${styles.boutonPetit}`}>Exporter ▾</summary>
+            <div className={r.exportMenu}>
+              <a href={`/api/espace/resultats/${selectionId}/excel${suffixeEssai}`}>
+                <b>Excel (.xlsx)</b>
+                <small>Le classement, puis une feuille par type de vote avec chaque vote et chaque paiement</small>
+              </a>
+              <a href={`/proces-verbal/${selectionId}${suffixeEssai}`} target="_blank" rel="noreferrer">
+                <b>PDF · procès-verbal</b>
+                <small>Le classement prêt à imprimer ou à enregistrer en PDF, avec le calcul et les signatures du jury</small>
+              </a>
+              <a href={`/api/espace/resultats/${selectionId}${suffixeEssai}`}>
+                <b>CSV</b>
+                <small>Le classement seul, pour un autre logiciel</small>
+              </a>
+            </div>
+          </details>
           <a
             href={`/projection/${selectionId}`}
             target="_blank"
@@ -102,12 +115,13 @@ export default async function PageResultats({
                   </th>
                 ))}
                 <th className={styles.nombre}>Note finale / 100</th>
+                <th />
               </tr>
             </thead>
             <tbody>
               {vue.lignes.length === 0 ? (
                 <tr>
-                  <td colSpan={vue.types.length + 3}>Aucun candidat inscrit.</td>
+                  <td colSpan={vue.types.length + 4}>Aucun candidat inscrit.</td>
                 </tr>
               ) : null}
               {vue.lignes.map((l) => (
@@ -135,15 +149,33 @@ export default async function PageResultats({
                     const n = l.types.find((x) => x.typeVoteId === t.id);
                     return (
                       <td key={t.id} className={styles.nombre}>
-                        {sur100(n?.note ?? null)}
-                        <div style={{ color: "var(--gris)", fontSize: 12 }}>
-                          {(n?.volume ?? 0).toLocaleString("fr-FR")} {t.canal === "EN_LIGNE" ? "voix" : "vote(s)"}
-                        </div>
+                        {/* Toucher la note ouvre les votes qui la composent. */}
+                        <button
+                          type="button"
+                          className={r.cellule}
+                          data-detail-candidat={l.participationId}
+                          data-detail-type={t.id}
+                          aria-label={`Voir les votes ${t.libelle} de ${l.nom}`}
+                        >
+                          {sur100(n?.note ?? null)}
+                          <span className={r.volume}>
+                            {(n?.volume ?? 0).toLocaleString("fr-FR")} {t.canal === "EN_LIGNE" ? "voix" : "vote(s)"} ›
+                          </span>
+                        </button>
                       </td>
                     );
                   })}
                   <td className={`${styles.nombre} ${styles.fort}`} style={{ fontSize: 17 }}>
                     {sur100(l.note)}
+                  </td>
+                  <td className={styles.nombre}>
+                    <button
+                      type="button"
+                      className={`${styles.bouton} ${styles.boutonSecondaire} ${styles.boutonPetit}`}
+                      data-detail-candidat={l.participationId}
+                    >
+                      Détails
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -191,7 +223,7 @@ export default async function PageResultats({
                   const n = l.types.find((x) => x.typeVoteId === t.id);
                   const volume = n?.volume ?? 0;
                   return (
-                    <div key={t.id} className={r.ligne}>
+                    <button key={t.id} type="button" className={`${r.ligne} ${r.ligneBouton}`} data-detail-candidat={l.participationId} data-detail-type={t.id}>
                       <span className={r.libelle}>
                         {t.libelle}
                         {volume > 0 ? ` · ${volume.toLocaleString("fr-FR")} ${t.canal === "SALLE" ? "vote(s)" : "voix"}` : ""}
@@ -206,7 +238,7 @@ export default async function PageResultats({
                           </span>
                         </>
                       )}
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -214,6 +246,20 @@ export default async function PageResultats({
           ))}
         </ol>
       </div>
+
+      <DetailVotes
+        selectionId={selectionId}
+        essai={essai && !vue.figeLe}
+        types={vue.types}
+        candidats={vue.lignes.map((l) => ({
+          participationId: l.participationId,
+          nom: l.nom,
+          photoUrl: l.photoUrl,
+          rang: l.rang,
+          note: l.note,
+          types: l.types,
+        }))}
+      />
     </>
   );
 }

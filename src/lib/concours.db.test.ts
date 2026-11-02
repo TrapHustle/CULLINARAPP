@@ -119,7 +119,7 @@ describe.skipIf(!RUN)("concours de A à Z", () => {
     expect((await grille.ajouterCritere(orgA, niveau, jury.id, { libelle: "Oublié", bareme: 5 })).ok).toBe(true);
     const oublie = (await grille.lireGrille(orgA, niveau))[0].criteres.find((c) => c.libelle === "Oublié");
     expect(oublie && (await grille.supprimerCritere(orgA, niveau, jury.id, oublie.id)).ok).toBe(true);
-    const saisie = { libelle: "Jury", canal: "SALLE" as const, avecCriteres: true, acces: "OUVERT" as const };
+    const saisie = { libelle: "Jury", canal: "SALLE" as const, actif: true, avecCriteres: true, acces: "OUVERT" as const };
     expect((await grille.modifierType(orgA, niveau, jury.id, { ...saisie, part: jury.part })).ok).toBe(true);
     expect((await grille.modifierType(orgA, niveau, jury.id, { ...saisie, part: jury.part + 10 })).ok).toBe(false);
     expect(await grille.typesSansVote(s1)).toHaveLength(3);

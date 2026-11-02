@@ -1290,6 +1290,50 @@
   color: var(--rouge);
 }
 
+/* Popup « ce qui manque » avant ouverture ------------------------------------ */
+
+.dialogue {
+  width: min(92vw, 34rem);
+  border: 1px solid var(--filet);
+  border-radius: 16px;
+  padding: 0;
+  background: var(--fond-carte, #fff);
+  color: inherit;
+}
+
+.dialogue::backdrop {
+  background: rgb(0 0 0 / 0.45);
+}
+
+.dialogueCorps {
+  padding: 22px 24px;
+}
+
+.dialogueListe {
+  list-style: none;
+  margin: 16px 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.dialogueListe ul {
+  margin: 6px 0;
+  padding-left: 18px;
+  color: var(--gris);
+}
+
+.dialogueBas {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.pastilleViolette {
+  background: #f1eafe;
+  border-color: transparent;
+  color: #6d3fd1;
+}
+
 /* Critères ------------------------------------------------------------------ */
 
 .sousTitreCarte {

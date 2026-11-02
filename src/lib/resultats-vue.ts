@@ -37,7 +37,7 @@ export async function vueResultats(
     where: { id: selectionId, evenement: { organisationId } },
     include: {
       evenement: { select: { nom: true, afficheUrl: true } },
-      typesVote: { orderBy: { ordre: "asc" }, select: { id: true, libelle: true, part: true, canal: true } },
+      typesVote: { where: { actif: true }, orderBy: { ordre: "asc" }, select: { id: true, libelle: true, part: true, canal: true } },
       participations: { include: { candidat: { select: { photoUrl: true } } } },
       archives: { orderBy: { clotureLe: "desc" }, take: 1 },
     },

@@ -53,7 +53,7 @@ async function lirePagePubliqueSansCache(slug: string) {
     where: { slug },
     include: {
       evenement: { include: { organisation: { select: { nom: true, actif: true, paiementConfig: true } } } },
-      typesVote: { where: { canal: "EN_LIGNE" }, orderBy: [{ ordre: "asc" }, { id: "asc" }], select: { id: true, libelle: true } },
+      typesVote: { where: { canal: "EN_LIGNE", actif: true }, orderBy: [{ ordre: "asc" }, { id: "asc" }], select: { id: true, libelle: true } },
       participations: {
         where: { disponible: true },
         orderBy: [{ ordre: "asc" }, { id: "asc" }],
@@ -112,7 +112,7 @@ async function cible(slug: string, participationId: string) {
     where: { slug },
     include: {
       evenement: { include: { organisation: { select: { id: true, actif: true, paiementConfig: true } } } },
-      typesVote: { where: { canal: "EN_LIGNE" }, orderBy: [{ ordre: "asc" }, { id: "asc" }], select: { id: true } },
+      typesVote: { where: { canal: "EN_LIGNE", actif: true }, orderBy: [{ ordre: "asc" }, { id: "asc" }], select: { id: true } },
       participations: { where: { id: participationId }, include: { candidat: { select: { nom: true } } } },
     },
   });
@@ -324,7 +324,7 @@ export async function confirmerPaiement(paiementId: string, refPrestataire: stri
     const p = await tx.paiement.findUniqueOrThrow({ where: { id: paiementId } });
     // Candidat retiré entre-temps : le paiement reste une trace comptable (RG 6.7).
     if (!p.participationId || !p.selectionId) return true;
-    const type = await tx.typeVote.findFirst({ where: { selectionId: p.selectionId, canal: "EN_LIGNE" }, select: { id: true } });
+    const type = await tx.typeVote.findFirst({ where: { selectionId: p.selectionId, canal: "EN_LIGNE", actif: true }, select: { id: true } });
     if (!type) return true;
     await tx.suffrage.create({
       data: {
