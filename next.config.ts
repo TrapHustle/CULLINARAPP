@@ -37,7 +37,11 @@ const nextConfig: NextConfig = {
   // Adresse à partager au public : elle affiche la page de vote sans
   // redirection, l'adresse reste celle-ci dans le navigateur.
   async rewrites() {
-    return [{ source: "/talent-traiteur-vote-en-ligne", destination: "/voter" }];
+    return [
+      { source: "/talent-traiteur-vote-en-ligne", destination: "/voter" },
+      // Page de test d'impression RawBT (fiche technique), servie depuis public/.
+      { source: "/rawbt", destination: "/rawbt.html" },
+    ];
   },
 };
 

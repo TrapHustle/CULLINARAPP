@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Test RawBT · INOVYX TECH</title>
+<style>
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f3f6fb; color: #14202e;
+         font: 17px/1.5 system-ui, "Segoe UI", Roboto, sans-serif; text-align: center; }
+  .numero { font-size: 96px; font-weight: 800; color: #0b1f3a; line-height: 1; }
+  button { margin-top: 24px; padding: 22px 56px; border: 0; border-radius: 12px; background: #1768e5; color: #fff;
+           font: 800 24px/1 system-ui, sans-serif; text-transform: uppercase; letter-spacing: .06em; cursor: pointer; }
+  button:active { transform: translateY(1px); background: #0f56c4; }
+  p { color: #5b6670; font-size: 14px; }
+  a { color: #1768e5; }
+</style>
+</head>
+<body>
+<main>
+  <p>Prochain numéro</p>
+  <div class="numero" id="numero">1</div>
+  <button id="btn-imprimer">Imprimer</button>
+  <p><a href="#" id="remise">Recommencer à 1</a> · INOVYX TECH</p>
+</main>
+
+<script>
+const RAWBT = '#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;';
+
+function imprimerOctets(octets) {
+  let s = '';
+  for (const o of octets) s += String.fromCharCode(o);
+  location.href = 'intent:base64,' + btoa(s) + RAWBT;
+}
+
+const DEBUT  = [0x1B, 0x40];
+const CENTRE = [0x1B, 0x61, 1];
+const GRAS   = [0x1B, 0x45, 1],     NORMAL = [0x1B, 0x45, 0];
+const TRES_GROS = [0x1D, 0x21, 0x33],  PETIT = [0x1D, 0x21, 0];   // 4 fois plus grand
+const COUPE_PARTIELLE = [0x1B, 0x64, 4, 0x1D, 0x56, 1];
+const ligne = s => [...(s + '\n')].map(c => c.charCodeAt(0));
+const deux = n => String(n).padStart(2, '0');
+const dateHeure = (d = new Date()) =>
+  deux(d.getDate()) + '/' + deux(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + deux(d.getHours()) + ':' + deux(d.getMinutes());
+
+let numero = 1;
+try { numero = Number(localStorage.getItem('rawbt-numero')) || 1; } catch (e) {}
+const affichage = document.getElementById('numero');
+affichage.textContent = numero;
+
+document.getElementById('btn-imprimer').onclick = () => {
+  imprimerOctets([
+    ...DEBUT, ...CENTRE,
+    ...ligne('TICKET'),
+    ...TRES_GROS, ...GRAS, ...ligne(String(numero)), ...NORMAL, ...PETIT,
+    ...ligne(dateHeure()),
+    ...COUPE_PARTIELLE,
+  ]);
+  numero += 1;
+  affichage.textContent = numero;
+  try { localStorage.setItem('rawbt-numero', numero); } catch (e) {}
+};
+
+document.getElementById('remise').onclick = (e) => {
+  e.preventDefault();
+  numero = 1;
+  affichage.textContent = numero;
+  try { localStorage.setItem('rawbt-numero', 1); } catch (e) {}
+};
+</script>
+</body>
+</html>
