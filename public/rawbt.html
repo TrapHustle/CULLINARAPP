@@ -33,12 +33,42 @@ function imprimerOctets(octets) {
   location.href = 'intent:base64,' + btoa(s) + RAWBT;
 }
 
-const DEBUT  = [0x1B, 0x40];
-const CENTRE = [0x1B, 0x61, 1];
-const GRAS   = [0x1B, 0x45, 1],     NORMAL = [0x1B, 0x45, 0];
-const TRES_GROS = [0x1D, 0x21, 0x33],  PETIT = [0x1D, 0x21, 0];   // 4 fois plus grand
+const DEBUT = [0x1B, 0x40];
 // Pas de commande de coupe : RawBT coupe déjà le papier à la fin (réglage « Papier découpé »).
-const ligne = s => [...(s + '\n')].map(c => c.charCodeAt(0));
+const LARGEUR = 576;                                            // 80 mm ; 384 en 58 mm
+
+// Le texte envoyé en commandes utilise la petite police de l'imprimante :
+// on dessine donc le ticket dans un canvas de 576 points, puis on l'envoie en image.
+function canvasEnOctets(cv) {
+  const largeur = cv.width, h = cv.height;
+  const px = cv.getContext('2d').getImageData(0, 0, largeur, h).data, lb = largeur / 8;
+  const out = [0x1D, 0x76, 0x30, 0, lb & 255, lb >> 8, h & 255, h >> 8];
+  for (let y = 0; y < h; y++) for (let x = 0; x < lb; x++) {
+    let o = 0;
+    for (let b = 0; b < 8; b++) {
+      const i = (y * largeur + x * 8 + b) * 4;
+      if (px[i] + px[i + 1] + px[i + 2] < 384) o |= 0x80 >> b;  // pixel foncé = point noir
+    }
+    out.push(o);
+  }
+  return out;
+}
+
+function dessinerTicket(numero) {
+  const cv = document.createElement('canvas');
+  cv.width = LARGEUR; cv.height = 400;
+  const g = cv.getContext('2d');
+  g.fillStyle = '#fff'; g.fillRect(0, 0, cv.width, cv.height);
+  g.fillStyle = '#000'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = 'bold 44px Arial, sans-serif';
+  g.fillText('TICKET', LARGEUR / 2, 40);
+  g.font = 'bold 240px Arial, sans-serif';
+  g.fillText(String(numero), LARGEUR / 2, 195, LARGEUR - 20);   // le numéro occupe toute la largeur si besoin
+  g.font = '34px Arial, sans-serif';
+  g.fillText(dateHeure(), LARGEUR / 2, 360);
+  return cv;
+}
+
 const deux = n => String(n).padStart(2, '0');
 const dateHeure = (d = new Date()) =>
   deux(d.getDate()) + '/' + deux(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + deux(d.getHours()) + ':' + deux(d.getMinutes());
@@ -49,12 +79,7 @@ const affichage = document.getElementById('numero');
 affichage.textContent = numero;
 
 document.getElementById('btn-imprimer').onclick = () => {
-  imprimerOctets([
-    ...DEBUT, ...CENTRE,
-    ...ligne('TICKET'),
-    ...TRES_GROS, ...GRAS, ...ligne(String(numero)), ...NORMAL, ...PETIT,
-    ...ligne(dateHeure()),
-  ]);
+  imprimerOctets([...DEBUT, ...canvasEnOctets(dessinerTicket(numero))]);
   numero += 1;
   affichage.textContent = numero;
   try { localStorage.setItem('rawbt-numero', numero); } catch (e) {}
