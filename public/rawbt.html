@@ -37,7 +37,7 @@ const DEBUT  = [0x1B, 0x40];
 const CENTRE = [0x1B, 0x61, 1];
 const GRAS   = [0x1B, 0x45, 1],     NORMAL = [0x1B, 0x45, 0];
 const TRES_GROS = [0x1D, 0x21, 0x33],  PETIT = [0x1D, 0x21, 0];   // 4 fois plus grand
-const COUPE_PARTIELLE = [0x1B, 0x64, 4, 0x1D, 0x56, 1];
+// Pas de commande de coupe : RawBT coupe déjà le papier à la fin (réglage « Papier découpé »).
 const ligne = s => [...(s + '\n')].map(c => c.charCodeAt(0));
 const deux = n => String(n).padStart(2, '0');
 const dateHeure = (d = new Date()) =>
@@ -54,7 +54,6 @@ document.getElementById('btn-imprimer').onclick = () => {
     ...ligne('TICKET'),
     ...TRES_GROS, ...GRAS, ...ligne(String(numero)), ...NORMAL, ...PETIT,
     ...ligne(dateHeure()),
-    ...COUPE_PARTIELLE,
   ]);
   numero += 1;
   affichage.textContent = numero;
