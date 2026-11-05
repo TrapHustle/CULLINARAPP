@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { exigerEcriture } from "./espace";
 import type { EtatFormulaire } from "./evenements-actions";
 import { annulerSaisie, lireContexteFiche, lireFiche, saisirFiche, saisirVoix } from "./notes";
-import { basculerEnLigne, basculerSalle, cloturer, enregistrerQualifies, ouvrir, reporterQualifies } from "./pilotage";
+import { basculerEnLigne, basculerSalle, basculerTout, cloturer, enregistrerQualifies, ouvrir, reporterQualifies } from "./pilotage";
 
 function rafraichir() {
   revalidatePath("/espace", "layout");
@@ -33,6 +33,15 @@ export async function basculerSalleAction(selectionId: string, ouvert: boolean, 
   if (!r.ok) return { erreur: r.erreur };
   rafraichir();
   return { succes: ouvert ? "Vote en salle repris." : "Vote en salle suspendu." };
+}
+
+export async function basculerToutAction(evenementId: string, ouvert: boolean, _e: EtatFormulaire): Promise<EtatFormulaire> {
+  const utilisateur = await exigerEcriture();
+  const r = await basculerTout(utilisateur.organisationId, evenementId, ouvert);
+  if (!r.ok) return { erreur: r.erreur };
+  rafraichir();
+  const n = r.valeur > 1 ? `des ${r.valeur} sélections ouvertes` : "de la sélection ouverte";
+  return { succes: ouvert ? `Votes ${n} repris.` : `Votes ${n} suspendus.` };
 }
 
 export async function cloturerAction(selectionId: string, _e: EtatFormulaire, form: FormData): Promise<EtatFormulaire> {

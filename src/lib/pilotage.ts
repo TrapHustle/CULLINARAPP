@@ -92,6 +92,24 @@ export async function basculerSalle(organisationId: string, selectionId: string,
 }
 
 /**
+ * Reprend ou suspend d'un coup le vote en ligne et le vote en salle de toutes
+ * les sélections ouvertes d'un événement. Le vote en ligne ne reprend que là
+ * où la sélection en a un. Renvoie le nombre de sélections touchées.
+ */
+export async function basculerTout(organisationId: string, evenementId: string, ouvert: boolean): Promise<Resultat<number>> {
+  const ouvertes = { evenementId, etat: "OUVERTE", evenement: { organisationId } };
+  const [salle] = await prisma.$transaction([
+    prisma.selection.updateMany({ where: ouvertes, data: { voteSalleOuvert: ouvert } }),
+    prisma.selection.updateMany({
+      where: ouvert ? { ...ouvertes, typesVote: { some: { canal: "EN_LIGNE", actif: true } } } : ouvertes,
+      data: { voteEnLigneOuvert: ouvert },
+    }),
+  ]);
+  if (salle.count === 0) return { ok: false, erreur: "Aucune sélection n'est ouverte." };
+  return { ok: true, valeur: salle.count };
+}
+
+/**
  * Clôture : plus aucun vote n'est accepté, le classement officiel est figé
  * dans une archive (RG 9.5), et les qualifiés choisis sont enregistrés
  * (RG 9.2).

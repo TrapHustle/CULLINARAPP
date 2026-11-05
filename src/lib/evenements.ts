@@ -352,7 +352,7 @@ export async function chiffresEvenement(organisationId: string, evenementId: str
       orderBy: { rang: "asc" },
       include: {
         _count: { select: { participations: true } },
-        typesVote: { select: { id: true, canal: true } },
+        typesVote: { select: { id: true, canal: true, actif: true } },
       },
     }),
     prisma.participation.count({ where: filtre }),

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { FormulaireAction } from "@/components/espace/formulaire-action";
 import { Icone } from "@/components/espace/icone";
 import styles from "@/components/espace/panel.module.css";
 import { arrondi2 } from "@/lib/calcul";
@@ -8,6 +9,7 @@ import { exigerUtilisateur } from "@/lib/espace";
 import { chiffresEvenement, evenementDeLOrganisation } from "@/lib/evenements";
 import { LIBELLES_ETAT, type EtatSelection } from "@/lib/evenements-core";
 import { dateHeure, nombre, salutation } from "@/lib/format-espace";
+import { basculerEnLigneAction, basculerSalleAction, basculerToutAction } from "@/lib/pilotage-actions";
 import { calculerResultats } from "@/lib/resultats-saas";
 
 export const metadata: Metadata = { title: "Vue d’ensemble — DIGITALYX-VOTE" };
@@ -20,7 +22,52 @@ interface SelectionVue {
   fin: Date | null;
   voteEnLigneOuvert: boolean;
   voteSalleOuvert: boolean;
-  typesVote: { canal: string }[];
+  typesVote: { canal: string; actif?: boolean }[];
+}
+
+/**
+ * Interrupteurs du vote en ligne et du vote en salle d'une sélection ouverte,
+ * les mêmes que sur sa page de pilotage.
+ */
+function Interrupteurs({ selection, maintenant }: { selection: SelectionVue & { id: string }; maintenant: Date }) {
+  const enLigne = selection.typesVote.some((t) => t.canal === "EN_LIGNE" && t.actif !== false);
+  const finPassee = selection.fin !== null && selection.fin <= maintenant;
+  return (
+    <>
+      {enLigne ? (
+        <div className={styles.interrupteur}>
+          <div>
+            <strong>Vote en ligne {finPassee ? "terminé" : selection.voteEnLigneOuvert ? "ouvert" : "suspendu"}</strong>
+            <span>
+              {finPassee
+                ? `La date de fin (${dateHeure(selection.fin!)}) est passée : changez-la dans la sélection pour rouvrir.`
+                : "Page publique de vote et paiements."}
+            </span>
+          </div>
+          {finPassee && !selection.voteEnLigneOuvert ? null : (
+            <FormulaireAction
+              action={basculerEnLigneAction.bind(null, selection.id, !selection.voteEnLigneOuvert)}
+              bouton={selection.voteEnLigneOuvert ? "Suspendre" : "Reprendre"}
+              variante="secondaire"
+              discret
+            />
+          )}
+        </div>
+      ) : null}
+      <div className={styles.interrupteur}>
+        <div>
+          <strong>Vote en salle {selection.voteSalleOuvert ? "ouvert" : "suspendu"}</strong>
+          <span>Notes du jury, tablettes et liens de vote en salle.</span>
+        </div>
+        <FormulaireAction
+          action={basculerSalleAction.bind(null, selection.id, !selection.voteSalleOuvert)}
+          bouton={selection.voteSalleOuvert ? "Suspendre" : "Reprendre"}
+          variante="secondaire"
+          discret
+        />
+      </div>
+    </>
+  );
 }
 
 /** Pastilles d'état du vote en ligne et du vote en salle d'une sélection ouverte. */
@@ -56,10 +103,17 @@ export default async function PageVueEnsemble({ params }: { params: Promise<{ ev
   if (!evenement) notFound();
 
   const { selections, participations, voix, voixParSelection } = await chiffresEvenement(utilisateur.organisationId, evenementId);
-  const ouverte = selections.find((s) => s.etat === "OUVERTE") ?? null;
+  // Plusieurs sélections peuvent être ouvertes en même temps : chacune a sa carte.
+  const ouvertes = selections.filter((s) => s.etat === "OUVERTE");
   const prochaine = selections.find((s) => s.etat === "PREPAREE") ?? null;
-  const resultats = ouverte ? await calculerResultats(ouverte.id) : null;
-  const tete = resultats?.classement.filter((l) => l.note !== null).slice(0, TETE_DE_CLASSEMENT) ?? [];
+  const tetes = await Promise.all(
+    ouvertes.map(async (s) =>
+      (await calculerResultats(s.id)).classement.filter((l) => l.note !== null).slice(0, TETE_DE_CLASSEMENT),
+    ),
+  );
+  const toutOuvert = ouvertes.every(
+    (s) => s.voteSalleOuvert && (s.voteEnLigneOuvert || !s.typesVote.some((t) => t.canal === "EN_LIGNE" && t.actif)),
+  );
 
   const base = `/espace/e/${evenementId}`;
   const maintenant = new Date();
@@ -77,9 +131,11 @@ export default async function PageVueEnsemble({ params }: { params: Promise<{ ev
             {salutation()}, <em>{utilisateur.organisation.nom}</em>
           </h1>
           <p className={styles.sousTitre}>
-            {ouverte
-              ? `${evenement.nom} — « ${ouverte.libelle} » est ouverte au vote.`
-              : `${evenement.nom} — aucune sélection n’est ouverte au vote.`}
+            {ouvertes.length === 0
+              ? `${evenement.nom} — aucune sélection n’est ouverte au vote.`
+              : ouvertes.length === 1
+                ? `${evenement.nom} — « ${ouvertes[0].libelle} » est ouverte au vote.`
+                : `${evenement.nom} — ${ouvertes.length} sélections sont ouvertes au vote.`}
           </p>
         </div>
         <Link href={`${base}/selections`} className={`${styles.bouton} ${styles.boutonSecondaire}`}>
@@ -95,8 +151,12 @@ export default async function PageVueEnsemble({ params }: { params: Promise<{ ev
           </div>
           <span className={styles.chiffreLibelle}>Sélections</span>
           <strong className={styles.chiffreValeur}>{selections.length}</strong>
-          <span className={`${styles.chiffreDetail} ${ouverte ? styles.positif : ""}`}>
-            {ouverte ? "1 ouverte au vote" : selections.length === 0 ? "Aucune pour l’instant" : "Aucune ouverte"}
+          <span className={`${styles.chiffreDetail} ${ouvertes.length > 0 ? styles.positif : ""}`}>
+            {ouvertes.length > 0
+              ? `${ouvertes.length} ouverte${ouvertes.length > 1 ? "s" : ""} au vote`
+              : selections.length === 0
+                ? "Aucune pour l’instant"
+                : "Aucune ouverte"}
           </span>
         </div>
         <div className={styles.chiffre}>
@@ -117,9 +177,34 @@ export default async function PageVueEnsemble({ params }: { params: Promise<{ ev
         </div>
       </div>
 
-      <section className={styles.carte}>
-        {ouverte ? (
-          <>
+      {ouvertes.length > 0 ? (
+        <div className={styles.interrupteur} style={{ borderTop: 0, paddingInline: 0 }}>
+          <div>
+            <strong>
+              {ouvertes.length > 1 ? `${ouvertes.length} sélections ouvertes` : "1 sélection ouverte"}
+            </strong>
+            <span>Reprend ou suspend d&rsquo;un coup le vote en ligne et le vote en salle de toutes les sélections ouvertes.</span>
+          </div>
+          <div className={styles.ligneActions}>
+            <FormulaireAction
+              action={basculerToutAction.bind(null, evenementId, true)}
+              bouton="Tout reprendre"
+              variante={toutOuvert ? "secondaire" : undefined}
+            />
+            <FormulaireAction
+              action={basculerToutAction.bind(null, evenementId, false)}
+              bouton="Tout suspendre"
+              variante="secondaire"
+              confirmer="Suspendre le vote en ligne et le vote en salle de toutes les sélections ouvertes ?"
+            />
+          </div>
+        </div>
+      ) : null}
+
+      {ouvertes.map((ouverte, i) => {
+        const tete = tetes[i];
+        return (
+          <section key={ouverte.id} className={styles.carte}>
             <div className={styles.carteHaut}>
               <div>
                 <div className={styles.direct}>
@@ -164,6 +249,7 @@ export default async function PageVueEnsemble({ params }: { params: Promise<{ ev
                 </div>
               )}
             </div>
+            <Interrupteurs selection={ouverte} maintenant={maintenant} />
             <div className={styles.cartePied}>
               <span>
                 <Icone nom="cadenas" taille={15} /> Classement sur 100, recalculé à chaque vote
@@ -172,40 +258,46 @@ export default async function PageVueEnsemble({ params }: { params: Promise<{ ev
                 {nombre(ouverte._count.participations)} candidat{ouverte._count.participations > 1 ? "s" : ""}
               </strong>
             </div>
-          </>
-        ) : prochaine ? (
-          <div className={styles.carteHaut}>
-            <div>
-              <div className={styles.surtitre}>Prochaine sélection</div>
-              <h2 className={styles.carteTitre} style={{ marginTop: 8 }}>
-                {prochaine.libelle}
-              </h2>
-              <p className={styles.carteTexte}>
-                {[prochaine.lieu, prochaine.debut ? dateHeure(prochaine.debut) : null].filter(Boolean).join(" · ") ||
-                  LIBELLES_ETAT[prochaine.etat as EtatSelection]}
-              </p>
-            </div>
-            <Link href={`${base}/selections/${prochaine.id}`} className={`${styles.bouton} ${styles.boutonSecondaire}`}>
-              Préparer
-            </Link>
-          </div>
-        ) : (
-          <div className={styles.vide}>
-            <strong>{selections.length === 0 ? "Ajoutez votre première sélection" : "Toutes les sélections sont clôturées"}</strong>
-            {selections.length === 0
-              ? "Une sélection est un tour du concours : 1ʳᵉ sélection, demi-finale, finale…"
-              : "L’événement est terminé."}
-            {selections.length === 0 ? (
+          </section>
+        );
+      })}
+
+      {ouvertes.length > 0 ? null : (
+        <section className={styles.carte}>
+          {prochaine ? (
+            <div className={styles.carteHaut}>
               <div>
-                <Link href={`${base}/selections`} className={`${styles.bouton} ${styles.boutonPrincipal}`}>
-                  <Icone nom="plus" taille={16} />
-                  Ajouter une sélection
-                </Link>
+                <div className={styles.surtitre}>Prochaine sélection</div>
+                <h2 className={styles.carteTitre} style={{ marginTop: 8 }}>
+                  {prochaine.libelle}
+                </h2>
+                <p className={styles.carteTexte}>
+                  {[prochaine.lieu, prochaine.debut ? dateHeure(prochaine.debut) : null].filter(Boolean).join(" · ") ||
+                    LIBELLES_ETAT[prochaine.etat as EtatSelection]}
+                </p>
               </div>
-            ) : null}
-          </div>
-        )}
-      </section>
+              <Link href={`${base}/selections/${prochaine.id}`} className={`${styles.bouton} ${styles.boutonSecondaire}`}>
+                Préparer
+              </Link>
+            </div>
+          ) : (
+            <div className={styles.vide}>
+              <strong>{selections.length === 0 ? "Ajoutez votre première sélection" : "Toutes les sélections sont clôturées"}</strong>
+              {selections.length === 0
+                ? "Une sélection est un tour du concours : 1ʳᵉ sélection, demi-finale, finale…"
+                : "L’événement est terminé."}
+              {selections.length === 0 ? (
+                <div>
+                  <Link href={`${base}/selections`} className={`${styles.bouton} ${styles.boutonPrincipal}`}>
+                    <Icone nom="plus" taille={16} />
+                    Ajouter une sélection
+                  </Link>
+                </div>
+              ) : null}
+            </div>
+          )}
+        </section>
+      )}
 
       {selections.length > 0 ? (
         <section className={styles.carte}>
