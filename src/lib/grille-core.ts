@@ -17,9 +17,6 @@ export const LIBELLES_CANAL: Record<Canal, string> = {
   QR: "Par QR code",
 };
 
-/** Canaux notés sur critères au choix ; les autres comptent toujours des voix. */
-export const CANAUX_A_CRITERES: readonly string[] = ["SALLE", "UNIQUE"];
-
 /** Canaux dont on règle qui vote : tout numéro, ou une liste autorisée. */
 export const CANAUX_A_ACCES: readonly string[] = ["QR", "UNIQUE", "GRATUIT", "SALLE"];
 
@@ -89,12 +86,10 @@ export const typeVoteSchema = z
     acces: z.enum(ACCES, { message: "Choisissez qui peut voter." }).default("OUVERT"),
     part: decimal("La part est un pourcentage, par exemple 40.").refine((v) => v <= 100, "La part ne peut pas dépasser 100 %."),
   })
-  // Le vote en ligne (payant ou gratuit) et le vote par QR comptent des voix :
-  // jamais de critère (RG 4.2). Le vote en ligne payant n'a pas de liste de
-  // numéros.
+  // Tous les canaux se notent sur critères au choix (RG 4.2). Le vote en
+  // ligne payant n'a pas de liste de numéros.
   .transform((d) => ({
     ...d,
-    avecCriteres: CANAUX_A_CRITERES.includes(d.canal) ? d.avecCriteres : false,
     acces: d.canal === "EN_LIGNE" ? ("OUVERT" as const) : d.acces,
   }));
 

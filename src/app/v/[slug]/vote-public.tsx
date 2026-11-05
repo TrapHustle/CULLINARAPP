@@ -35,6 +35,12 @@ interface Candidat {
   voix: number | null;
 }
 
+interface Critere {
+  id: string;
+  libelle: string;
+  bareme: number;
+}
+
 interface Props {
   slug: string;
   evenement: { nom: string; sousTitre: string | null; afficheUrl: string | null; organisation: string };
@@ -53,6 +59,8 @@ interface Props {
   ouvert: boolean;
   simulation: boolean;
   voixMax: number;
+  /** Vote noté sur critères : un paiement achète une note. `null` : vote par voix. */
+  criteres: Critere[] | null;
   candidats: Candidat[];
 }
 
@@ -152,7 +160,7 @@ function Portrait({ candidat }: { candidat: Candidat }) {
 
 const estMoyen = (m: string): m is PaymentMethod => (PAYMENT_METHODS as readonly string[]).includes(m);
 
-export function VotePublic({ slug, evenement, selection, ouvert: ouvertServeur, simulation, voixMax, candidats }: Props) {
+export function VotePublic({ slug, evenement, selection, ouvert: ouvertServeur, simulation, voixMax, criteres, candidats }: Props) {
   const router = useRouter();
   const now = useMaintenant();
   const [query, setQuery] = useState("");
@@ -203,11 +211,12 @@ export function VotePublic({ slug, evenement, selection, ouvert: ouvertServeur, 
   // Compteurs visibles : du plus voté au moins voté, comme sur l'ancienne page.
   const total = candidats.reduce((s, c) => s + (c.voix ?? 0), 0);
   // Même classement que l'ancienne page : les ex aequo partagent leur rang.
-  const classes = selection.compteursVisibles
+  const classes = selection.compteursVisibles && !criteres
     ? rankByVotes(candidats.map((c) => ({ ...c, order: c.ordre, votes: c.voix ?? 0 })))
     : null;
   const ordonnes = classes ?? candidats;
   const rangs = new Map((classes ?? []).map((c) => [c.participationId, c.rank]));
+  const avecRangs = classes !== null;
   // Numéro de passage affiché d'après la position, pas la valeur brute de
   // `ordre` : les sélections créées avant la numérotation à 1 partent de 0.
   const numeros = new Map(candidats.map((c, i) => [c.participationId, i + 1]));
@@ -254,7 +263,9 @@ export function VotePublic({ slug, evenement, selection, ouvert: ouvertServeur, 
               <span className={ouvert ? styles.clDotOn : styles.clDotOff} />
               {ouvert ? "Vote ouvert" : "Vote fermé"}
             </span>
-            <span className={`${styles.clChip} ${styles.num}`}>{formatNumber(selection.prixVote)} FCFA le vote</span>
+            <span className={`${styles.clChip} ${styles.num}`}>
+              {formatNumber(selection.prixVote)} FCFA {criteres ? "la note" : "le vote"}
+            </span>
           </div>
           {cloture ? <p className={`${styles.clClose} ${styles.num}`}>{cloture}</p> : null}
         </div>
@@ -287,10 +298,10 @@ export function VotePublic({ slug, evenement, selection, ouvert: ouvertServeur, 
         ) : (
           <ol
             className={styles.clList}
-            aria-label={selection.compteursVisibles ? "Candidats, du plus voté au moins voté" : "Candidats, dans l'ordre de passage"}
+            aria-label={avecRangs ? "Candidats, du plus voté au moins voté" : "Candidats, dans l'ordre de passage"}
           >
             {affiches.map((c) => {
-              const rang = selection.compteursVisibles ? rangs.get(c.participationId) : undefined;
+              const rang = avecRangs ? rangs.get(c.participationId) : undefined;
               return (
                 <li key={c.participationId} className={styles.clCard}>
                   <div className={styles.clBanner}>
@@ -332,7 +343,7 @@ export function VotePublic({ slug, evenement, selection, ouvert: ouvertServeur, 
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <path d="M5 12.5l4.5 4.5L19 7.5" />
                       </svg>
-                      Voter
+                      {criteres ? "Noter" : "Voter"}
                     </button>
                   </div>
                 </li>
@@ -358,7 +369,11 @@ export function VotePublic({ slug, evenement, selection, ouvert: ouvertServeur, 
               </span>
             ))}
           </div>
-          <p>1 vote = {formatNumber(selection.prixVote)} FCFA. Chaque vote compte dès que le paiement est confirmé.</p>
+          <p>
+            {criteres
+              ? `1 note = ${formatNumber(selection.prixVote)} FCFA. Chaque note compte dès que le paiement est confirmé.`
+              : `1 vote = ${formatNumber(selection.prixVote)} FCFA. Chaque vote compte dès que le paiement est confirmé.`}
+          </p>
           {simulation ? <p>Aperçu : paiements simulés, aucune somme n&apos;est prélevée.</p> : null}
           <p>Vote organisé par {evenement.organisation} · © INOVYX TECH · Digitalyx Vote</p>
         </div>
@@ -375,6 +390,7 @@ export function VotePublic({ slug, evenement, selection, ouvert: ouvertServeur, 
           moyens={moyens}
           simulation={simulation}
           voixMax={voixMax}
+          criteres={criteres}
           referenceReprise={reprise?.participationId === candidatChoisi.participationId ? reprise.reference : undefined}
           onFermer={() => {
             if (reprise) ecartes.current.add(reprise.reference);
@@ -392,7 +408,7 @@ export function VotePublic({ slug, evenement, selection, ouvert: ouvertServeur, 
 /* Fenêtre de vote                                                      */
 /* ------------------------------------------------------------------ */
 
-type Etape = "form" | "paying" | "redirecting" | "checking" | "done" | "failed" | "merci";
+type Etape = "notation" | "form" | "paying" | "redirecting" | "checking" | "done" | "failed" | "merci";
 
 function Spinner({ title, detail }: { title: string; detail?: React.ReactNode }) {
   return (
@@ -411,6 +427,7 @@ function FenetreVote({
   moyens,
   simulation,
   voixMax,
+  criteres,
   referenceReprise,
   onFermer,
   onVote,
@@ -421,6 +438,7 @@ function FenetreVote({
   moyens: PaymentMethod[];
   simulation: boolean;
   voixMax: number;
+  criteres: Critere[] | null;
   /** Référence d'un paiement parti chez l'opérateur, à vérifier dès l'ouverture. */
   referenceReprise?: string;
   onFermer: () => void;
@@ -434,7 +452,11 @@ function FenetreVote({
   const [country, setCountry] = useState<PhoneCountry>(DEFAULT_PHONE_COUNTRY);
   const [phone, setPhone] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [step, setStep] = useState<Etape>(referenceReprise ? "checking" : "form");
+  // Noté sur critères : on note d'abord, on paie ensuite.
+  const debut: Etape = criteres && criteres.length > 0 ? "notation" : "form";
+  const [step, setStep] = useState<Etape>(referenceReprise ? "checking" : debut);
+  const [notes, setNotes] = useState<Record<string, number>>({});
+  const [critereIndex, setCritereIndex] = useState(0);
   const [reference, setReference] = useState<string | null>(referenceReprise ?? null);
   const [receipt, setReceipt] = useState<Recu | null>(null);
   const [merci, setMerci] = useState<string | null>(null);
@@ -455,7 +477,9 @@ function FenetreVote({
 
   const gratuit = onglet === "gratuit";
   const clamp = (value: number) => Math.max(1, Math.min(voixMax, value));
-  const amount = votes * selection.prixVote;
+  // Une note se paie toujours à l'unité.
+  const quantite = criteres ? 1 : votes;
+  const amount = quantite * selection.prixVote;
   const busy = step === "paying";
   // La voix gratuite n'accepte que les numéros ivoiriens : le pays ne se change pas.
   const pays = gratuit ? DEFAULT_PHONE_COUNTRY : country;
@@ -604,7 +628,7 @@ function FenetreVote({
     setStep("paying");
     try {
       const [result] = await Promise.all([
-        voterGratuitAction(slug, candidat.participationId, parsed.phone),
+        voterGratuitAction(slug, candidat.participationId, parsed.phone, criteres ? notes : undefined),
         new Promise((resolve) => setTimeout(resolve, MIN_PAYING_MS)),
       ]);
       if (!result.ok) {
@@ -651,7 +675,14 @@ function FenetreVote({
     setStep("paying");
     try {
       const [result] = await Promise.all([
-        payerAction({ slug, participationId: candidat.participationId, voix: votes, moyen: method, telephone: parsed.phone }),
+        payerAction({
+          slug,
+          participationId: candidat.participationId,
+          voix: quantite,
+          moyen: method,
+          telephone: parsed.phone,
+          valeurs: criteres ? notes : undefined,
+        }),
         new Promise((resolve) => setTimeout(resolve, MIN_PAYING_MS)),
       ]);
       if (!result.ok) {
@@ -683,7 +714,9 @@ function FenetreVote({
     setScolded(false);
     setCopied(false);
     setOnglet("payer");
-    setStep("form");
+    setNotes({});
+    setCritereIndex(0);
+    setStep(debut);
   }
 
   async function copyReference() {
@@ -740,7 +773,10 @@ function FenetreVote({
             <Portrait candidat={candidat} />
           </div>
           <div>
-            <span className={styles.eyebrow}>Voter pour{candidat.ville ? ` · ${candidat.ville}` : ""}</span>
+            <span className={styles.eyebrow}>
+              {criteres ? "Noter" : "Voter pour"}
+              {candidat.ville ? ` · ${candidat.ville}` : ""}
+            </span>
             <h2 id="vote-sheet-title">{candidat.nom}</h2>
           </div>
           {!busy ? (
@@ -752,9 +788,25 @@ function FenetreVote({
           ) : null}
         </div>
 
+        {step === "notation" && criteres && criteres[critereIndex] ? (
+          <Notation
+            criteres={criteres}
+            index={critereIndex}
+            notes={notes}
+            onNote={(id, valeur) => setNotes((n) => ({ ...n, [id]: valeur }))}
+            onAller={setCritereIndex}
+            onFin={() => {
+              setError(null);
+              setStep("form");
+            }}
+          />
+        ) : null}
+
         {step === "form" ? (
           <>
             <div className={styles.sheetBody}>
+              {criteres ? <RecapNotes criteres={criteres} notes={notes} onModifier={() => setStep("notation")} /> : null}
+
               {selection.voixGratuite ? (
                 <div className={styles.group}>
                   <span className={styles.label} id="vote-kind-label">
@@ -762,10 +814,10 @@ function FenetreVote({
                   </span>
                   <div className={styles.pay} role="group" aria-labelledby="vote-kind-label">
                     <button type="button" aria-pressed={gratuit} onClick={() => choisirOnglet("gratuit")}>
-                      Voix gratuite
+                      {criteres ? "Note gratuite" : "Voix gratuite"}
                     </button>
                     <button type="button" aria-pressed={!gratuit} onClick={() => choisirOnglet("payer")}>
-                      Acheter des votes
+                      {criteres ? "Payer ma note" : "Acheter des votes"}
                     </button>
                   </div>
                 </div>
@@ -773,29 +825,31 @@ function FenetreVote({
 
               {!gratuit ? (
                 <>
-                  <div className={styles.group}>
-                    <span className={styles.label} id="vote-count-label">
-                      Nombre de votes
-                    </span>
-                    <div className={styles.stepper}>
-                      <button type="button" onClick={() => setVotes((v) => clamp(v - 1))} aria-label="Un vote de moins">
-                        −
-                      </button>
-                      <input
-                        className={styles.num}
-                        type="number"
-                        inputMode="numeric"
-                        min={1}
-                        max={voixMax}
-                        value={votes}
-                        aria-labelledby="vote-count-label"
-                        onChange={(event) => setVotes(clamp(Number.parseInt(event.target.value, 10) || 1))}
-                      />
-                      <button type="button" onClick={() => setVotes((v) => clamp(v + 1))} aria-label="Un vote de plus">
-                        +
-                      </button>
+                  {criteres ? null : (
+                    <div className={styles.group}>
+                      <span className={styles.label} id="vote-count-label">
+                        Nombre de votes
+                      </span>
+                      <div className={styles.stepper}>
+                        <button type="button" onClick={() => setVotes((v) => clamp(v - 1))} aria-label="Un vote de moins">
+                          −
+                        </button>
+                        <input
+                          className={styles.num}
+                          type="number"
+                          inputMode="numeric"
+                          min={1}
+                          max={voixMax}
+                          value={votes}
+                          aria-labelledby="vote-count-label"
+                          onChange={(event) => setVotes(clamp(Number.parseInt(event.target.value, 10) || 1))}
+                        />
+                        <button type="button" onClick={() => setVotes((v) => clamp(v + 1))} aria-label="Un vote de plus">
+                          +
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <div className={styles.group}>
                     <span className={styles.label} id="pay-label">
@@ -892,15 +946,19 @@ function FenetreVote({
               {gratuit ? (
                 <>
                   <button type="button" className={`${styles.btn} ${styles.btnGold} ${styles.cta}`} onClick={voteGratuit}>
-                    Voter gratuitement
+                    {criteres ? "Envoyer ma note gratuite" : "Voter gratuitement"}
                   </button>
-                  <p className={styles.sim}>Une seule voix gratuite par numéro. Pour soutenir encore, achetez des votes.</p>
+                  <p className={styles.sim}>
+                    {criteres
+                      ? "Une seule note gratuite par numéro. Pour noter encore, payez votre note."
+                      : "Une seule voix gratuite par numéro. Pour soutenir encore, achetez des votes."}
+                  </p>
                 </>
               ) : (
                 <>
                   <div className={styles.recap}>
                     <span className={styles.num}>
-                      {formatNumber(votes)} × {formatNumber(selection.prixVote)} FCFA
+                      {criteres ? "1 note" : `${formatNumber(votes)} × ${formatNumber(selection.prixVote)} FCFA`}
                     </span>
                     <b className={styles.num}>{formatNumber(amount)} FCFA</b>
                   </div>
@@ -921,7 +979,7 @@ function FenetreVote({
         {step === "paying" ? (
           <div className={styles.sheetBody}>
             {gratuit ? (
-              <Spinner title="Enregistrement de votre voix…" />
+              <Spinner title={criteres ? "Enregistrement de votre note…" : "Enregistrement de votre voix…"} />
             ) : (
               <Spinner
                 title="Paiement en cours…"
@@ -981,7 +1039,11 @@ function FenetreVote({
                   Vérifier maintenant
                 </button>
               </div>
-              <p className={styles.sim}>Vos votes seront comptés même si vous fermez cette fenêtre.</p>
+              <p className={styles.sim}>
+                {criteres
+                  ? "Votre note sera comptée même si vous fermez cette fenêtre."
+                  : "Vos votes seront comptés même si vous fermez cette fenêtre."}
+              </p>
             </div>
           </>
         ) : null}
@@ -991,7 +1053,9 @@ function FenetreVote({
             <div className={styles.sheetBody}>
               <div className={styles.center} role="alert">
                 <h2>Paiement non abouti</h2>
-                <p className={styles.muted}>{error ?? "Le paiement n'a pas abouti. Aucun vote n'a été compté."}</p>
+                <p className={styles.muted}>
+                  {error ?? (criteres ? "Le paiement n'a pas abouti. Aucune note n'a été comptée." : "Le paiement n'a pas abouti. Aucun vote n'a été compté.")}
+                </p>
               </div>
             </div>
             <div className={styles.sheetFoot}>
@@ -1026,7 +1090,7 @@ function FenetreVote({
                   Fermer
                 </button>
                 <button type="button" className={`${styles.btn} ${styles.btnGold}`} onClick={startOver}>
-                  Acheter des votes
+                  {criteres ? "Payer une note" : "Acheter des votes"}
                 </button>
               </div>
             </div>
@@ -1044,7 +1108,13 @@ function FenetreVote({
                 </div>
                 <h2>Merci !</h2>
                 <p>
-                  <b className={styles.num}>{votesLabel(receipt.voix)}</b> pour {receipt.candidat}
+                  {receipt.note ? (
+                    <>Votre note pour {receipt.candidat} est enregistrée.</>
+                  ) : (
+                    <>
+                      <b className={styles.num}>{votesLabel(receipt.voix)}</b> pour {receipt.candidat}
+                    </>
+                  )}
                 </p>
                 <p className={`${styles.muted} ${styles.num} ${styles.receipt}`}>
                   {formatNumber(receipt.montant)} FCFA · {PAYMENT_METHOD_LABELS[receipt.moyen]}
@@ -1068,7 +1138,7 @@ function FenetreVote({
                   Fermer
                 </button>
                 <button type="button" className={`${styles.btn} ${styles.btnGold}`} onClick={startOver}>
-                  Revoter
+                  {criteres ? "Noter à nouveau" : "Revoter"}
                 </button>
               </div>
             </div>
@@ -1087,6 +1157,114 @@ function FenetreVote({
           />
         ) : null}
       </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Notation sur critères                                                */
+/* ------------------------------------------------------------------ */
+
+/** Un critère par écran : on choisit une note de 0 au barème du critère. */
+function Notation({
+  criteres,
+  index,
+  notes,
+  onNote,
+  onAller,
+  onFin,
+}: {
+  criteres: Critere[];
+  index: number;
+  notes: Record<string, number>;
+  onNote: (critereId: string, valeur: number) => void;
+  onAller: (index: number) => void;
+  onFin: () => void;
+}) {
+  const critere = criteres[index];
+  const valeur = notes[critere.id];
+  const dernier = index === criteres.length - 1;
+  const choix = Array.from({ length: critere.bareme + 1 }, (_, i) => i);
+  return (
+    <>
+      <div className={styles.sheetBody}>
+        <div className={styles.group}>
+          <span className={`${styles.label} ${styles.num}`}>
+            Critère {index + 1} sur {criteres.length}
+          </span>
+          <div className={styles.progression} aria-hidden="true">
+            {criteres.map((c, i) => (
+              <i key={c.id} className={i <= index ? styles.progressionFaite : undefined} />
+            ))}
+          </div>
+        </div>
+        <div className={styles.group}>
+          <span className={styles.label} id="critere-label">
+            {critere.libelle}
+          </span>
+          <div className={styles.notes} role="group" aria-labelledby="critere-label">
+            {choix.map((v) => (
+              <button key={v} type="button" className={styles.num} aria-pressed={valeur === v} onClick={() => onNote(critere.id, v)}>
+                {v}
+              </button>
+            ))}
+          </div>
+          <p className={styles.hint}>Choisissez une note de 0 à {critere.bareme}.</p>
+        </div>
+      </div>
+      <div className={styles.sheetFoot}>
+        <div className={styles.row2}>
+          <button type="button" className={`${styles.btn} ${styles.btnLine}`} disabled={index === 0} onClick={() => onAller(index - 1)}>
+            Retour
+          </button>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnGold}`}
+            disabled={valeur === undefined}
+            onClick={() => (dernier ? onFin() : onAller(index + 1))}
+          >
+            {dernier ? "Valider ma note" : "Critère suivant"}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/** La note choisie, critère par critère, avant de la payer. */
+function RecapNotes({
+  criteres,
+  notes,
+  onModifier,
+}: {
+  criteres: Critere[];
+  notes: Record<string, number>;
+  onModifier: () => void;
+}) {
+  const total = criteres.reduce((s, c) => s + (notes[c.id] ?? 0), 0);
+  const bareme = criteres.reduce((s, c) => s + c.bareme, 0);
+  return (
+    <div className={styles.group}>
+      <span className={styles.label}>Votre note</span>
+      <ul className={styles.recapNotes}>
+        {criteres.map((c) => (
+          <li key={c.id}>
+            <span>{c.libelle}</span>
+            <b className={styles.num}>
+              {notes[c.id] ?? "–"} / {c.bareme}
+            </b>
+          </li>
+        ))}
+        <li>
+          <span>Total</span>
+          <b className={styles.num}>
+            {total} / {bareme}
+          </b>
+        </li>
+      </ul>
+      <button type="button" className={`${styles.btn} ${styles.btnLine}`} onClick={onModifier}>
+        Modifier ma note
+      </button>
     </div>
   );
 }

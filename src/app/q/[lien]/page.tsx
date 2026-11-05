@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lien: str
   const type = await lirePageQr(lien);
   if (!type) return { title: "Vote introuvable" };
   const title = `${type.libelle} · ${type.selection.evenement.nom}`;
-  const action = (type.canal === "SALLE" || type.canal === "UNIQUE") && type.avecCriteres ? "Notez les candidats" : "Votez pour votre candidat préféré";
+  const action = type.avecCriteres ? "Notez les candidats" : "Votez pour votre candidat préféré";
   return { title, description: `${action} · ${type.selection.libelle}`, robots: { index: false } };
 }
 
@@ -30,7 +30,7 @@ export default async function PageVoteQr({ params }: { params: Promise<{ lien: s
   if (!["QR", "UNIQUE", "GRATUIT", "SALLE"].includes(type.canal)) notFound();
 
   const { selection } = type;
-  const avecNotes = (type.canal === "SALLE" || type.canal === "UNIQUE") && type.avecCriteres;
+  const avecNotes = type.avecCriteres;
   return (
     <div className={outfit.className}>
       <VoteQr

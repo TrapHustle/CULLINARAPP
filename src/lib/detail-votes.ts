@@ -111,7 +111,7 @@ export async function detailVotes(
         valeurs: { select: { critereId: true, valeur: true } },
         table: { select: { nom: true } },
         votant: { select: { identifiant: true } },
-        paiement: { select: { simule: true } },
+        paiement: { select: { simule: true, telephone: true } },
       },
     }),
     prisma.paiement.findMany({ where: { selectionId, ...pour }, orderBy: { creeLe: "asc" } }),
@@ -132,7 +132,9 @@ export async function detailVotes(
   return {
     prixVote: selection.prixVote,
     types: selection.typesVote.map((type) => {
-      const enLignePayant = type.canal === "EN_LIGNE";
+      // Noté sur critères, une note payée se lit comme les autres notes :
+      // critère par critère, pas comme un lot de voix.
+      const enLignePayant = type.canal === "EN_LIGNE" && !type.avecCriteres;
       const votes = suffrages
         .filter((s) => s.typeVoteId === type.id)
         // Les voix payées sont détaillées par leur paiement.
@@ -151,7 +153,9 @@ export async function detailVotes(
                 ? `Votant ${s.jureIndex}`
                 : s.votant
                   ? masquerTelephone(s.votant.identifiant)
-                  : (PROVENANCE[s.origine] ?? s.origine)),
+                  : s.paiement
+                    ? masquerTelephone(s.paiement.telephone)
+                    : (PROVENANCE[s.origine] ?? s.origine)),
             provenance: s.origine === "TABLETTE" ? (s.table?.nom ?? "Tablette") : (PROVENANCE[s.origine] ?? s.origine),
             valeurs,
             total: valeurs ? valeurs.reduce((a, b) => a + b, 0) : null,

@@ -20,6 +20,10 @@ import { checkSirapPayment, createSirapPayment } from "./sirap";
  * l'organisateur l'accorde) ou en payant un lot de voix. Une voix payée ne
  * compte qu'une fois le paiement confirmé (RG 6.3) : c'est à ce moment que le
  * vote (`Suffrage`) est créé, une seule fois, rattaché au paiement.
+ *
+ * Un vote en ligne noté sur critères vend des notes au lieu de voix : le
+ * votant note le candidat, puis paie une note au prix d'une voix. La note
+ * attend sur le paiement (`Paiement.notes`) jusqu'à sa confirmation.
  */
 
 export type ModePaiement = "simulation" | "sirap";
@@ -53,7 +57,16 @@ async function lirePagePubliqueSansCache(slug: string) {
     where: { slug },
     include: {
       evenement: { include: { organisation: { select: { nom: true, actif: true, paiementConfig: true } } } },
-      typesVote: { where: { canal: "EN_LIGNE", actif: true }, orderBy: [{ ordre: "asc" }, { id: "asc" }], select: { id: true, libelle: true } },
+      typesVote: {
+        where: { canal: "EN_LIGNE", actif: true },
+        orderBy: [{ ordre: "asc" }, { id: "asc" }],
+        select: {
+          id: true,
+          libelle: true,
+          avecCriteres: true,
+          criteres: { orderBy: [{ ordre: "asc" }, { id: "asc" }], select: { id: true, libelle: true, bareme: true } },
+        },
+      },
       participations: {
         where: { disponible: true },
         orderBy: [{ ordre: "asc" }, { id: "asc" }],
@@ -80,6 +93,8 @@ async function lirePagePubliqueSansCache(slug: string) {
     enLigne,
     ouvert: voteOuvert(selection, enLigne !== null),
     mode: modePaiement(selection.evenement.organisation.paiementConfig),
+    /** Vote noté sur critères : les critères à noter, sinon `null` (vote par voix). */
+    criteres: enLigne?.avecCriteres ? enLigne.criteres : null,
     candidats: selection.participations.map((p) => ({
       participationId: p.id,
       ordre: p.ordre,
@@ -112,18 +127,56 @@ async function cible(slug: string, participationId: string) {
     where: { slug },
     include: {
       evenement: { include: { organisation: { select: { id: true, actif: true, paiementConfig: true } } } },
-      typesVote: { where: { canal: "EN_LIGNE", actif: true }, orderBy: [{ ordre: "asc" }, { id: "asc" }], select: { id: true } },
+      typesVote: {
+        where: { canal: "EN_LIGNE", actif: true },
+        orderBy: [{ ordre: "asc" }, { id: "asc" }],
+        select: { id: true, avecCriteres: true, criteres: { select: { id: true, libelle: true, bareme: true } } },
+      },
       participations: { where: { id: participationId }, include: { candidat: { select: { nom: true } } } },
     },
   });
   if (!page) return { ok: false as const, erreur: "Ce vote n'existe pas." };
-  const typeVoteId = page.typesVote[0]?.id;
-  if (!typeVoteId || !voteOuvert(page, true)) return { ok: false as const, erreur: "Le vote est fermé." };
+  const type = page.typesVote[0];
+  if (!type || !voteOuvert(page, true)) return { ok: false as const, erreur: "Le vote est fermé." };
   const participation = page.participations[0];
   if (!participation || !participation.disponible) {
     return { ok: false as const, erreur: "Ce candidat n'est plus proposé au vote." };
   }
-  return { ok: true as const, selection: page, typeVoteId, participation };
+  return { ok: true as const, selection: page, typeVoteId: type.id, type, participation };
+}
+
+type Notes = Record<string, number>;
+
+/**
+ * Contrôle la note d'un vote noté sur critères : une valeur entière par
+ * critère, de 0 à son barème. Pour un vote par voix, il n'y a rien à noter.
+ */
+function lireNotes(
+  type: { avecCriteres: boolean; criteres: { id: string; libelle: string; bareme: number }[] },
+  valeurs: unknown,
+): { ok: true; notes: Notes | null } | { ok: false; erreur: string } {
+  if (!type.avecCriteres) return { ok: true, notes: null };
+  if (type.criteres.length === 0) return { ok: false, erreur: "Ce vote n'a pas encore de critères : prévenez l'organisateur." };
+  const saisies = (valeurs && typeof valeurs === "object" ? valeurs : {}) as Record<string, unknown>;
+  const notes: Notes = {};
+  for (const c of type.criteres) {
+    const v = saisies[c.id];
+    if (typeof v !== "number" || !Number.isInteger(v) || v < 0 || v > c.bareme) {
+      return { ok: false, erreur: `« ${c.libelle} » : choisissez une note de 0 à ${c.bareme}.` };
+    }
+    notes[c.id] = v;
+  }
+  return { ok: true, notes };
+}
+
+/** Les valeurs à créer avec le vote, pour les critères qui existent encore. */
+function valeursDuVote(notes: unknown, criteres: { id: string }[]) {
+  if (!notes || typeof notes !== "object") return undefined;
+  const n = notes as Record<string, unknown>;
+  const create = criteres
+    .filter((c) => typeof n[c.id] === "number")
+    .map((c) => ({ critereId: c.id, valeur: n[c.id] as number }));
+  return create.length > 0 ? { create } : undefined;
 }
 
 // Voix gratuite ------------------------------------------------------------------
@@ -141,10 +194,17 @@ export type ResultatVote = { ok: true; message: string } | { ok: false; erreur: 
  * numéro). Le paiement, qui n'a pas cette contrainte, garde `normalizePhone`
  * et continue d'accepter tous les pays de `PHONE_COUNTRIES`.
  */
-export async function voterGratuit(slug: string, participationId: string, telephone: string): Promise<ResultatVote> {
+export async function voterGratuit(
+  slug: string,
+  participationId: string,
+  telephone: string,
+  valeurs?: unknown,
+): Promise<ResultatVote> {
   const c = await cible(slug, participationId);
   if (!c.ok) return c;
   if (!c.selection.voixGratuite) return { ok: false, erreur: "Ce vote n'accorde pas de voix gratuite." };
+  const lu = lireNotes(c.type, valeurs);
+  if (!lu.ok) return lu;
 
   const analyse = parsePhone(telephone, DEFAULT_PHONE_COUNTRY);
   if (!analyse.ok) return { ok: false, erreur: "Entrez un numéro ivoirien valide. Exemple : 07 00 00 00 00." };
@@ -161,6 +221,7 @@ export async function voterGratuit(slug: string, participationId: string, teleph
           poids: 1,
           origine: "GRATUIT",
           votantId: votant.id,
+          valeurs: valeursDuVote(lu.notes, c.type.criteres),
         },
       });
     });
@@ -170,7 +231,12 @@ export async function voterGratuit(slug: string, participationId: string, teleph
     }
     throw erreur;
   }
-  return { ok: true, message: `Merci ! Votre voix pour ${c.participation.candidat.nom} est comptée.` };
+  return {
+    ok: true,
+    message: lu.notes
+      ? `Merci ! Votre note pour ${c.participation.candidat.nom} est comptée.`
+      : `Merci ! Votre voix pour ${c.participation.candidat.nom} est comptée.`,
+  };
 }
 
 // Paiement ------------------------------------------------------------------------
@@ -183,6 +249,8 @@ export interface Recu {
   moyen: PaymentMethod;
   statut: "PENDING" | "CONFIRMED" | "FAILED";
   simule: boolean;
+  /** Le paiement achetait une note sur critères, pas des voix. */
+  note: boolean;
 }
 
 export type ResultatPaiement =
@@ -205,6 +273,7 @@ function recu(p: {
   moyen: string;
   statut: string;
   simule: boolean;
+  notes?: unknown;
 }): Recu {
   return {
     reference: p.reference,
@@ -214,6 +283,7 @@ function recu(p: {
     moyen: (PAYMENT_METHODS as readonly string[]).includes(p.moyen) ? (p.moyen as PaymentMethod) : "WAVE",
     statut: p.statut === "CONFIRMED" || p.statut === "FAILED" ? p.statut : "PENDING",
     simule: p.simule,
+    note: p.notes !== null && p.notes !== undefined,
   };
 }
 
@@ -227,9 +297,15 @@ export async function demanderPaiement(input: {
   voix: number;
   moyen: string;
   telephone: string;
+  /** Vote noté sur critères : la note, une valeur par critère. */
+  valeurs?: unknown;
 }): Promise<ResultatPaiement> {
   const c = await cible(input.slug, input.participationId);
   if (!c.ok) return c;
+  const lu = lireNotes(c.type, input.valeurs);
+  if (!lu.ok) return lu;
+  // Noté sur critères : un paiement achète une note, jamais un lot.
+  if (lu.notes) input = { ...input, voix: 1 };
 
   if (!Number.isInteger(input.voix) || input.voix < 1 || input.voix > VOIX_MAX_PAR_PAIEMENT) {
     return { ok: false, erreur: `Choisissez entre 1 et ${VOIX_MAX_PAR_PAIEMENT} voix.` };
@@ -259,6 +335,7 @@ export async function demanderPaiement(input: {
     montant,
     moyen,
     telephone,
+    notes: lu.notes ?? undefined,
   };
 
   if (modePaiement(c.selection.evenement.organisation.paiementConfig) === "simulation") {
@@ -276,6 +353,7 @@ export async function demanderPaiement(input: {
               poids: input.voix,
               origine: "PAIEMENT",
               paiementId: p.id,
+              valeurs: valeursDuVote(lu.notes, c.type.criteres),
             },
           });
           return p;
@@ -293,7 +371,7 @@ export async function demanderPaiement(input: {
     phone: telephone,
     method: moyen,
     amount: montant,
-    label: `DV|${c.selection.id}|${c.participation.id}|x${input.voix}`,
+    label: `DV|${c.selection.id}|${c.participation.id}|${lu.notes ? "note" : `x${input.voix}`}`,
   });
   if (!demande.ok) return { ok: false, erreur: demande.error };
 
@@ -324,7 +402,10 @@ export async function confirmerPaiement(paiementId: string, refPrestataire: stri
     const p = await tx.paiement.findUniqueOrThrow({ where: { id: paiementId } });
     // Candidat retiré entre-temps : le paiement reste une trace comptable (RG 6.7).
     if (!p.participationId || !p.selectionId) return true;
-    const type = await tx.typeVote.findFirst({ where: { selectionId: p.selectionId, canal: "EN_LIGNE", actif: true }, select: { id: true } });
+    const type = await tx.typeVote.findFirst({
+      where: { selectionId: p.selectionId, canal: "EN_LIGNE", actif: true },
+      select: { id: true, avecCriteres: true, criteres: { select: { id: true } } },
+    });
     if (!type) return true;
     await tx.suffrage.create({
       data: {
@@ -334,6 +415,9 @@ export async function confirmerPaiement(paiementId: string, refPrestataire: stri
         poids: p.voix,
         origine: "PAIEMENT",
         paiementId: p.id,
+        // La note payée, critère par critère. Un critère supprimé entre-temps
+        // est ignoré : il compte alors 0 dans la moyenne.
+        valeurs: type.avecCriteres ? valeursDuVote(p.notes, type.criteres) : undefined,
       },
     });
     return true;

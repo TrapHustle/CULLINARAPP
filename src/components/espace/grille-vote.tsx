@@ -1,6 +1,7 @@
 import {
   ajouterCritereAction,
   ajouterTypeAction,
+  appliquerCriteresATousAction,
   deplacerCritereAction,
   modifierCritereAction,
   modifierTypeAction,
@@ -230,6 +231,16 @@ export function GrilleVote({ evenementId, selectionId, types, modifiable, comple
                     </BoutonEnvoi>
                   </FormulaireAction>
                 ) : null}
+                {editable && types.length > 1 && type.criteres.length > 0 ? (
+                  <FormulaireAction
+                    action={appliquerCriteresATousAction.bind(null, evenementId, selectionId, type.id)}
+                    confirmer={`Donner à tous les autres types de vote les critères de « ${type.libelle} » ? Leurs critères actuels sont remplacés, et ceux qui comptaient des voix passent en notation sur critères.`}
+                  >
+                    <BoutonEnvoi className={`${styles.bouton} ${styles.boutonSecondaire}`}>
+                      <Icone nom="coche" taille={15} /> Appliquer ces critères à tous les votes
+                    </BoutonEnvoi>
+                  </FormulaireAction>
+                ) : null}
               </div>
             ) : (
               <div className={styles.carteCorps}>
@@ -297,15 +308,13 @@ function ChampsType({
         <input type="hidden" name="acces" value={acces} />
         <input type="hidden" name="part" value={valeurPart} />
         {actif ? <input type="hidden" name="actif" value="on" /> : null}
-        {canal === "SALLE" || canal === "UNIQUE" ? (
-          <label className={styles.caseACocher}>
-            <input type="checkbox" name="avecCriteres" defaultChecked={avecCriteres} />
-            <span>
-              Noter sur des critères
-              <small>Sinon, on compte des voix. Possible tant que ce type n&rsquo;a reçu aucun vote.</small>
-            </span>
-          </label>
-        ) : null}
+        <label className={styles.caseACocher}>
+          <input type="checkbox" name="avecCriteres" defaultChecked={avecCriteres} />
+          <span>
+            Noter sur des critères
+            <small>Sinon, on compte des voix. Possible tant que ce type n&rsquo;a reçu aucun vote.</small>
+          </span>
+        </label>
       </>
     );
   }
@@ -328,7 +337,7 @@ function ChampsType({
           <option value="SALLE">En salle (jury, public présent)</option>
           <option value="EN_LIGNE">En ligne payant (page publique, voix payantes)</option>
           <option value="GRATUIT">En ligne gratuit (une voix par numéro pour tout le concours)</option>
-          <option value="UNIQUE">Vote unique (lien et QR code, avec ou sans critères)</option>
+          <option value="UNIQUE">Vote unique (lien et QR code)</option>
           <option value="QR">Par QR code (une voix par personne)</option>
         </select>
       </label>
@@ -347,7 +356,7 @@ function ChampsType({
         <input type="checkbox" name="avecCriteres" defaultChecked={avecCriteres} />
         <span>
           Noter sur des critères
-          <small>Sinon, on compte des voix. Possible en salle et pour un vote unique ; toujours des voix en ligne et par QR code.</small>
+          <small>Sinon, on compte des voix. En ligne payant, chaque paiement achète une note : les paliers et le mode leader ne servent plus.</small>
         </span>
       </label>
     </>

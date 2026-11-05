@@ -26,8 +26,10 @@ export default async function PageAffiche({ params }: { params: Promise<{ typeVo
   const parLien = type.canal !== "EN_LIGNE";
   const restreint = parLien && type.acces === "RESTREINT";
   const etapes = !parLien
-    ? ["Scannez le QR code", "Choisissez votre candidat", "Votez gratuitement ou achetez des voix"]
-    : type.canal === "SALLE" && type.avecCriteres
+    ? type.avecCriteres
+      ? ["Scannez le QR code", "Choisissez votre candidat", "Notez-le, puis payez votre note"]
+      : ["Scannez le QR code", "Choisissez votre candidat", "Votez gratuitement ou achetez des voix"]
+    : type.avecCriteres
       ? ["Scannez le QR code", "Tapez votre numéro de téléphone", "Notez chaque candidat"]
       : ["Scannez le QR code", "Tapez votre numéro de téléphone", "Choisissez votre candidat"];
 

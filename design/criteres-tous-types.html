@@ -1,0 +1,333 @@
+<title>Critères pour tous les votes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,700;1,700&family=Outfit:wght@400;500;600;700&display=swap">
+<style>
+/* Maquette : critères sur tous les types de vote. Espace organisateur en bleu
+   (jetons de panel.module.css), pages publiques en noir et or (vote-public-clair). */
+:root {
+  --bleu: #1768e5; --bleu-pale: #e2edff; --bleu-texte: #1259c9;
+  --encre: #0d1830; --gris: #47546b; --filet: #d6dde8; --fond: #e9eef5; --surface: #ffffff; --tete: #f3f6fa;
+  --vert: #157a56; --vert-pale: #daf4e9; --orange: #9a5b00; --orange-pale: #fff1d6;
+  --ink: #0e0d0b; --ink-2: #1b1915; --gold: #d4af37; --gold-deep: #8a6a12; --paper: #f3f1ec;
+  --card: #ffffff; --line: #e3ded2; --txt: #1c1a16; --dim: #6b6558; --on-ink: #f4f1e8; --on-ink-dim: #aaa392;
+  --display: "Cormorant Garamond", Georgia, serif;
+  --body: "Outfit", "Segoe UI", Roboto, Arial, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bleu: #3b82f6; --bleu-pale: #172a4d; --bleu-texte: #8ab6ff;
+    --encre: #eef2f8; --gris: #b5c0d2; --filet: #2a3a57; --fond: #0b1426; --surface: #121e35; --tete: #16243f;
+    --vert: #6fd3a8; --vert-pale: #12342a; --orange: #f0b45a; --orange-pale: #33260f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bleu: #3b82f6; --bleu-pale: #172a4d; --bleu-texte: #8ab6ff;
+  --encre: #eef2f8; --gris: #b5c0d2; --filet: #2a3a57; --fond: #0b1426; --surface: #121e35; --tete: #16243f;
+  --vert: #6fd3a8; --vert-pale: #12342a; --orange: #f0b45a; --orange-pale: #33260f;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: var(--body); background: var(--fond); color: var(--encre); font-size: 15px; line-height: 1.5; }
+.mock { background: var(--gold); color: var(--ink); font-size: 12.5px; font-weight: 600; text-align: center; padding-block: 7px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.page { max-width: 1120px; margin: 0 auto; padding-block: 28px 60px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 40px; }
+h1 { margin: 0; font-size: clamp(26px, 5vw, 34px); font-weight: 700; letter-spacing: -.01em; text-wrap: balance; }
+h2 { margin: 0; font-size: 21px; font-weight: 700; text-wrap: balance; }
+p { margin: 0; }
+.intro { display: grid; gap: 10px; max-width: 70ch; color: var(--gris); }
+.intro strong { color: var(--encre); }
+section { display: grid; gap: 16px; }
+.etiquette { font-size: 11.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--bleu-texte); }
+.tete-section { display: grid; gap: 4px; }
+.tete-section p { color: var(--gris); max-width: 70ch; }
+
+/* Tableau des canaux */
+.tableau { overflow-x: auto; background: var(--surface); border: 1px solid var(--filet); border-radius: 12px; }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 14px; }
+th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--filet); vertical-align: top; }
+th { background: var(--tete); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--gris); font-weight: 600; }
+tr:last-child td { border-bottom: 0; }
+.pastille { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.p-nouveau { background: var(--vert-pale); color: var(--vert); }
+.p-meme { background: var(--tete); color: var(--gris); border: 1px solid var(--filet); }
+
+/* Carte de la grille (espace organisateur) */
+.grille { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 820px) { .grille { grid-template-columns: 1fr; } }
+.carte { background: var(--surface); border: 1px solid var(--filet); border-radius: 12px; padding: 18px; display: grid; gap: 14px; }
+.carte h3 { margin: 0; font-size: 17px; }
+.champ { display: grid; gap: 5px; font-size: 13.5px; }
+.champ span { font-weight: 600; }
+.champ select, .champ input { font: inherit; padding: 9px 11px; border-radius: 8px; border: 1px solid var(--filet); background: var(--surface); color: var(--encre); }
+.case { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; padding: 12px; border-radius: 10px; background: var(--bleu-pale); }
+.case input { margin-top: 3px; width: 17px; height: 17px; accent-color: var(--bleu); }
+.case small { display: block; color: var(--gris); font-size: 12.5px; }
+.criteres { display: grid; gap: 0; border: 1px solid var(--filet); border-radius: 10px; overflow: hidden; }
+.critere { display: flex; justify-content: space-between; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--filet); font-size: 14px; }
+.critere:last-child { border-bottom: 0; background: var(--tete); font-weight: 600; }
+.critere b { font-variant-numeric: tabular-nums; }
+.note { font-size: 13px; color: var(--orange); background: var(--orange-pale); padding: 10px 12px; border-radius: 10px; }
+
+/* Téléphones (pages publiques) */
+.parcours { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 980px) { .parcours { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .parcours { grid-template-columns: 1fr; } }
+.etape { display: grid; gap: 8px; align-content: start; }
+.etape > small { font-size: 12.5px; color: var(--gris); font-weight: 600; }
+.tel { background: var(--paper); color: var(--txt); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; display: grid; align-content: start; min-height: 430px; box-shadow: 0 6px 18px rgba(13, 24, 48, .08); }
+.tel-tete { background: var(--ink); color: var(--gold); padding: 14px 16px 12px; display: grid; gap: 2px; }
+.tel-tete b { font-family: var(--display); font-style: italic; font-size: 22px; line-height: 1; }
+.tel-tete span { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--on-ink-dim); }
+.tel-corps { padding: 14px; display: grid; gap: 10px; }
+.tel-corps h4 { margin: 0; font-family: var(--display); font-size: 21px; line-height: 1.1; color: var(--txt); }
+.aide { font-size: 12.5px; color: var(--dim); }
+.cand { display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 9px 10px; font-size: 14px; }
+.cand.choisi { border-color: var(--gold-deep); box-shadow: 0 0 0 1px var(--gold-deep); }
+.cand.fait { opacity: .62; }
+.photo { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 12px; color: var(--ink); background: #e9dcb4; }
+.cand div { min-width: 0; flex: 1; }
+.cand div small { display: block; color: var(--dim); font-size: 12px; }
+.badge { font-size: 11.5px; font-weight: 600; color: #1f7a45; background: #eef8f2; border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+.prog { display: flex; gap: 5px; }
+.prog i { flex: 1; height: 4px; border-radius: 4px; background: var(--line); }
+.prog i.on { background: var(--gold-deep); }
+.notes { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.notes span { display: grid; place-items: center; height: 40px; border-radius: 10px; background: var(--card); border: 1px solid var(--line); font-weight: 600; font-variant-numeric: tabular-nums; }
+.notes span.on { background: var(--ink); color: var(--gold); border-color: var(--ink); }
+.btn { display: block; text-align: center; background: var(--ink); color: var(--gold); border-radius: 12px; padding: 12px; font-weight: 600; font-size: 14.5px; }
+.btn.clair { background: transparent; color: var(--txt); border: 1px solid var(--line); }
+.recap { background: var(--card); border: 1px solid var(--line); border-radius: 12px; display: grid; }
+.recap div { display: flex; justify-content: space-between; gap: 8px; padding: 8px 11px; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+.recap div:last-child { border-bottom: 0; font-weight: 700; }
+.recap b { font-variant-numeric: tabular-nums; }
+.moyens { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.moyens span { text-align: center; font-size: 12.5px; font-weight: 600; padding: 9px 4px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); }
+.moyens span.on { border-color: var(--gold-deep); box-shadow: 0 0 0 1px var(--gold-deep); }
+.merci { text-align: center; display: grid; gap: 8px; justify-items: center; padding-top: 18px; }
+.coche { width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; background: #eef8f2; color: #1f7a45; font-size: 26px; font-weight: 700; }
+.recu { font-size: 12.5px; color: var(--dim); font-variant-numeric: tabular-nums; }
+
+/* Résultats */
+.chiffre { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.vide { color: var(--gris); font-style: italic; }
+.technique { background: var(--surface); border: 1px solid var(--filet); border-radius: 12px; padding: 18px; display: grid; gap: 10px; }
+.technique ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; color: var(--gris); }
+.technique code { font-size: 13px; background: var(--tete); padding: 1px 5px; border-radius: 5px; color: var(--encre); }
+</style>
+
+<div class="mock">Maquette · à valider avant le code · Critères sur tous les types de vote</div>
+
+<main class="page">
+  <div class="intro">
+    <h1>Noter sur des critères, quel que soit le type de vote</h1>
+    <p>Aujourd'hui, seuls <strong>En salle</strong> et <strong>Vote unique</strong> peuvent être notés sur des critères. Avec ce changement, la case <strong>« Noter sur des critères »</strong> apparaît pour tous les canaux : QR code, en ligne gratuit et en ligne payant.</p>
+    <p>Sans la case cochée, rien ne change : le type compte des voix comme aujourd'hui.</p>
+  </div>
+
+  <section>
+    <div class="tete-section">
+      <span class="etiquette">Ce qui change</span>
+      <h2>Chaque canal, avec critères</h2>
+    </div>
+    <div class="tableau">
+      <table>
+        <thead><tr><th>Canal</th><th>Avec critères</th><th>Qui peut noter, combien de fois</th><th></th></tr></thead>
+        <tbody>
+          <tr><td><b>En salle</b></td><td>Tablettes et lien du type</td><td>Comme aujourd'hui</td><td><span class="pastille p-meme">Inchangé</span></td></tr>
+          <tr><td><b>Vote unique</b></td><td>Lien et QR code</td><td>Comme aujourd'hui : une note par candidat et par numéro</td><td><span class="pastille p-meme">Inchangé</span></td></tr>
+          <tr><td><b>Par QR code</b></td><td>Lien et QR code</td><td>Une note par candidat et par numéro</td><td><span class="pastille p-nouveau">Nouveau</span></td></tr>
+          <tr><td><b>En ligne gratuit</b></td><td>Page publique, sans paiement</td><td>Une note par candidat et par numéro</td><td><span class="pastille p-nouveau">Nouveau</span></td></tr>
+          <tr><td><b>En ligne payant</b></td><td>Page publique, 200 FCFA par note</td><td>Un paiement = une note. On peut repayer pour noter à nouveau, le même candidat ou un autre.</td><td><span class="pastille p-nouveau">Nouveau</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="tete-section">
+      <span class="etiquette">Espace organisateur · Grille de vote</span>
+      <h2>La case est proposée pour tous les canaux</h2>
+    </div>
+    <div class="grille">
+      <div class="carte">
+        <h3>Modifier « Vote en ligne »</h3>
+        <label class="champ" for="canal"><span>Canal</span>
+          <select id="canal"><option>En ligne payant (page publique, 200 FCFA)</option></select>
+        </label>
+        <label class="champ" for="part"><span>Part dans la note finale (%)</span><input id="part" value="30"></label>
+        <label class="case" for="avec"><input id="avec" type="checkbox" checked>
+          <span>Noter sur des critères
+            <small>Sinon, on compte des voix. Possible pour tous les canaux, tant que ce type n'a reçu aucun vote.</small>
+          </span>
+        </label>
+        <p class="note">En ligne payant avec critères : chaque paiement achète une note. Les modes de calcul des voix (paliers, leader) ne servent plus pour ce type.</p>
+      </div>
+      <div class="carte">
+        <h3>Critères · barème total 15 points</h3>
+        <div class="criteres">
+          <div class="critere"><span>Goût</span><b>/ 5</b></div>
+          <div class="critere"><span>Présentation</span><b>/ 5</b></div>
+          <div class="critere"><span>Originalité</span><b>/ 5</b></div>
+          <div class="critere"><span>Total</span><b>/ 15</b></div>
+        </div>
+        <p class="aide" style="color:var(--gris)">Mêmes critères et même barème que pour les autres types : ajouter, renommer, changer le barème, supprimer.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="tete-section">
+      <span class="etiquette">Page publique · En ligne payant</span>
+      <h2>On note d'abord, on paie ensuite</h2>
+      <p>La note n'est enregistrée qu'une fois le paiement confirmé. Un paiement échoué ou abandonné ne laisse aucune note.</p>
+    </div>
+    <div class="parcours">
+      <div class="etape"><small>1 · Choisir le candidat</small>
+        <div class="tel">
+          <div class="tel-tete"><span>Concours culinaire</span><b>Finale</b></div>
+          <div class="tel-corps">
+            <h4>Notez votre plat préféré</h4>
+            <div class="cand"><span class="photo">T3</span><div>Table 03<small>Abidjan</small></div></div>
+            <div class="cand choisi"><span class="photo">T7</span><div>Table 07<small>Bouaké</small></div></div>
+            <div class="cand"><span class="photo">T9</span><div>Table 09<small>Yamoussoukro</small></div></div>
+            <span class="btn">Noter Table 07</span>
+          </div>
+        </div>
+      </div>
+      <div class="etape"><small>2 · Un critère par écran</small>
+        <div class="tel">
+          <div class="tel-tete"><span>Table 07 · critère 2 sur 3</span><b>Présentation</b></div>
+          <div class="tel-corps">
+            <div class="prog"><i class="on"></i><i class="on"></i><i></i></div>
+            <h4>Présentation</h4>
+            <p class="aide">Choisissez une note de 0 à 5.</p>
+            <div class="notes"><span>0</span><span>1</span><span>2</span><span>3</span><span class="on">4</span><span>5</span></div>
+            <span class="btn">Critère suivant</span>
+            <span class="btn clair">Retour</span>
+          </div>
+        </div>
+      </div>
+      <div class="etape"><small>3 · Payer la note</small>
+        <div class="tel">
+          <div class="tel-tete"><span>Table 07</span><b>Votre note</b></div>
+          <div class="tel-corps">
+            <div class="recap">
+              <div><span>Goût</span><b>5 / 5</b></div>
+              <div><span>Présentation</span><b>4 / 5</b></div>
+              <div><span>Originalité</span><b>4 / 5</b></div>
+              <div><span>Total</span><b>13 / 15</b></div>
+            </div>
+            <div class="moyens"><span class="on">Wave</span><span>Orange</span><span>MTN</span></div>
+            <span class="btn">Payer 200 FCFA</span>
+            <p class="aide">Une note = 200 FCFA. Pas de choix du nombre de voix pour ce type.</p>
+          </div>
+        </div>
+      </div>
+      <div class="etape"><small>4 · Paiement confirmé</small>
+        <div class="tel">
+          <div class="tel-tete"><span>Concours culinaire</span><b>Merci !</b></div>
+          <div class="tel-corps">
+            <div class="merci">
+              <div class="coche" aria-hidden="true">✓</div>
+              <h4>Note enregistrée</h4>
+              <p>Votre note de <b>13 / 15</b> pour <b>Table 07</b> compte dans le classement.</p>
+              <p class="recu">Reçu VP-8K2Q · 200 FCFA · Wave</p>
+              <span class="btn clair" style="width:100%">Noter un autre candidat</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="tete-section">
+      <span class="etiquette">Page publique · QR code et en ligne gratuit</span>
+      <h2>Le même écran que le vote unique avec critères</h2>
+      <p>Le numéro est saisi une fois. Les candidats déjà notés par ce numéro sont grisés : on ne peut pas les noter deux fois.</p>
+    </div>
+    <div class="parcours">
+      <div class="etape"><small>1 · Numéro</small>
+        <div class="tel">
+          <div class="tel-tete"><span>Vote gratuit</span><b>Votre numéro</b></div>
+          <div class="tel-corps">
+            <h4>Entrez votre numéro</h4>
+            <label class="champ" for="tel"><span>Téléphone</span><input id="tel" value="07 58 41 22 90"></label>
+            <span class="btn">Continuer</span>
+            <p class="aide">Il sert seulement à vérifier que chaque numéro note une fois chaque candidat.</p>
+          </div>
+        </div>
+      </div>
+      <div class="etape"><small>2 · Choix, notés grisés</small>
+        <div class="tel">
+          <div class="tel-tete"><span>Vote gratuit</span><b>Notez les candidats</b></div>
+          <div class="tel-corps">
+            <div class="cand fait"><span class="photo">T3</span><div>Table 03<small>Abidjan</small></div><span class="badge">Noté</span></div>
+            <div class="cand choisi"><span class="photo">T7</span><div>Table 07<small>Bouaké</small></div></div>
+            <div class="cand"><span class="photo">T9</span><div>Table 09<small>Yamoussoukro</small></div></div>
+            <span class="btn">Noter Table 07</span>
+            <p class="aide">1 candidat noté sur 3.</p>
+          </div>
+        </div>
+      </div>
+      <div class="etape"><small>3 · Un critère par écran</small>
+        <div class="tel">
+          <div class="tel-tete"><span>Table 07 · critère 3 sur 3</span><b>Originalité</b></div>
+          <div class="tel-corps">
+            <div class="prog"><i class="on"></i><i class="on"></i><i class="on"></i></div>
+            <h4>Originalité</h4>
+            <div class="notes"><span>0</span><span>1</span><span>2</span><span class="on">3</span><span>4</span><span>5</span></div>
+            <span class="btn">Valider ma note</span>
+            <span class="btn clair">Retour</span>
+          </div>
+        </div>
+      </div>
+      <div class="etape"><small>4 · Merci</small>
+        <div class="tel">
+          <div class="tel-tete"><span>Vote gratuit</span><b>Merci !</b></div>
+          <div class="tel-corps">
+            <div class="merci">
+              <div class="coche" aria-hidden="true">✓</div>
+              <h4>Note enregistrée</h4>
+              <p>Votre note pour <b>Table 07</b> est enregistrée.</p>
+              <span class="btn clair" style="width:100%">Noter un autre candidat</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="tete-section">
+      <span class="etiquette">Résultats</span>
+      <h2>La note du type = moyenne des notes reçues</h2>
+      <p>Même calcul que pour le jury : moyenne des totaux, ramenée sur 100, puis la part du type dans la note finale. Pour le payant, seules les notes payées et confirmées comptent.</p>
+    </div>
+    <div class="tableau">
+      <table>
+        <thead><tr><th>Candidat</th><th class="chiffre">Notes reçues (en ligne payant)</th><th class="chiffre">Moyenne / 15</th><th class="chiffre">Note du type / 100</th><th class="chiffre">Apport (part 30 %)</th></tr></thead>
+        <tbody>
+          <tr><td>Table 07</td><td class="chiffre">48</td><td class="chiffre">12,4</td><td class="chiffre">82,7</td><td class="chiffre">24,8</td></tr>
+          <tr><td>Table 03</td><td class="chiffre">3</td><td class="chiffre">12,4</td><td class="chiffre">82,7</td><td class="chiffre">24,8</td></tr>
+          <tr><td>Table 09</td><td class="chiffre">0</td><td class="chiffre vide">aucune note</td><td class="chiffre vide">—</td><td class="chiffre vide">part reportée sur les autres types</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">À noter : c'est une moyenne, donc 3 notes valent autant que 48 si la moyenne est la même (Table 07 et Table 03 ci-dessus). Payer plus ne fait pas monter la note, seule la qualité des notes compte.</p>
+  </section>
+
+  <section>
+    <div class="technique">
+      <h2>Côté technique</h2>
+      <ul>
+        <li>La grille accepte les critères pour tous les canaux (<code>CANAUX_A_CRITERES</code>).</li>
+        <li>QR code et gratuit réutilisent la notation déjà en place pour le vote unique : pas de changement de base.</li>
+        <li>En ligne payant : le paiement doit garder les notes en attente jusqu'à sa confirmation. Il faut <b>un nouveau champ sur <code>Paiement</code></b>, donc une migration. Je l'écris et vous la montre avant de la lancer, sur la base de test seulement.</li>
+        <li>Rien sur le VPS. Tout se fait sur la branche test_saas.</li>
+      </ul>
+    </div>
+  </section>
+</main>

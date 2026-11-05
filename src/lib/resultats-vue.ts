@@ -21,7 +21,7 @@ export interface LigneVue {
 
 export interface VueResultats {
   selection: { id: string; libelle: string; etat: string; nbQualifies: number; evenementNom: string; afficheUrl: string | null };
-  types: { id: string; libelle: string; part: number; canal: string }[];
+  types: { id: string; libelle: string; part: number; canal: string; avecCriteres?: boolean }[];
   lignes: LigneVue[];
   /** Date de clôture si le classement vient de l'archive. */
   figeLe: Date | null;
@@ -37,7 +37,7 @@ export async function vueResultats(
     where: { id: selectionId, evenement: { organisationId } },
     include: {
       evenement: { select: { nom: true, afficheUrl: true } },
-      typesVote: { where: { actif: true }, orderBy: { ordre: "asc" }, select: { id: true, libelle: true, part: true, canal: true } },
+      typesVote: { where: { actif: true }, orderBy: { ordre: "asc" }, select: { id: true, libelle: true, part: true, canal: true, avecCriteres: true } },
       participations: { include: { candidat: { select: { photoUrl: true } } } },
       archives: { orderBy: { clotureLe: "desc" }, take: 1 },
     },

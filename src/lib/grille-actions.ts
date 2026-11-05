@@ -7,6 +7,7 @@ import { premiereErreur } from "./evenements-core";
 import {
   ajouterCritere,
   ajouterType,
+  appliquerCriteresATous,
   deplacerCritere,
   modifierCritere,
   modifierType,
@@ -154,6 +155,23 @@ export async function deplacerCritereAction(
   if (!r.ok) return { erreur: r.erreur };
   rafraichir(evenementId);
   return {};
+}
+
+export async function appliquerCriteresATousAction(
+  evenementId: string,
+  selectionId: string | null,
+  typeId: string,
+  _e: EtatFormulaire,
+): Promise<EtatFormulaire> {
+  const utilisateur = await exigerEcriture();
+  const r = await appliquerCriteresATous(utilisateur.organisationId, niveau(evenementId, selectionId), typeId);
+  if (!r.ok) return { erreur: r.erreur };
+  rafraichir(evenementId);
+  const { appliques, ignores } = r.valeur;
+  const fait = appliques === 0 ? "Aucun autre type modifié." : `Mêmes critères appliqués à ${appliques} type${appliques > 1 ? "s" : ""} de vote.`;
+  return ignores.length === 0
+    ? { succes: fait }
+    : { erreur: `${fait} Non modifiés, car ils ont déjà reçu des votes : ${ignores.join(", ")}.` };
 }
 
 export async function poserGrilleProposeeAction(evenementId: string, _e: EtatFormulaire): Promise<EtatFormulaire> {

@@ -64,14 +64,14 @@ export default async function PageLiens({
         // interrupteur, et un accès ouvert à tous ou réservé à une liste.
         const estQr = type.canal !== "EN_LIGNE";
         const enSalle = type.canal === "SALLE";
-        const notes = enSalle && type.avecCriteres;
+        const notes = type.avecCriteres;
         const restreint = estQr && type.acces === "RESTREINT";
         const ouvert = !estQr
           ? selection.voteEnLigneOuvert
           : enSalle
             ? type.ouvert && selection.voteSalleOuvert
             : type.ouvert;
-        const nature = !estQr ? "Voix payantes" : notes ? "Notes sur critères" : "Voix unique";
+        const nature = !estQr ? (notes ? "Notes payantes sur critères" : "Voix payantes") : notes ? "Notes sur critères" : "Voix unique";
         const partage = `https://wa.me/?text=${encodeURIComponent(`${selection.evenement.nom} · ${selection.libelle} — ${type.libelle} : votez ici ${url}`)}`;
         const fichier = `qr-${selection.slug}-${type.libelle}`.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").replace(/[^a-z0-9]+/g, "-");
         return (

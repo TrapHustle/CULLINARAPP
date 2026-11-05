@@ -20,14 +20,15 @@ describe("grille de vote", () => {
     expect(p.join(" ")).toMatch(/Un seul type de vote en ligne/);
   });
 
-  it("le vote en ligne n'a jamais de critères (RG 4.2)", () => {
-    const r = typeVoteSchema.parse({ libelle: "Public", canal: "EN_LIGNE", avecCriteres: true, part: "30" });
-    expect(r.avecCriteres).toBe(false);
+  it("tous les canaux se notent sur critères au choix (RG 4.2)", () => {
+    for (const canal of ["SALLE", "EN_LIGNE", "GRATUIT", "UNIQUE", "QR"]) {
+      expect(typeVoteSchema.parse({ libelle: "Public", canal, avecCriteres: true, part: "30" }).avecCriteres).toBe(true);
+      expect(typeVoteSchema.parse({ libelle: "Public", canal, avecCriteres: false, part: "30" }).avecCriteres).toBe(false);
+    }
   });
 
-  it("le vote par QR compte des voix ; seul le vote en ligne ne peut pas être restreint", () => {
-    const qr = typeVoteSchema.parse({ libelle: "Invités", canal: "QR", avecCriteres: true, acces: "RESTREINT", part: "30" });
-    expect(qr.avecCriteres).toBe(false);
+  it("seul le vote en ligne ne peut pas être restreint", () => {
+    const qr = typeVoteSchema.parse({ libelle: "Invités", canal: "QR", avecCriteres: false, acces: "RESTREINT", part: "30" });
     expect(qr.acces).toBe("RESTREINT");
     const salle = typeVoteSchema.parse({ libelle: "Jury", canal: "SALLE", avecCriteres: true, acces: "RESTREINT", part: "40" });
     expect(salle.acces).toBe("RESTREINT");
@@ -51,12 +52,12 @@ describe("grille de vote", () => {
     expect(p.join(" ")).toMatch(/ajoutez des critères, ou passez-le en vote par voix/);
   });
 
-  it("vote unique : critères et accès au choix ; en ligne gratuit : toujours des voix", () => {
+  it("vote unique et en ligne gratuit : critères et accès au choix", () => {
     const base = { libelle: "Secours", avecCriteres: true, acces: "RESTREINT", part: "20" };
     const unique = typeVoteSchema.parse({ ...base, canal: "UNIQUE" });
     expect(unique).toMatchObject({ canal: "UNIQUE", avecCriteres: true, acces: "RESTREINT", actif: true });
     const gratuit = typeVoteSchema.parse({ ...base, canal: "GRATUIT", actif: false });
-    expect(gratuit).toMatchObject({ canal: "GRATUIT", avecCriteres: false, acces: "RESTREINT", actif: false });
+    expect(gratuit).toMatchObject({ canal: "GRATUIT", avecCriteres: true, acces: "RESTREINT", actif: false });
   });
 
   it("lit une part décimale à la française", () => {

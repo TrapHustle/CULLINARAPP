@@ -12,8 +12,8 @@ import { identifiantQr, type LigneNumero } from "./vote-qr-core";
  * Côté public : on tape son numéro, puis
  *  - vote par voix (QR, ou en salle sans critère) : on choisit un candidat,
  *    une seule voix par numéro et par type de vote (contrainte unique de `Votant`) ;
- *  - vote en salle avec critères : on note chaque candidat, une seule fois par
- *    numéro et par candidat (identifiant du suffrage tiré du triplet).
+ *  - vote avec critères (tous ces canaux) : on note chaque candidat, une seule
+ *    fois par numéro et par candidat (identifiant du suffrage tiré du triplet).
  * En accès "RESTREINT", le numéro doit être dans `NumeroAutorise`.
  *
  * Côté organisateur : ouvrir/fermer le lien et tenir la liste des numéros.
@@ -30,12 +30,12 @@ const CANAUX_AUTONOMES = ["QR", "UNIQUE", "GRATUIT"];
 
 /** Vote par voix (un candidat par numéro), par opposition à la notation sur critères. */
 function parVoix(t: { canal: string; avecCriteres: boolean }) {
-  return t.canal === "QR" || t.canal === "GRATUIT" || ((t.canal === "SALLE" || t.canal === "UNIQUE") && !t.avecCriteres);
+  return CANAUX_LIEN.includes(t.canal) && !t.avecCriteres;
 }
 
-/** Vote noté sur critères (en salle ou vote unique). */
+/** Vote noté sur critères : une note par numéro et par candidat. */
 function parNotes(t: { canal: string; avecCriteres: boolean }) {
-  return (t.canal === "SALLE" || t.canal === "UNIQUE") && t.avecCriteres;
+  return CANAUX_LIEN.includes(t.canal) && t.avecCriteres;
 }
 
 /**
@@ -238,7 +238,7 @@ export async function noterQr(
           participationId,
           typeVoteId: type.id,
           poids: 1,
-          origine: "QR",
+          origine: type.canal === "GRATUIT" ? "GRATUIT" : "QR",
           valeurs: { create: type.criteres.map((cr) => ({ critereId: cr.id, valeur: valeurs[cr.id] })) },
         },
       });

@@ -96,7 +96,7 @@ export default async function PageProcesVerbal({
                     <td key={t.id} className={styles.nombre}>
                       {sur100(n?.note ?? null)}
                       <span className={styles.volume}>
-                        {(n?.volume ?? 0).toLocaleString("fr-FR")} {t.canal === "EN_LIGNE" ? "voix" : "vote(s)"}
+                        {(n?.volume ?? 0).toLocaleString("fr-FR")} {t.avecCriteres ? "note(s)" : t.canal === "EN_LIGNE" ? "voix" : "vote(s)"}
                       </span>
                     </td>
                   );

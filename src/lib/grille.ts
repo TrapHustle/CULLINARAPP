@@ -298,6 +298,65 @@ export async function supprimerCritere(
   return OK;
 }
 
+/**
+ * Donne à tous les autres types du niveau les mêmes critères que ce type :
+ * chacun passe en notation sur critères et ses critères sont remplacés par une
+ * copie (libellé, barème, ordre). Un type qui ne peut plus changer (votes reçus,
+ * sélection figée) est laissé tel quel et nommé dans le résultat.
+ */
+export async function appliquerCriteresATous(
+  organisationId: string,
+  niveau: Niveau,
+  typeId: string,
+): Promise<Resultat<{ appliques: number; ignores: string[] }>> {
+  // Une sélection ouverte peut encore compléter ses types sans vote : au-delà
+  // de l'appartenance, la vérification se fait type par type ci-dessous.
+  const controle = await controler(organisationId, niveau);
+  if (!controle.ok && controle !== FIGEE) return controle;
+  const source = await typeAvecCriteres(niveau, typeId);
+  if (!source) return INTROUVABLE;
+  if (!source.avecCriteres || source.criteres.length === 0) {
+    return { ok: false, erreur: "Ce type n'a pas de critères à recopier." };
+  }
+  const criteres = [...source.criteres]
+    .sort((a, b) => a.ordre - b.ordre || a.id.localeCompare(b.id))
+    .map((c, ordre) => ({ libelle: c.libelle, bareme: c.bareme, ordre }));
+
+  const autres =
+    niveau.kind === "evenement"
+      ? await prisma.typeVoteModele.findMany({ where: { evenementId: niveau.id, id: { not: typeId } }, select: { id: true, libelle: true } })
+      : await prisma.typeVote.findMany({ where: { selectionId: niveau.id, id: { not: typeId } }, select: { id: true, libelle: true } });
+
+  let appliques = 0;
+  const ignores: string[] = [];
+  for (const autre of autres) {
+    const c = await controlerType(organisationId, niveau, autre.id);
+    if (!c.ok) {
+      ignores.push(autre.libelle);
+      continue;
+    }
+    if (niveau.kind === "evenement") {
+      await prisma.$transaction([
+        prisma.critereModele.deleteMany({ where: { typeVoteId: autre.id } }),
+        prisma.typeVoteModele.update({
+          where: { id: autre.id },
+          data: { avecCriteres: true, criteres: { create: criteres } },
+        }),
+      ]);
+    } else {
+      await prisma.$transaction([
+        prisma.critere.deleteMany({ where: { typeVoteId: autre.id } }),
+        prisma.typeVote.update({
+          where: { id: autre.id },
+          data: { avecCriteres: true, criteres: { create: criteres } },
+        }),
+      ]);
+    }
+    appliques++;
+  }
+  return { ok: true, valeur: { appliques, ignores } };
+}
+
 /** Échange un critère avec son voisin. Les ordres sont renumérotés au passage. */
 export async function deplacerCritere(
   organisationId: string,

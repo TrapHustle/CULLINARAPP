@@ -52,8 +52,11 @@ export default async function PageVote({ params }: { params: Promise<{ slug: str
       ouvert={page.ouvert}
       simulation={page.mode === "simulation"}
       voixMax={VOIX_MAX_PAR_PAIEMENT}
-      // Compteurs masqués (RG 7.3) : les chiffres ne partent même pas vers le navigateur.
-      candidats={page.candidats.map((c) => ({ ...c, voix: selection.compteursVisibles ? c.voix : null }))}
+      criteres={page.criteres}
+      // Compteurs masqués (RG 7.3) : les chiffres ne partent même pas vers le
+      // navigateur. Noté sur critères, le nombre de notes ne fait pas le
+      // classement : il n'est pas affiché non plus.
+      candidats={page.candidats.map((c) => ({ ...c, voix: selection.compteursVisibles && !page.criteres ? c.voix : null }))}
     />
   );
 }

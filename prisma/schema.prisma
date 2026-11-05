@@ -707,6 +707,9 @@ model Paiement {
   /// Simulé : affiché sur la page publique, jamais dans les résultats officiels.
   simule          Boolean   @default(false)
   refPrestataire  String?
+  /// Vote en ligne noté sur critères : { critereId: valeur }, gardé jusqu'à
+  /// la confirmation du paiement, qui crée alors le vote et ses valeurs.
+  notes           Json?
   creeLe          DateTime  @default(now())
   confirmeLe      DateTime?
 

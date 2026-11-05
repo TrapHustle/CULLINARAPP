@@ -9,8 +9,13 @@ import { demanderPaiement, etatPaiement, voterGratuit, type Recu, type ResultatP
  * moyen proposé, quantité bornée, numéro valide) et le montant recalculé.
  */
 
-export async function voterGratuitAction(slug: string, participationId: string, telephone: string): Promise<ResultatVote> {
-  const r = await voterGratuit(String(slug), String(participationId), String(telephone ?? ""));
+export async function voterGratuitAction(
+  slug: string,
+  participationId: string,
+  telephone: string,
+  valeurs?: Record<string, number>,
+): Promise<ResultatVote> {
+  const r = await voterGratuit(String(slug), String(participationId), String(telephone ?? ""), valeurs);
   if (r.ok) revalidatePath(`/v/${slug}`);
   return r;
 }
@@ -21,6 +26,7 @@ export async function payerAction(input: {
   voix: number;
   moyen: string;
   telephone: string;
+  valeurs?: Record<string, number>;
 }): Promise<ResultatPaiement> {
   const r = await demanderPaiement({
     slug: String(input.slug),
@@ -28,6 +34,7 @@ export async function payerAction(input: {
     voix: Number(input.voix),
     moyen: String(input.moyen),
     telephone: String(input.telephone ?? ""),
+    valeurs: input.valeurs,
   });
   if (r.ok && r.type === "confirme") revalidatePath(`/v/${input.slug}`);
   return r;
