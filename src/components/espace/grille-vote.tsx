@@ -234,7 +234,7 @@ export function GrilleVote({ evenementId, selectionId, types, modifiable, comple
                 {editable && types.length > 1 && type.criteres.length > 0 ? (
                   <FormulaireAction
                     action={appliquerCriteresATousAction.bind(null, evenementId, selectionId, type.id)}
-                    confirmer={`Donner à tous les autres types de vote les critères de « ${type.libelle} » ? Leurs critères actuels sont remplacés, et ceux qui comptaient des voix passent en notation sur critères.`}
+                    confirmer={`Donner à tous les autres types de vote les critères de « ${type.libelle} » ? Leurs critères actuels sont remplacés, et ceux qui comptaient des voix passent en notation sur critères. Le vote en ligne payant ne change pas.`}
                   >
                     <BoutonEnvoi className={`${styles.bouton} ${styles.boutonSecondaire}`}>
                       <Icone nom="coche" taille={15} /> Appliquer ces critères à tous les votes

@@ -301,7 +301,8 @@ export async function supprimerCritere(
 /**
  * Donne à tous les autres types du niveau les mêmes critères que ce type :
  * chacun passe en notation sur critères et ses critères sont remplacés par une
- * copie (libellé, barème, ordre). Un type qui ne peut plus changer (votes reçus,
+ * copie (libellé, barème, ordre). Le vote en ligne payant n'est jamais touché :
+ * il reste un vote par voix. Un type qui ne peut plus changer (votes reçus,
  * sélection figée) est laissé tel quel et nommé dans le résultat.
  */
 export async function appliquerCriteresATous(
@@ -324,8 +325,14 @@ export async function appliquerCriteresATous(
 
   const autres =
     niveau.kind === "evenement"
-      ? await prisma.typeVoteModele.findMany({ where: { evenementId: niveau.id, id: { not: typeId } }, select: { id: true, libelle: true } })
-      : await prisma.typeVote.findMany({ where: { selectionId: niveau.id, id: { not: typeId } }, select: { id: true, libelle: true } });
+      ? await prisma.typeVoteModele.findMany({
+          where: { evenementId: niveau.id, id: { not: typeId }, canal: { not: "EN_LIGNE" } },
+          select: { id: true, libelle: true },
+        })
+      : await prisma.typeVote.findMany({
+          where: { selectionId: niveau.id, id: { not: typeId }, canal: { not: "EN_LIGNE" } },
+          select: { id: true, libelle: true },
+        });
 
   let appliques = 0;
   const ignores: string[] = [];

@@ -52,7 +52,7 @@ describe.skipIf(!RUN)("critères sur tous les types de vote", () => {
     await prisma.$disconnect();
   });
 
-  it("applique les critères du jury à tous les types, y compris en ligne et gratuit", async () => {
+  it("applique les critères du jury à tous les types sauf le vote en ligne payant", async () => {
     const e = await ev.creerEvenement(org, { nom: "Gala critères", edition: 1, sousTitre: null, date: null });
     const r = await ev.creerSelection(org, e.id, { ...vide, libelle: "Finale", nbQualifies: 1 });
     if (!r.ok) throw new Error("sélection");
@@ -82,7 +82,7 @@ describe.skipIf(!RUN)("critères sur tous les types de vote", () => {
     expect((await grille.ajouterCritere(org, niveau, j.id, { libelle: "Originalité", bareme: 5 })).ok).toBe(true);
 
     const fait = await grille.appliquerCriteresATous(org, niveau, j.id);
-    expect(fait).toEqual({ ok: true, valeur: { appliques: 3, ignores: [] } });
+    expect(fait).toEqual({ ok: true, valeur: { appliques: 2, ignores: [] } });
 
     const types = await grille.lireGrille(org, niveau);
     const attendu = [
@@ -90,12 +90,29 @@ describe.skipIf(!RUN)("critères sur tous les types de vote", () => {
       ["Présentation", 10],
       ["Originalité", 5],
     ];
-    for (const t of types) {
+    for (const t of types.filter((t) => t.canal !== "EN_LIGNE")) {
       expect(t.avecCriteres).toBe(true);
       expect(t.criteres.map((c) => [c.libelle, c.bareme])).toEqual(attendu);
     }
-    jury = types.find((t) => t.id === j.id)!;
-    enLigne = types.find((t) => t.canal === "EN_LIGNE")!;
+    const payant = types.find((t) => t.canal === "EN_LIGNE")!;
+    expect([payant.avecCriteres, payant.criteres]).toEqual([false, []]);
+
+    // Le vote payant noté sur critères reste possible, réglé à la main.
+    const r3 = await grille.modifierType(org, niveau, payant.id, {
+      libelle: payant.libelle,
+      canal: "EN_LIGNE",
+      actif: true,
+      avecCriteres: true,
+      acces: "OUVERT",
+      part: payant.part,
+    });
+    expect(r3.ok).toBe(true);
+    for (const [libelle, bareme] of attendu) {
+      expect((await grille.ajouterCritere(org, niveau, payant.id, { libelle: libelle as string, bareme: bareme as number })).ok).toBe(true);
+    }
+    const relus = await grille.lireGrille(org, niveau);
+    jury = relus.find((t) => t.id === j.id)!;
+    enLigne = relus.find((t) => t.canal === "EN_LIGNE")!;
     const g = await prisma.typeVote.findFirstOrThrow({ where: { selectionId: s1, canal: "GRATUIT" } });
     gratuit = { id: g.id, lien: g.lien };
 
